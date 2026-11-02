@@ -1104,3 +1104,35 @@ main{min-width:0!important;flex:1!important}
 
 /* Original stylesheet 49: cascade order preserved. */
 .dp-staff-acc-only{white-space:nowrap}.dp-staff-acc-only strong{display:block;font-size:15px;line-height:1.2}.dp-staff-acc-only small{display:none}
+
+/* Auth: login screen + account/permissions management */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(168deg,#061d52,#09478d 75%,#07326e);padding:20px}
+.login-card{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:32px 28px;box-shadow:0 20px 60px #04173b4d;display:flex;flex-direction:column;gap:14px}
+.login-logo{font-size:19px;font-weight:850;color:var(--ink)}.login-logo small{display:block;font-size:10px;letter-spacing:1.6px;color:var(--muted);margin-top:6px;font-weight:700}
+.login-card h1{margin:4px 0 2px;font-size:20px;color:var(--ink)}
+.login-card label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);font-weight:700}
+.login-card input{width:100%}
+.login-card button.primary{margin-top:6px;padding:12px;border-radius:9px;font-size:13px}
+.login-error{color:#d63939;font-size:12px;font-weight:700;background:#fdecec;border:1px solid #f6c6c6;border-radius:8px;padding:9px 11px;margin:0}
+.top-right{display:flex;align-items:center;gap:10px}
+.top-logout-btn{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700}
+.top-logout-btn:hover{background:#f5f8fc}
+#account .acc-me-card{background:linear-gradient(140deg,#fff,#fbfcff);border:1px solid var(--line);border-radius:13px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+#account .acc-me-card strong{font-size:15px;color:var(--ink)}
+#account .acc-me-role{display:inline-block;margin-left:9px;background:#fff4e9;color:#d66b19;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:750}
+#account .acc-me-email{font-size:12px;color:var(--muted);margin-top:4px}
+#account .acc-logout-btn{background:#fdecec;color:#d63939;border:1px solid #f6c6c6;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700}
+#account .acc-manage-head{display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px}
+#account .acc-manage-head h3{margin:0;font-size:16px}
+#account .acc-form{background:#f8f9fd;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+#account .acc-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#account .acc-form-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:700}
+#account .acc-form-actions{grid-column:1/-1;display:flex;gap:10px;margin-top:4px}
+#account .acc-msg{border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;margin-bottom:12px}
+#account .acc-msg-ok{background:#e8f7f1;color:#168460}
+#account .acc-msg-error{background:#fdecec;color:#d63939}
+#account .acc-table td,#account .acc-table th{white-space:nowrap}
+#account .acc-row-actions{display:flex;gap:8px;white-space:nowrap}
+#account .acc-row-actions button{padding:7px 10px;font-size:11px}
+#account .acc-del{color:#d63939;border-color:#f6c6c6}
+@media(max-width:650px){#account .acc-form-grid{grid-template-columns:1fr}}

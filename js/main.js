@@ -1,4 +1,5 @@
 import { fetchDashboardData } from './api.js';
+import { STAFF_ROSTER } from './staffRoster.js';
 
 const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_LATEST, CONTACT_DATA } = await fetchDashboardData();
 
@@ -144,25 +145,15 @@ const NET_LATEST=mockNET_LATEST;if(!window.IBB5_IMPORTED_DATA && typeof DATA!=="
 // ---- Original script 7  ----
 
 (function(){
- const staff=[{acc:'DNG.Vypv',name:'Phan Văn Vĩ',team:1},{acc:'DNG.OanhLTH3',name:'Lê Thị Hoàng Oanh',team:1},{acc:'DNG.ChuongHM',name:'Hạ Minh Chương',team:1},{acc:'DNG.NguyenTP10',name:'Trần Phước Nguyên',team:1},{acc:'DNG.TriNP',name:'Nguyễn Phước Trí',team:1},{acc:'DNG.Hoantt',name:'Nguyễn Thị Thanh Hoa',team:2},{acc:'DNG.Nhannt137',name:'Nguyễn Thành Nhân',team:2},{acc:'DNG.Namnh170',name:'Ngô Hoài Nam',team:2},{acc:'DNG.DatHX4',name:'Hồ Xuân Đạt',team:1},{acc:'DNG.HoaNTB6',name:'Nguyễn Thị Bích Hòa',team:3},{acc:'DNG.ManLM3',name:'Lê Minh Mẫn',team:3},{acc:'DNG.Tienna2',name:'Nguyễn Anh Tiến',team:3},{acc:'DNG.HanNVN',name:'Nguyễn Vũ Ngọc Hân',team:3},{acc:'DNG.BachND7',name:'Nguyễn Đình Bách',team:3},{acc:'DNG.DoanLT4',name:'Lê Trần Doãn',team:3},{acc:'DNG.LanMH2',name:'Mai Hoàng Lân',team:3},{acc:'DNG.DatBTH',name:'DNG.DatBTH',team:3}];
- const KEY='ibb5_role_preview_v1',norm=v=>String(v||'').trim().toLowerCase();
- let selected={role:'manager',acc:''};try{const stored=JSON.parse(localStorage.getItem(KEY)||'null');if(stored&&['manager','lead','staff'].includes(stored.role))selected={role:stored.role,acc:stored.acc||''};}catch(e){}
- const roleEl=document.getElementById('ibbRole'),userEl=document.getElementById('ibbUser');
- function current(){const person=staff.find(s=>norm(s.acc)===norm(selected.acc));return {role:selected.role,acc:person?.acc||'',team:person?.team||0};}
+ const staff=STAFF_ROSTER;
+ const norm=v=>String(v||'').trim().toLowerCase();
+ const me=window.IBB5_CURRENT_PROFILE||{role:'staff',acc:'',full_name:'',email:''};
+ function current(){const person=staff.find(s=>norm(s.acc)===norm(me.acc));return {role:me.role,acc:person?.acc||me.acc||'',team:person?.team||0};}
  window.IBB5_ROLE={current,canView:(x)=>{const p=current();if(p.role==='manager')return true;if(!p.acc)return false;if(p.role==='staff')return norm(x.staff)===norm(p.acc);return staff.some(s=>s.team===p.team&&norm(s.acc)===norm(x.staff));}};
- function update(){roleEl.value=selected.role;const choices=staff;
- userEl.innerHTML=choices.map(x=>'<option value="'+x.acc+'">'+x.name+' · '+x.acc+' · Bầy '+x.team+'</option>').join('');
- if(selected.role!=='manager'&&!choices.some(s=>norm(s.acc)===norm(selected.acc)))selected.acc=choices[0]?.acc||'';
- userEl.value=selected.acc;document.getElementById('ibbUserWrap').style.display=selected.role==='manager'?'none':'';
- const p=current(),scope=selected.role==='manager'?'Toàn phòng':selected.role==='lead'?'Bầy '+p.team+' · '+p.acc:'Chỉ '+p.acc;
- document.getElementById('ibbRoleSummary').textContent=(selected.role==='manager'?'Trưởng phòng':selected.role==='lead'?'Trưởng Bầy':'Nhân viên')+' — '+scope;
- document.getElementById('ibbRoleScope').textContent=selected.role==='manager'?'Xem và xuất toàn bộ hồ sơ NET.':selected.role==='lead'?'Chỉ xem và xuất hồ sơ của nhân viên thuộc Bầy '+p.team+'. KPI và lịch hẹn toàn phòng vẫn hiển thị đầy đủ.':'Chỉ xem và xuất hồ sơ do tài khoản '+p.acc+' bán.';
+ const p=current(),scope=me.role==='manager'?'Toàn phòng':me.role==='lead'?'Bầy '+p.team+' · '+p.acc:'Chỉ '+p.acc;
+ const summaryEl=document.getElementById('ibbRoleSummary');if(summaryEl)summaryEl.textContent=(me.role==='manager'?'Trưởng phòng':me.role==='lead'?'Trưởng Bầy':'Nhân viên')+' — '+scope;
+ const scopeEl=document.getElementById('ibbRoleScope');if(scopeEl)scopeEl.textContent=me.role==='manager'?'Xem và xuất toàn bộ hồ sơ NET.':me.role==='lead'?'Chỉ xem và xuất hồ sơ của nhân viên thuộc Bầy '+p.team+'. KPI và lịch hẹn toàn phòng vẫn hiển thị đầy đủ.':'Chỉ xem và xuất hồ sơ do tài khoản '+p.acc+' bán.';
  const hint=document.getElementById('ibbPendingScope');if(hint)hint.textContent='Phạm vi hồ sơ hợp đồng: '+scope+'. Tìm kiếm, bộ lọc và xuất CSV tuân theo phạm vi này.';
- try{localStorage.setItem(KEY,JSON.stringify(selected));}catch(e){}
- document.dispatchEvent(new CustomEvent('ibb5-role-change'));
- }
- roleEl.addEventListener('change',()=>{selected.role=roleEl.value;update()});
- userEl.addEventListener('change',()=>{selected.acc=userEl.value;update()});update();
 })();
 
 
