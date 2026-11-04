@@ -1,6 +1,7 @@
 import { fetchDashboardData } from './api.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { managedShare } from './managedKpi.js';
+import { dailyPace } from './dailyPace.js';
 
 const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_LATEST, CONTACT_DATA } = await fetchDashboardData();
 
@@ -40,7 +41,7 @@ const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b5
  const workdays7=IBB_CALC.workdays(windowStart,asOf);
  const online7=IBB_CALC.unique(netRows.filter(x=>x.date&&x.date>=windowStart&&x.date<=asOf&&new Date(x.date+'T12:00:00').getDay()!==0));
  const pace7=workdays7?online7/workdays7:null;
- const pace=elapsed?totalOnline/elapsed:null,forecast=pace7===null?null:totalOnline+Math.round(pace7*remaining),gap=target===null?null:Math.max(0,target-totalOnline),need=remaining&&gap!==null?gap/remaining:null;
+ const pace=elapsed?totalOnline/elapsed:null,forecast=pace7===null?null:totalOnline+Math.round(pace7*remaining),gap=target===null?null:Math.max(0,target-totalOnline);
  const show=n=>n===null?'—':n.toFixed(2).replace('.',',');const number=n=>n===null?'—':fmt(n);
  $('online').textContent=fmt(totalOnline);$('online').title='Mã HĐ NET duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn NET được nhập mới nhất có ưu tiên tuyệt đối.';$('target').textContent=target===null?'Chưa ký cam kết':fmt(target);
  $('rate').textContent=target===null?'Chưa có target đã ký':target===0?'Mục tiêu bằng 0':show(totalOnline/target*100)+'% mục tiêu';$('targetBar').style.width=target>0?Math.min(100,totalOnline/target*100)+'%':'0%';
@@ -62,8 +63,8 @@ const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b5
  const priorCut=IBB_CALC.prior(month,+asOf.slice(-2)),priorMonth=priorCut.slice(0,7),priorRows=netRows.filter(x=>x.date&&x.date.slice(0,7)===priorMonth);
  const previous=IBB_CALC.validPrev(netRows,priorMonth)?IBB_CALC.unique(priorRows.filter(x=>x.date<=priorCut)):null;
  $('growth').textContent=previous===null?'—':(previous===0?'—':show((totalOnline-previous)/previous*100)+'%');$('growth').title=previous===null?'Chưa có dữ liệu NET tháng trước':('Tháng trước cùng kỳ '+previous+' HĐ; tăng/giảm '+(totalOnline-previous)+' HĐ');
- $('dailyTitle').textContent='Kết quả kinh doanh ngày '+asOf.split('-').reverse().join('/');const sold=IBB_CALC.unique(netRows.filter(x=>x.created===asOf)),today=IBB_CALC.unique(onlineRows.filter(x=>x.date===asOf)),isMonthLastDay=asOf===(month+'-'+String(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate()).padStart(2,'0')),dailyBenchmark=isMonthLastDay?gap:need,progress=dailyBenchmark===null?null:(dailyBenchmark===0?(target!==null&&totalOnline>=target?100:null):today/dailyBenchmark*100);
- $('soldToday').textContent=fmt(sold)+' HĐ';$('todayOnlineCount').textContent=fmt(today)+' HĐ';$('todayOnline').textContent=fmt(today)+' / '+(dailyBenchmark===null?'—':fmt(dailyBenchmark))+' HĐ';$('dailyProgress').textContent=progress===null?'—':show(progress)+'%';$('todayOnline').title=remaining>0?'Mốc cần đạt để hoàn thành cam kết trong ngày làm việc còn lại':'Ngày cuối tháng: mốc tham chiếu = số HĐ còn thiếu so với cam kết tháng tại ngày chốt';$('dailyProgress').title=$('todayOnline').title;$('todayPaceDescription').textContent=remaining>0?'Online NET / Pace cần đạt':'Online NET / Số HĐ còn thiếu so với cam kết';$('dailyPaceDescription').textContent=remaining>0?'Online ngày / Pace cần đạt':'Online ngày / Số HĐ còn thiếu so với cam kết';$('todayBar').style.width=(progress===null?0:Math.min(100,progress))+'%';$('dailyBar').style.width=(progress===null?0:Math.min(100,progress))+'%';
+ $('dailyTitle').textContent='Kết quả kinh doanh ngày '+asOf.split('-').reverse().join('/');const sold=IBB_CALC.unique(netRows.filter(x=>x.created===asOf)),today=IBB_CALC.unique(onlineRows.filter(x=>x.date===asOf)),paceDays=dailyPace(gap,asOf),dailyBenchmark=paceDays.pace,progress=dailyBenchmark===null?null:(dailyBenchmark===0?(target!==null&&totalOnline>=target?100:null):today/dailyBenchmark*100);
+ $('soldToday').textContent=fmt(sold)+' HĐ';$('todayOnlineCount').textContent=fmt(today)+' HĐ';$('todayOnline').textContent=fmt(today)+' / '+(dailyBenchmark===null?'—':fmt(dailyBenchmark))+' HĐ';$('dailyProgress').textContent=progress===null?'—':show(progress)+'%';$('todayOnline').title='Pace = HĐ còn thiếu / max(1, ngày còn lại trong tháng − 3), gồm Chủ nhật. Còn '+paceDays.remaining+' ngày; mẫu số '+paceDays.days+' ngày.';$('dailyProgress').title=$('todayOnline').title;$('todayPaceDescription').textContent='Online NET / Pace (ngày còn lại − 3, gồm CN)';$('dailyPaceDescription').textContent='Online ngày / Pace (ngày còn lại − 3, gồm CN)';$('todayBar').style.width=(progress===null?0:Math.min(100,progress))+'%';$('dailyBar').style.width=(progress===null?0:Math.min(100,progress))+'%';
  $('rangeLabel').textContent='Tháng '+month+' · đến '+asOf+' · '+(room||'Toàn phòng')+' · Pace loại Chủ nhật';
  let el=document.getElementById('ibbQualitySummary');if(el){el.querySelector('[data-k="prepaid"]').textContent=totalOnline?show(p/totalOnline*100)+'%':'—';el.querySelector('[data-k="camera"]').textContent=fmt(IBB_CALC.unique(cameraOnline))+' / '+fmt(totalOnline);el.querySelector('[data-k="coverage"]').textContent=totalOnline?show(cameraOnline.length/totalOnline*100)+'%':'—';}
  renderRooms();renderCharts();renderDetails();window.refreshCommitUI?.();if(typeof perfRender==='function')perfRender();}
