@@ -1,5 +1,6 @@
 import { fetchDashboardData } from './api.js';
 import { STAFF_ROSTER } from './staffRoster.js';
+import { managedShare } from './managedKpi.js';
 
 const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_LATEST, CONTACT_DATA } = await fetchDashboardData();
 
@@ -55,7 +56,9 @@ const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b5
  const p=onlineRows.filter(x=>Number(x.prepaid)>0).length;
  const cameraOnline=IBB_CALC.camOnline(onlineRows,asOf);
  $('cameraKpi').textContent=fmt(IBB_CALC.unique(cameraOnline));
- $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(show(payCount/totalOnline*100)+'%'):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';$('managed').textContent='—';
+ $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(show(payCount/totalOnline*100)+'%'):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';
+ const managed=managedShare(onlineRows);$('managed').textContent=managed.percent===null?'—':show(managed.percent)+'%';$('managed').title=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01 hoặc DNG_02 · từ '+start+' đến '+asOf;
+ $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';
  const priorCut=IBB_CALC.prior(month,+asOf.slice(-2)),priorMonth=priorCut.slice(0,7),priorRows=netRows.filter(x=>x.date&&x.date.slice(0,7)===priorMonth);
  const previous=IBB_CALC.validPrev(netRows,priorMonth)?IBB_CALC.unique(priorRows.filter(x=>x.date<=priorCut)):null;
  $('growth').textContent=previous===null?'—':(previous===0?'—':show((totalOnline-previous)/previous*100)+'%');$('growth').title=previous===null?'Chưa có dữ liệu NET tháng trước':('Tháng trước cùng kỳ '+previous+' HĐ; tăng/giảm '+(totalOnline-previous)+' HĐ');
