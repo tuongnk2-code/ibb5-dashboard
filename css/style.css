@@ -1146,3 +1146,7 @@ main{min-width:0!important;flex:1!important}
 #pendingContracts .pending-keyword-search{margin:10px 0 12px;gap:0}
 #pendingContracts .pending-keyword-input{max-width:100%}
 #pendingContracts .pending-keyword-input input{min-width:0}
+
+#performance .perf-table{min-width:1250px!important}
+#performance .perf-table th:nth-child(n+3){width:7%!important}
+#performance .perf-table th:nth-child(7),#performance .perf-table th:nth-child(9){width:9%!important}
