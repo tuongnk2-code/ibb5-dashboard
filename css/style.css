@@ -1137,3 +1137,12 @@ main{min-width:0!important;flex:1!important}
 #account .acc-del{color:#d63939;border-color:#f6c6c6}
 @media(max-width:650px){#account .acc-form-grid{grid-template-columns:1fr}}
 #pendingContracts .pending-table .ph-created-month{display:block;width:100%;min-width:0;margin-top:5px;padding:7px 4px!important;font-size:11px!important;color:#34516d;background:#fff}
+
+/* Keep the pending-contract search compact while retaining its accessible name. */
+#pendingContracts .pending-help,
+#pendingContracts .pending-keyword-search > label,
+#pendingContracts .pending-keyword-search > small,
+#pendingContracts #ibbPendingScope{display:none}
+#pendingContracts .pending-keyword-search{margin:10px 0 12px;gap:0}
+#pendingContracts .pending-keyword-input{max-width:100%}
+#pendingContracts .pending-keyword-input input{min-width:0}
