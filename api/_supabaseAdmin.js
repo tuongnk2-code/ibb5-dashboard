@@ -13,7 +13,7 @@ export function getSupabaseAdmin() {
   return client;
 }
 
-export async function requireManager(req) {
+export async function requireProfile(req) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (!token) {
@@ -32,8 +32,14 @@ export async function requireManager(req) {
   if (profileError || !profile) {
     return { error: 'Không tìm thấy hồ sơ tài khoản.', status: 403 };
   }
-  if (profile.role !== 'manager') {
+  return { admin, caller: profile };
+}
+
+export async function requireManager(req) {
+  const auth = await requireProfile(req);
+  if (auth.error) return auth;
+  if (auth.caller.role !== 'manager') {
     return { error: 'Chỉ Trưởng phòng mới có quyền quản lý tài khoản.', status: 403 };
   }
-  return { admin, caller: profile };
+  return auth;
 }

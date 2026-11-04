@@ -23,6 +23,11 @@ async function showApp(profile) {
   appShell.style.display = '';
   window.IBB5_CURRENT_PROFILE = profile;
   await import('./main.js');
+  const reportRoot = document.getElementById('dailyReportsRoot');
+  if (reportRoot) {
+    const { renderDailyReports } = await import('./dailyReports.js');
+    renderDailyReports(reportRoot, profile, (month, acc) => window.IBB5_MONTHLY_TARGET?.(month, acc) ?? null);
+  }
   const root = document.getElementById('accountPanelRoot');
   if (root) {
     const { renderPermissions } = await import('./permissions.js');

@@ -137,7 +137,7 @@ document.querySelectorAll('.sidebar .nav a').forEach(a=>a.addEventListener('clic
 const links=[...document.querySelectorAll('.sidebar .nav a[href^="#"]')];
 const sections=[...document.querySelectorAll('.content > section.panel[id]')];
 const title=document.querySelector('header.top h1');
-const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo bảng giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',account:'Tài khoản'};
+const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo bảng giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',account:'Tài khoản'};
 function activate(id){if(!sections.some(s=>s.id===id))id='overview';sections.forEach(s=>s.classList.toggle('page-active',s.id===id));links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));if(title)title.textContent=names[id]||'Tổng quan kinh doanh';window.scrollTo(0,0);}
 links.forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const id=this.getAttribute('href').slice(1);if(location.hash!=='#'+id)history.pushState(null,'','#'+id);activate(id)}));
 window.addEventListener('popstate',()=>activate(location.hash.slice(1)));
@@ -731,3 +731,5 @@ $('ctRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.group
 }
 $('ctSearch').addEventListener('input',render);render();
 })();
+
+window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??null;
