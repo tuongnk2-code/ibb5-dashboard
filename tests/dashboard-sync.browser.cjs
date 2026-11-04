@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 (async () => {
   const { createServer } = await import('../node_modules/vite/dist/node/index.js');
-  const { unpackState, stateSignature } = await import('../js/dashboardStateModel.js');
+  const { unpackState, stateSignature, validateSnapshot } = await import('../js/dashboardStateModel.js');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5177, strictPort: true } }); await server.listen();
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
   const records = new Map(), errors = [];
@@ -12,6 +12,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     { id:'SYNC1',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' },
     { id:'CAM_ONLY',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' }
   );
+  legacy.snapshot.data[0].netClbh='Tra truoc 3T 615k/3T';
+  legacy.snapshot.data[0].prepaid=0; // The CLBH policy is authoritative.
   const previousDate = new Date(date.slice(0,7)+'-01T12:00:00Z');
   previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
   for(const id of ['PREV1','PREV2']) legacy.snapshot.data.push({id,type:'Internet',staff:'DNG.ManLM3',created:previousDate.toISOString().slice(0,10),date:previousDate.toISOString().slice(0,10),room:'IBB5'});
@@ -25,6 +27,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if(req.method()==='GET')return route.fulfill({json:req.url().includes('versions=1')?{signature:stateSignature([...records.values()])}:unpackState([...records.values()])});
       const body=req.postDataJSON();
       if(body.kind==='migrate') { records.set('snapshot',{key:'snapshot',revision:1,data:body.snapshot});for(const [m,rooms]of Object.entries(body.commitments))for(const [room,data]of Object.entries(rooms))records.set('commit:'+m+':'+room,{key:'commit:'+m+':'+room,revision:1,data});for(const [id,data]of Object.entries(body.notes))records.set('pending:'+id,{key:'pending:'+id,revision:1,data});return route.fulfill({json:{ok:true}}); }
+      if(body.kind==='snapshot'){const row={key:'snapshot',revision:body.revision+1,data:validateSnapshot(body.snapshot)};records.set('snapshot',row);return route.fulfill({json:{row}});}
       const key='pending:'+body.id,row={key,revision:body.revision+1,data:body.value};records.set(key,row);return route.fulfill({json:{row}});
     });
     await context.route('**/api/daily-reports*',r=>r.fulfill({json:{profiles:[],reports:[],metrics:{},previous:null}}));
@@ -42,6 +45,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.locator('#cameraKpi').textContent(),'2');
       assert.equal(await page.locator('[data-k="camera"]').textContent(),'1 / 1');
       assert.equal(await page.locator('[data-k="coverage"]').textContent(),'100%');
+      assert.equal(await page.locator('[data-k="prepaid"]').textContent(),'100%');
       assert.equal(await page.locator('#growth').textContent(),'-50%');
       assert.match(await page.locator('#growthNote').textContent(),/2 HĐ · Giảm 1 HĐ/);
       await page.locator('#to').evaluate(el=>{el.value='2001-01-04';el.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -53,6 +57,18 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await desktop.page.evaluate(async()=>{await window.IBB5_SYNC.pending('SYNC1',{expected:'2026-11-10',action:'Đã gọi',result:'Chờ',source:'Zalo',timeSlot:'8h - 10h'});});
     await mobile.page.reload();await mobile.page.locator('#dashboardSyncBtn').waitFor();
     assert.equal(await mobile.page.evaluate(()=>window.IBB5_PENDING_NOTES.SYNC1.action),'Đã gọi');
+    if(process.env.NET_IMPORT_TEST_FILE){
+      await desktop.page.evaluate(()=>{location.hash='datahub'});
+      await desktop.page.locator('#ibbUploadNet').setInputFiles(process.env.NET_IMPORT_TEST_FILE);
+      await Promise.all([desktop.page.waitForEvent('load'),desktop.page.locator('#ibbImportBtn').click()]);
+      await desktop.page.locator('#dashboardSyncBtn').waitFor();
+      await desktop.page.waitForFunction(()=>window.IBB5_IMPORTED_DATA?.filter(r=>r.type==='Internet').length===956);
+      for(const [id,value] of Object.entries({from:'2026-11-01',to:'2026-11-04'}))await desktop.page.locator('#'+id).evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));},value);
+      assert.equal(await desktop.page.locator('[data-k="prepaid"]').textContent(),'47%');
+      assert.match(await desktop.page.locator('[data-k="prepaid"]').getAttribute('title'),/^28 \/ 60 HĐ/);
+      assert.equal(records.get('snapshot').data.data.filter(r=>r.type==='Internet'&&typeof r.netClbh==='string').length,956);
+      console.log('PASS: real NET Excel import retains CLBH for 956 contracts and computes 28/60 = 47%');
+    }
     assert.deepEqual(errors,[]);console.log('PASS: true login bootstrap migrates desktop data; fresh mobile reads the same contracts, targets and saved notes; Vietnam today default');
   } finally {await browser.close();await server.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});

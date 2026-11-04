@@ -12,4 +12,6 @@ Sau đó mở điện thoại, bấm **Đồng bộ** hoặc tải lại trang. 
 
 Lưu ý: đồng bộ không tự sinh dữ liệu cho những ngày chưa nhập file. Chọn hôm nay có thể cho kết quả 0 khi nguồn mới nhất vẫn là tháng trước.
 
+Tỷ lệ NET Online trả trước = số mã HĐ NET Online có kỳ hạn **≥ 3T** trong cột **CLBH Net Thời điểm hiện tại** / tổng mã HĐ NET Online của kỳ đang xem. Nội dung CLBH được giữ ở `netClbh` khi nhập Excel và lưu dùng chung; không dùng cột Số tháng trả trước để thay thế. Giá trị phần trăm hiển thị được làm tròn số nguyên.
+
 Git push triển khai code trên Vercel; SQL trong `supabase/dashboard-shared-state.sql` là thay đổi Supabase riêng. Không đưa khóa máy chủ vào client hoặc Git.

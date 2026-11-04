@@ -32,6 +32,7 @@ export function validateSnapshot(snapshot) {
     }
     for (const field of ['room', 'staff', 'status', 'package', 'branch', 'customer', 'sourceExcel']) result[field] = String(row[field] || '').slice(0, 500);
     result.prepaid = Number(row.prepaid) || 0;
+    if (row.type === 'Internet' && typeof row.netClbh === 'string') result.netClbh = row.netClbh.slice(0, 500);
     if (row.vvip != null) result.vvip = row.vvip === true;
     return result;
   });
