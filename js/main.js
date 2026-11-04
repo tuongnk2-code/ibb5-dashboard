@@ -575,14 +575,11 @@ function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('
 }
 const total=(arr,days)=>({sold:days.map((_,i)=>arr.reduce((s,p)=>s+(p.sold[i]||0),0)),online:days.map((_,i)=>arr.reduce((s,p)=>s+(p.online[i]||0),0))});
 function rowHtml(p,mode,idx,days){
- const totalSold=p.sold.reduce((a,b)=>a+b,0),totalOnline=p.online.reduce((a,b)=>a+b,0);
- // The two monthly totals are immediately after Employee, in both Day and Month views.
- const monthCells=`<td class="dp-sold dp-month-first">${totalSold}</td><td class="dp-online dp-month-second">${totalOnline}</td>`;
  if(mode==='day'){
   const s=p.sold[idx]||0,o=p.online[idx]||0,d=o-s;
-  return monthCells+`<td class="dp-sold">${s}</td><td class="dp-online">${o}</td><td>${d>0?'+':''}${d}</td>`;
+  return `<td class="dp-sold">${s}</td><td class="dp-online">${o}</td><td>${d>0?'+':''}${d}</td>`;
  }
- return monthCells+days.map((_,i)=>`<td class="dp-sold">${p.sold[i]||0}</td><td class="dp-online">${p.online[i]||0}</td>`).join('');
+ return days.map((_,i)=>`<td class="dp-sold">${p.sold[i]||0}</td><td class="dp-online">${p.online[i]||0}</td>`).join('');
 }
 function kpi(title,val,cl=''){return `<div class="dp-kpi ${cl}"><small>${esc(title)}</small><strong>${esc(val)}</strong></div>`}
 function render(){
@@ -595,10 +592,9 @@ function render(){
  const high=days.map((n,i)=>({n,val:rows.reduce((s,p)=>s+p.online[i],0)})).reduce((a,b)=>b.val>a.val?b:a,{n:1,val:0});
  el('dpKpis').innerHTML=kpi('HĐ bán mới · '+period,fmt(sold)+' HĐ','sold')+kpi('HĐ Online · '+period,fmt(on)+' HĐ','online')+kpi('Chênh lệch Online – Bán',((on-sold)>0?'+':'')+fmt(on-sold)+' HĐ')+kpi(mode==='day'?'Nhân sự có phát sinh':'Ngày Online cao nhất',mode==='day'?active+' NV':'Ngày '+high.n+' · '+high.val+' HĐ');
  el('dpScope').textContent=(team?'Bầy '+team:'Toàn phòng')+(search?' · đang lọc nhân sự':'')+' · '+period;
- // Group headers align with fixed Employee and fixed Monthly totals; daily columns scroll horizontally.
- el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th><th class="dp-month-group" colspan="2">TỔNG THÁNG</th>'+
+ // Only the Acc column is fixed; daily columns scroll horizontally.
+ el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th>'+
   (mode==='day'?`<th colspan="3">NGÀY ${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="2">Ngày ${String(n).padStart(2,'0')}</th>`).join(''))+'</tr><tr>'+
-  '<th class="dp-month-first">Bán</th><th class="dp-month-second">Online</th>'+
   (mode==='day'?'<th>Bán</th><th>Online</th><th>Chênh lệch</th>':days.map(()=>'<th>Bán</th><th>Online</th>').join(''))+'</tr>';
  let body='';const person=p=>`<td class="dp-staff dp-staff-acc-only"><strong>${esc(p.acc||p.name)}</strong></td>`;
  for(const t of team?[team]:['1','2','3']){
@@ -608,14 +604,14 @@ function render(){
  body+=`<tr class="dp-grand"><td class="dp-staff">${team?'TỔNG BẦY '+team:'TỔNG PHÒNG'} (${rows.length} NS)</td>`+rowHtml(total(rows,days),mode,idx,days)+'</tr>';
  el('dpTableBody').innerHTML=body;
  // VISUAL ONLY: explicit column grid prevents browser/zoom from stretching the pinned Mã Acc column.
- const baseDay=mode==='day'?70:50,cols=mode==='day'?3:days.length*2,tableW=146+56+56+cols*baseDay;
- el('dpColGroup').innerHTML='<col style="width:146px"><col style="width:56px"><col style="width:56px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
+ const baseDay=mode==='day'?70:50,cols=mode==='day'?3:days.length*2,tableW=146+cols*baseDay;
+ el('dpColGroup').innerHTML='<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
  el('dpTable').style.width=tableW+'px'; el('dpTable').style.minWidth=tableW+'px';
- el('dpNote').textContent='Cố định cột Mã Acc + Tổng tháng khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
+ el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
 }
 function exportCSV(){const v=current;const {m,day,mode,team,days,rows}=v;if(!rows)return;
- const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Tổng tháng Bán','Tổng tháng Online','Ngày','Bán mới','Online','Chênh lệch']:['Bầy','Nhân sự','Mã Acc','Tổng tháng Bán','Tổng tháng Online',...days.flatMap(d=>[d+' Bán',d+' Online'])]];
- function push(team,name,acc,r){const idx=+day.slice(-2)-1,s=r.sold.reduce((a,b)=>a+b,0),o=r.online.reduce((a,b)=>a+b,0);table.push(mode==='day'?[team,name,acc,s,o,day,r.sold[idx]||0,r.online[idx]||0,(r.online[idx]||0)-(r.sold[idx]||0)]:[team,name,acc,s,o,...days.flatMap((_,i)=>[r.sold[i]||0,r.online[i]||0])]);}
+ const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày','Bán mới','Online','Chênh lệch']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>[d+' Bán',d+' Online'])]];
+ function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,r.sold[idx]||0,r.online[idx]||0,(r.online[idx]||0)-(r.sold[idx]||0)]:[team,name,acc,...days.flatMap((_,i)=>[r.sold[i]||0,r.online[i]||0])]);}
  for(const t of team?[team]:['1','2','3']){const people=rows.filter(p=>p.team===t);people.forEach(p=>push('Bầy '+t,p.name,p.acc,p));push('Bầy '+t,'TỔNG BẦY '+t,'',total(people,days));}
  push('Tổng',team?'TỔNG BẦY '+team:'TỔNG PHÒNG','',total(rows,days));
  const csv='\ufeff'+table.map(row=>row.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
