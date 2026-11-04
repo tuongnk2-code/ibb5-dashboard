@@ -5,11 +5,25 @@
 .responsive-table-scroll>table{min-width:max-content}
 .tablewrap,.pending-scroll,.pending-schedule-scroll,.ct-tablewrap,.dp-scroll,.ibbc-scroll,.dr-table-scroll{max-width:100%;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 #performance .tablewrap{overflow-x:auto!important;max-width:100%}
+#pendingContracts .pending-table{width:1478px!important;min-width:1478px!important}
 #pendingContracts .pending-table :is(th,td):nth-child(2){width:142px!important;min-width:142px!important;max-width:142px!important}
 #pendingContracts .pending-table :is(th,td):nth-child(3){width:170px!important;min-width:170px!important;max-width:170px!important;left:254px!important}
 input,select,textarea{max-width:100%}
 dialog{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto}
 button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+#pendingContracts .p-mobile-edit{display:none}
+#pendingContracts #pendingMobileEditor{width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid #d5e3f3;border-radius:16px;padding:20px;color:#173b60;box-shadow:0 20px 80px #082d6540;overscroll-behavior:contain}
+#pendingMobileEditor::backdrop{background:#09213c99}
+#pendingMobileEditor .pm-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+#pendingMobileEditor .pm-head h3{font-size:19px;margin:0 0 6px}
+#pendingMobileEditor .pm-head p{font-size:13px;margin:0}
+#pendingMobileEditor .pm-info{background:#f1f6fc;border-radius:10px;padding:12px;display:grid;grid-template-columns:110px minmax(0,1fr);gap:7px;font-size:12px;margin:15px 0}
+#pendingMobileEditor dt{color:#7890aa}#pendingMobileEditor dd{margin:0;overflow-wrap:anywhere}
+#pendingMobileEditor label{font-size:13px;margin:14px 0;display:flex;flex-direction:column;gap:6px}
+#pendingMobileEditor input,#pendingMobileEditor select{width:100%;min-width:0;min-height:44px;font-size:16px;padding:10px}
+#pendingMobileEditor .pm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+#pendingContracts #pendingMobileEditor button.primary{background:#ff7a16;color:#fff;border-color:#ff7a16}
+#pendingContracts #pendingMobileStatus{padding:9px 12px;background:#eaf8f0;color:#14815e;border-radius:9px;margin:8px 0}
 @media(max-width:1200px){
   .content .tablewrap{overflow-x:auto!important;max-width:100%}
   #pendingContracts .pending-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;overflow:visible!important}
@@ -54,6 +68,16 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
   #account .acc-me-email{overflow-wrap:anywhere;min-width:0}
 }
 @media(max-width:600px){
+  #pendingContracts .pending-box{padding:12px!important;border-radius:12px}
+  #pendingContracts .pending-table{width:1436px!important;min-width:1436px!important}
+  #pendingContracts .pending-table :is(th,td):nth-child(1){width:94px!important;min-width:94px!important;max-width:94px!important}
+  #pendingContracts .pending-table :is(th,td):nth-child(2){width:118px!important;min-width:118px!important;max-width:118px!important;left:94px!important}
+  #pendingContracts .pending-table th,#pendingContracts .pending-table td{padding:8px 5px!important;font-size:12px!important}
+  #pendingContracts .pending-table td:nth-child(2){white-space:normal;overflow-wrap:anywhere}
+  #pendingContracts .pending-table .ph-label{min-height:30px;font-size:12px;line-height:1.25;white-space:normal}
+  #pendingContracts .pending-table .ph-filter,#pendingContracts .pending-table .ph-created-month{font-size:14px!important;padding:6px 3px!important;min-height:36px;height:36px}
+  #pendingContracts .p-online-warning{font-size:10px!important;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+  #pendingContracts .pending-table .p-mobile-edit{display:block;font-size:11px!important;padding:5px 6px;min-height:32px;margin-top:6px;width:100%}
   #appShell .top h1{font-size:20px!important}
   #appShell .top{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center}
   #appShell .top>div{min-width:0}
