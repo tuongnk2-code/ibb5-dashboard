@@ -5,6 +5,8 @@
 .responsive-table-scroll>table{min-width:max-content}
 .tablewrap,.pending-scroll,.pending-schedule-scroll,.ct-tablewrap,.dp-scroll,.ibbc-scroll,.dr-table-scroll{max-width:100%;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 #performance .tablewrap{overflow-x:auto!important;max-width:100%}
+#pendingContracts .pending-table :is(th,td):nth-child(2){width:142px!important;min-width:142px!important;max-width:142px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(3){width:170px!important;min-width:170px!important;max-width:170px!important;left:254px!important}
 input,select,textarea{max-width:100%}
 dialog{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto}
 button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
@@ -43,7 +45,8 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
   #pendingContracts .pending-cards>article{min-height:220px!important;grid-template-rows:44px minmax(65px,1fr) 78px!important}
   #pendingContracts .pending-cards>article:has(#pendDailyDate){grid-template-rows:44px minmax(65px,1fr) 78px!important}
   #pendingContracts .pending-scroll{overflow-x:auto!important;max-width:100%}
-  #pendingContracts .pending-table :is(th,td):nth-child(2),#pendingContracts .pending-table :is(th,td):nth-child(3){position:static!important;left:auto!important}
+  #pendingContracts .pending-table :is(th,td):nth-child(2){position:sticky!important;left:112px!important}
+  #pendingContracts .pending-table :is(th,td):nth-child(3){position:static!important;left:auto!important}
   #performance .dp-head,#performance .dp-controls{max-width:100%;min-width:0!important}
   #performance .dp-controls{flex-wrap:wrap!important}
   #datahub .ibb-import-inputs{grid-template-columns:repeat(2,minmax(0,1fr))!important}

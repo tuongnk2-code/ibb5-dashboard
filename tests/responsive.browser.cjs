@@ -35,7 +35,26 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
     await page.locator('.sidebar a[href="#pendingContracts"]').click(); assert.equal(await page.locator('#mobileMenuToggle').getAttribute('aria-expanded'), 'false'); assert.equal(await page.locator('#pendingContracts').isVisible(), true);
     const scrolling = page.locator('#pendingContracts .pending-scroll');
     assert.equal(await scrolling.evaluate(el => { el.scrollLeft = 300; return el.scrollLeft > 0; }), true);
-    assert.equal(await page.locator('#pendingContracts .pending-table th').nth(1).evaluate(el => getComputedStyle(el).position), 'static');
+    assert.equal(await page.locator('#pendingContracts .pending-table th').nth(1).evaluate(el => getComputedStyle(el).position), 'sticky');
+    assert.equal(await page.locator('#pendingContracts .pending-table th').nth(2).evaluate(el => getComputedStyle(el).position), 'static');
+    assert.deepEqual(await page.locator('#pendingContracts .ph-label').allTextContents().then(values => values.slice(0, 3)), ['Mã HĐ', 'Nhân viên bán', 'Tên Khách Hàng']);
+    const staffHeader = page.locator('#pendingContracts .pending-table th').nth(1);
+    const pinnedBefore = (await staffHeader.boundingBox()).x;
+    await scrolling.evaluate(el => { el.scrollLeft = 600; });
+    assert.ok(Math.abs((await staffHeader.boundingBox()).x - pinnedBefore) < 2);
+    const staffCell = page.locator('#pendRows tr[data-id]').first().locator('td').nth(1);
+    assert.ok(Math.abs((await staffCell.boundingBox()).x - pinnedBefore) < 2);
+    const staffFilter = page.getByLabel('Lọc Nhân viên bán', { exact: true });
+    const staffValue = await staffFilter.locator('option').evaluateAll(options => options.find(o => o.value && !o.value.startsWith('__SORT_'))?.value);
+    if (staffValue) {
+      await staffFilter.selectOption(staffValue);
+      for (const cell of await page.locator('#pendRows tr[data-id] td:nth-child(2)').all()) assert.ok((await cell.textContent()).startsWith(staffValue));
+    }
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#pendExport').click();
+    const download = await downloadPromise;
+    const csv = require('node:fs').readFileSync(await download.path(), 'utf8');
+    assert.ok(csv.includes('"Mã HĐ","Nhân viên bán","Tên Khách Hàng"'));
     await page.locator('#mobileMenuToggle').click(); await page.locator('.sidebar a[href="#account"]').click();
     await page.locator('#accAddBtn').click(); assert.equal(await page.locator('#accAddForm').isVisible(), true);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
