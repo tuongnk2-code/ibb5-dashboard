@@ -13,6 +13,7 @@
 #dailyReports .dr-alerts{border:1px solid #f0da9b;background:#fffaf0;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:14px}#dailyReports .dr-overdue-alert{background:#fff1f2;border-color:#f4bbc2;color:#bb2636}#dailyReports .dr-person-alert{margin:9px 7px 0 0;font-size:12px;padding:7px 10px}
 #dailyReports .dr-layout{display:grid;grid-template-columns:minmax(340px, .8fr) minmax(0,1.2fr);gap:20px;align-items:start}
 #dailyReports .dr-card{background:#fff;border:1px solid var(--dr-line);border-radius:18px;padding:22px;min-width:0}
+#dailyReports .dr-history{margin-top:20px}#dailyReports #drViewOwn{margin-bottom:14px;border-color:#1684e6;color:#1767ae;background:#f1f7ff}#dailyReports #drViewOwn[hidden]{display:none}#dailyReports .dr-history .dr-card-head{flex-wrap:wrap}
 #dailyReports .dr-card-head{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:12px}#dailyReports .dr-card-head p{margin:0}
 #dailyReports fieldset{margin:0;padding:0;border:0;min-width:0}#dailyReports fieldset:disabled{opacity:.55}
 #dailyReports .dr-section-label{font-size:11px;letter-spacing:.08em;font-weight:800;color:#7895b5;border-top:1px solid #edf2f8;padding-top:18px;margin:17px 0 13px}

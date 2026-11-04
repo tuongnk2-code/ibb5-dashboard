@@ -1,6 +1,7 @@
 import { STAFF_ROSTER } from './staffRoster.js';
 
 export const REPORT_SOURCES = ['Zalo', 'Thị trường', 'Facebook', 'Đại lý', 'Khách hàng cũ', 'Web', 'Telesale', 'Khác'];
+export const reportIdentity = profile => profile.acc || (profile.role === 'manager' ? 'Trưởng phòng' : 'Chưa gán Acc');
 export const reportDay = (now = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 export const shiftDay = (date, n) => new Date(Date.parse(date + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 export const validDay = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date)) && new Date(date + 'T12:00:00Z').toISOString().slice(0, 10) === date;
@@ -43,7 +44,7 @@ export function validateReport(input) {
 }
 export function reportText(profile, date, data) {
   const total = data.sources.reduce((n, s) => n + s.leads, 0);
-  return [profile.full_name + ' báo cáo ngày ' + date.split('-').reverse().join('/'),
+  return [reportIdentity(profile) + ' báo cáo ngày ' + date.split('-').reverse().join('/'),
     '1. PTTB trong ngày: ' + data.actual + '/' + data.commitment,
     '2. KHTN mới trong ngày: ' + total,
     ...data.sources.filter(s => s.leads || s.closed).map(s => '- ' + s.leads + ' ' + s.name + (s.closed ? ' (chốt ' + s.closed + ')' : '')),

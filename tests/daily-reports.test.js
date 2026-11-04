@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reportDay, validDay, reportState, validateReport, canSeeReport, reportText } from '../js/dailyReportModel.js';
+import { reportDay, validDay, reportState, validateReport, canSeeReport, reportText, reportIdentity } from '../js/dailyReportModel.js';
 
 const payload = () => ({ actual: 4, commitment: 1, tomorrowPttb: 1, tomorrowOnline: 1, monthlyTarget: 40, sources: [{ name: 'Zalo', leads: 4, closed: 3 }], difficulty: '', support: 'Hỗ trợ khách', focus: '' });
 test('Vietnam deadline includes drafts and submitted-late distinction', () => {
@@ -31,6 +31,8 @@ test('report validates source arithmetic and text export preserves actual/commit
   assert.throws(() => validateReport({ ...payload(), sources: [{ name: 'Zalo', leads: 1, closed: 2 }] }));
   assert.throws(() => validateReport({ ...payload(), sources: [{ name: '', leads: 0, closed: 0 }] }));
   assert.match(reportText({ full_name: 'Test' }, '2026-11-04', { ...valid, online: 1, monthlyOnline: 5 }), /PTTB trong ngày: 4\/1/);
+  assert.equal(reportIdentity({ full_name: 'Không hiển thị', acc: 'DNG.DatBTH' }), 'DNG.DatBTH');
+  assert.match(reportText({ full_name: 'Không hiển thị', acc: 'DNG.DatBTH' }, '2026-11-04', valid), /^DNG.DatBTH báo cáo/);
 });
 
 test('report API restricts access, enforces revisions and never trusts client online counts', async () => {
@@ -47,6 +49,12 @@ test('report API restricts access, enforces revisions and never trusts client on
     if (url.pathname === '/rest/v1/contracts') return json([{ id: 'NET1', staff: caller.acc, date }]);
     if (url.pathname === '/rest/v1/daily_reports') {
       if (method === 'GET') {
+        if (url.searchParams.get('report_date')?.startsWith('gte.')) {
+          assert.equal(url.searchParams.get('user_id'), 'eq.a');
+          assert.equal(url.searchParams.get('status'), 'eq.submitted');
+          assert.equal(url.searchParams.get('order'), 'report_date.desc');
+          return json(record?.status === 'submitted' ? [record] : []);
+        }
         if (url.searchParams.get('report_date') !== 'eq.' + date) return json(null);
         if (url.searchParams.has('in') || url.searchParams.get('user_id')?.startsWith('in.')) return json(record ? [record] : []);
         return json(record);
@@ -57,9 +65,9 @@ test('report API restricts access, enforces revisions and never trusts client on
   };
   try {
     const { default: handler } = await import('../api/daily-reports.js');
-    const invoke = async (method, body, auth = true) => {
+    const invoke = async (method, body, auth = true, query = { date }) => {
       const res = { setHeader() {}, status(code) { this.code = code; return this; }, json(value) { this.body = value; return this; } };
-      await handler({ method, query: { date }, headers: auth ? { authorization: 'Bearer test' } : {}, body: { date, ...body } }, res); return res;
+      await handler({ method, query, headers: auth ? { authorization: 'Bearer test' } : {}, body: { date, ...body } }, res); return res;
     };
     assert.equal((await invoke('GET', {}, false)).code, 401);
     const list = await invoke('GET', {});
@@ -67,6 +75,9 @@ test('report API restricts access, enforces revisions and never trusts client on
     assert.equal((await invoke('POST', { action: 'exempt', user_id: 'b', revision: 0 })).code, 403);
     const saved = await invoke('POST', { action: 'submit', revision: 0, data: { ...payload(), online: 999 } });
     assert.equal(saved.code, 200); assert.equal(record.status, 'submitted'); assert.equal(record.data.online, 1);
+    const history = await invoke('GET', {}, true, { history: 'mine', month: date.slice(0, 7), user_id: 'b' });
+    assert.equal(history.code, 200); assert.equal(history.body.reports[0].user_id, 'a');
+    assert.equal((await invoke('GET', {}, true, { history: 'mine', month: '2026-13' })).code, 400);
     assert.equal((await invoke('POST', { action: 'draft', revision: 0, data: payload() })).code, 409);
     assert.equal((await invoke('POST', { action: 'draft', revision: 1, data: payload() })).code, 200);
     assert.equal(record.status, 'submitted'); assert.equal(record.revision, 2);

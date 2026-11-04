@@ -26,6 +26,13 @@ export default async function handler(req, res) {
     const auth = await requireProfile(req);
     if (auth.error) return fail(res, auth.status, auth.error);
     const { caller, admin } = auth;
+    if (req.method === 'GET' && req.query?.history === 'mine') {
+      const month = req.query.month;
+      if (typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || !validDay(month + '-01')) return fail(res, 400, 'Chọn tháng báo cáo hợp lệ.');
+      const last = month + '-' + new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate();
+      const reports = check(await admin.from('daily_reports').select('*').eq('user_id', caller.id).eq('status', 'submitted').gte('report_date', month + '-01').lte('report_date', last).order('report_date', { ascending: false }));
+      return res.status(200).json({ reports });
+    }
     const date = req.method === 'GET' ? req.query?.date : req.body?.date;
     if (!validDay(date) || date > reportDay()) return fail(res, 400, 'Chọn ngày báo cáo hợp lệ, không vượt quá hôm nay.');
     const profiles = check(await admin.from('profiles').select('id,full_name,acc,role,created_at').order('full_name'))
