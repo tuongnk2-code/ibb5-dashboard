@@ -1,4 +1,5 @@
-import { getSupabaseAdmin, requireManager } from './_supabaseAdmin.js';
+import { requireManager } from './_supabaseAdmin.js';
+import { usernameToEmail } from '../js/loginIdentity.js';
 
 const ROLES = ['manager', 'lead', 'staff'];
 
@@ -18,8 +19,14 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { email, password, full_name, role, acc } = req.body || {};
-    if (!email || !password || !full_name || !role) return bad(res, 400, 'Thiếu email, mật khẩu, họ tên hoặc vai trò.');
+    const { username, password, full_name, role, acc } = req.body || {};
+    if (!username || !password || !full_name || !role) return bad(res, 400, 'Thiếu tên đăng nhập, mật khẩu, họ tên hoặc vai trò.');
+    let email;
+    try {
+      email = usernameToEmail(username);
+    } catch (err) {
+      return bad(res, 400, err.message);
+    }
     if (!ROLES.includes(role)) return bad(res, 400, 'Vai trò không hợp lệ.');
     if (role !== 'manager' && !acc) return bad(res, 400, 'Trưởng Bầy và Nhân viên cần chọn mã Acc.');
     if (password.length < 6) return bad(res, 400, 'Mật khẩu cần tối thiểu 6 ký tự.');
@@ -29,7 +36,8 @@ export default async function handler(req, res) {
       password,
       email_confirm: true,
     });
-    if (createError) return bad(res, 400, createError.message);
+    if (createError) return bad(res, 400, ['email_exists', 'user_already_exists'].includes(createError.code)
+      ? 'Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.' : createError.message);
 
     const { error: profileError } = await admin.from('profiles').insert({
       id: created.user.id,

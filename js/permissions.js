@@ -1,5 +1,6 @@
 import { callAdminUsersApi, signOut } from './auth.js';
 import { STAFF_ROSTER, ROLE_LABEL } from './staffRoster.js';
+import { displayLogin, USERNAME_PATTERN } from './loginIdentity.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const accOptions = selected => '<option value="">Chọn mã Acc...</option>' + STAFF_ROSTER.map(s => '<option value="' + esc(s.acc) + '"' + (s.acc === selected ? ' selected' : '') + '>' + esc(s.name) + ' · ' + esc(s.acc) + ' · Bầy ' + s.team + '</option>').join('');
@@ -7,7 +8,7 @@ const accOptions = selected => '<option value="">Chọn mã Acc...</option>' + S
 function accountCard(me) {
   return '<div class="acc-me-card">'
     + '<div><strong>' + esc(me.full_name) + '</strong><span class="acc-me-role">' + (ROLE_LABEL[me.role] || me.role) + '</span></div>'
-    + '<div class="acc-me-email">' + esc(me.email) + (me.acc ? ' · Mã Acc: ' + esc(me.acc) : '') + '</div>'
+    + '<div class="acc-me-email">' + esc(displayLogin(me.email)) + (me.acc ? ' · Mã Acc: ' + esc(me.acc) : '') + '</div>'
     + '<button type="button" id="accLogoutBtn" class="acc-logout-btn">Đăng xuất</button>'
     + '</div>';
 }
@@ -17,7 +18,7 @@ function manageSection() {
     + '<div class="acc-manage-head"><h3>Quản lý tài khoản</h3><button type="button" id="accAddBtn" class="primary">+ Thêm tài khoản</button></div>'
     + '<div id="accAddForm" class="acc-form" hidden></div>'
     + '<div id="accMsg" class="acc-msg" hidden></div>'
-    + '<div class="tablewrap"><table class="acc-table"><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Mã Acc</th><th>Ngày tạo</th><th></th></tr></thead><tbody id="accRows"><tr><td colspan="6">Đang tải...</td></tr></tbody></table></div>'
+    + '<div class="tablewrap"><table class="acc-table"><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Mã Acc</th><th>Ngày tạo</th><th></th></tr></thead><tbody id="accRows"><tr><td colspan="6">Đang tải...</td></tr></tbody></table></div>'
     + '</div>';
 }
 
@@ -26,7 +27,8 @@ function addFormHtml(initial) {
   const isEdit = !!d.id;
   return '<form id="accForm" class="acc-form-grid">'
     + '<label>Họ tên<input name="full_name" required value="' + esc(d.full_name || '') + '"></label>'
-    + '<label>Email<input name="email" type="email" required value="' + esc(d.email || '') + '" ' + (isEdit ? 'disabled' : '') + '></label>'
+    + '<label>Tên đăng nhập<input name="username" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" required value="' + esc(displayLogin(d.email)) + '" '
+    + (isEdit ? 'disabled' : 'minlength="3" maxlength="32" pattern="' + USERNAME_PATTERN + '" placeholder="Ví dụ: hoa.ntb6" title="3–32 ký tự: chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang; bắt đầu bằng chữ hoặc số."') + '></label>'
     + '<label>' + (isEdit ? 'Đặt lại mật khẩu (để trống nếu không đổi)' : 'Mật khẩu tạm') + '<input name="password" type="password" ' + (isEdit ? '' : 'required') + ' minlength="6" placeholder="Tối thiểu 6 ký tự"></label>'
     + '<label>Vai trò<select name="role">'
     + '<option value="manager"' + (d.role === 'manager' ? ' selected' : '') + '>Trưởng phòng · Toàn quyền</option>'
@@ -54,7 +56,7 @@ async function loadList(root, me) {
     tbody.innerHTML = profiles.map(p => (
       '<tr data-id="' + esc(p.id) + '">'
       + '<td>' + esc(p.full_name) + (p.id === me.id ? ' <small>(bạn)</small>' : '') + '</td>'
-      + '<td>' + esc(p.email) + '</td>'
+      + '<td>' + esc(displayLogin(p.email)) + '</td>'
       + '<td>' + (ROLE_LABEL[p.role] || p.role) + '</td>'
       + '<td>' + esc(p.acc || '—') + '</td>'
       + '<td>' + esc((p.created_at || '').slice(0, 10)) + '</td>'
@@ -97,7 +99,7 @@ function openForm(root, me, initial) {
         await callAdminUsersApi('PATCH', payload);
         showMsg(root, 'Đã cập nhật tài khoản.', false);
       } else {
-        payload.email = fd.get('email');
+        payload.username = fd.get('username');
         payload.password = password;
         await callAdminUsersApi('POST', payload);
         showMsg(root, 'Đã tạo tài khoản mới.', false);

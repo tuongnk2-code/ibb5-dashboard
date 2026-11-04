@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js';
+import { loginToEmail } from './loginIdentity.js';
 
 export async function getSession() {
   const { data, error } = await supabase.auth.getSession();
@@ -6,7 +7,8 @@ export async function getSession() {
   return data.session;
 }
 
-export async function signIn(email, password) {
+export async function signIn(login, password) {
+  const email = loginToEmail(login);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data.session;
