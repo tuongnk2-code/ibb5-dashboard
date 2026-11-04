@@ -7,6 +7,7 @@ import { periodGrowth } from './periodGrowth.js';
 import { reportDay } from './dailyReportModel.js';
 import { onlineCameraContracts, netWithOnlineCamera } from './cameraKpi.js';
 import { prepaidShare } from './prepaidKpi.js';
+import { overdueContracts, yearlyStaffChannels } from './analyticsDetails.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 
@@ -262,9 +263,8 @@ const data=()=>typeof DATA==='undefined'?[]:DATA.filter(x=>x.type==='Internet');
 const notes=()=>{if(window.IBB5_PENDING_NOTES)return window.IBB5_PENDING_NOTES;try{return JSON.parse(localStorage.getItem('ibb5_pending_followup_v1')||'{}')}catch(e){return {}}};
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const unique=a=>[...new Map(a.filter(x=>x.id).map(x=>[x.id,x])).values()];
-const daydiff=(a,b)=>Math.floor((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/86400000);
 const names=()=>{const s=new Set(data().map(x=>x.staff).filter(Boolean));return [...s].sort((a,b)=>a.localeCompare(b,'vi'))};
-function barRows(id,items,total){$(id).innerHTML=items.length?items.map(([name,n])=>'<div class="ana-row"><span title="'+esc(name)+'">'+esc(name)+'</span><div class="ana-track"><div class="ana-fill" style="width:'+((total?100*n/total:0).toFixed(2))+'%"></div></div><strong>'+fmt(n)+'</strong></div>').join(''):'<div class="ana-empty">Chưa có dữ liệu phù hợp.</div>'}
+function barRows(id,items,total,withPercent=false){$(id).innerHTML=items.length?items.map(([name,n])=>'<div class="ana-row"><span title="'+esc(name)+'">'+esc(name)+'</span><div class="ana-track"><div class="ana-fill" style="width:'+((total?100*n/total:0).toFixed(2))+'%"></div></div><strong'+(withPercent?' class="ana-share-value" title="'+fmt(n)+' / '+fmt(total)+' HĐ NET Online"':'')+'>'+fmt(n)+(withPercent?' HĐ <small>'+formatPercent(total?100*n/total:0)+'</small>':'')+'</strong></div>').join(''):'<div class="ana-empty">Chưa có dữ liệu phù hợp.</div>'}
 function render(){const m=$('anaMonth').value,staff=$('anaStaff').value,day=$('anaDay').value,ns=notes(),all=unique(data()),subset=all.filter(x=>!staff||x.staff===staff),monthRows=subset.filter(x=>x.created?.slice(0,7)===m||x.date?.slice(0,7)===m);const days=new Date(+m.slice(0,4),+m.slice(5),0).getDate();let series=[];for(let d=1;d<=days;d++){const date=m+'-'+String(d).padStart(2,'0');series.push({d,sold:subset.filter(x=>x.created===date).length,on:subset.filter(x=>x.date===date).length})}const max=Math.max(1,...series.flatMap(x=>[x.sold,x.on]));
 const totalOn=series.reduce((a,x)=>a+x.on,0),totalSold=series.reduce((a,x)=>a+x.sold,0);
 const highestOn=series.reduce((a,x)=>x.on>a.on?x:a,series[0]);
@@ -329,11 +329,21 @@ $('anaTrend').querySelectorAll('[data-trk-day]').forEach(node=>{
 });
 
 const slots=['8h - 10h','10h - 12h','13h30 - 15h30','15h30 - 17h30'];const slotCounts=slots.map(t=>[t,subset.filter(x=>ns[x.id]?.expected===day&&ns[x.id]?.timeSlot===t&&x.created<=day&&(!x.date||x.date>day)).length]);const slotTotal=slotCounts.reduce((a,b)=>a+b[1],0);
-$('anaOld').textContent=fmt(subset.filter(x=>x.created&&x.created<=day&&(!x.date||x.date>day)&&daydiff(day,x.created)>5).length);
+const overdue=overdueContracts(subset,day),visibleOverdue=overdue.filter(row=>window.IBB5_ROLE?.canView(row)??false);
+$('anaOld').textContent=fmt(overdue.length);
+$('anaOldRows').innerHTML=visibleOverdue.length?visibleOverdue.map(row=>{const note=ns[row.id]||{};return '<tr><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff||'Chưa gán')+'</td><td>'+fmt(row.age)+' ngày</td><td>'+esc(note.action||note.reason||'Chưa cập nhật')+((note.expected||note.result)?'<small>'+[note.expected?'Hẹn: '+esc(note.expected):'',note.result?'Kết quả: '+esc(note.result):''].filter(Boolean).join(' · ')+'</small>':'')+'</td></tr>';}).join(''):'<tr><td colspan="4" class="ana-empty">Không có HĐ tồn trên 5 ngày trong phạm vi xem.</td></tr>';
+$('anaOldScope').textContent=visibleOverdue.length===overdue.length?'Danh sách theo ngày '+day.split('-').reverse().join('/'):'Hiển thị '+visibleOverdue.length+' / '+overdue.length+' HĐ theo quyền tài khoản.';
 const onlineSubset=subset.filter(x=>x.date?.slice(0,7)===m);$('anaPrepaid').textContent=onlineSubset.length?formatPercent(prepaidShare(onlineSubset).percent):'—';$('anaCam').textContent=IBB_CALC.unique(IBB_CALC.camOnline(onlineSubset,IBB_CALC.monthEnd(m)));
-const onlineMonth=all.filter(x=>x.date?.slice(0,7)===m),counts=new Map();onlineMonth.forEach(x=>counts.set(x.staff||'Chưa gán',1+(counts.get(x.staff||'Chưa gán')||0)));barRows('anaStaffBars',[...counts].sort((a,b)=>b[1]-a[1]),onlineMonth.length);
+const onlineMonth=all.filter(x=>x.date?.slice(0,7)===m),counts=new Map();onlineMonth.forEach(x=>counts.set(x.staff||'Chưa gán',1+(counts.get(x.staff||'Chưa gán')||0)));barRows('anaStaffBars',[...counts].sort((a,b)=>b[1]-a[1]),onlineMonth.length,true);
 const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source){annotated++;chan.set(source,1+(chan.get(source)||0))}});barRows('anaChannelBars',[...chan].sort((a,b)=>b[1]-a[1]),annotated);$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Chưa cập nhật nguồn không được tự gán vào kênh.';
+if(channelMonthYear!==m.slice(0,4)){channelMonthYear=m.slice(0,4);if(![...$('anaChannelYear').options].some(option=>option.value===channelMonthYear))$('anaChannelYear').add(new Option(channelMonthYear,channelMonthYear));$('anaChannelYear').value=channelMonthYear;}
+const year=$('anaChannelYear').value,annual=yearlyStaffChannels(all,ns,year,staff);
+$('anaYearlyScope').textContent='Năm '+year+' · '+(staff||'Toàn phòng')+' · Đếm HĐ NET theo ngày tạo';
+$('anaYearlyRows').innerHTML=annual.rows.length?annual.rows.map(row=>'<tr data-acc="'+esc(row.acc)+'" data-source="'+esc(row.source)+'"><th scope="row">'+esc(row.acc)+'</th><td>'+esc(row.source)+'</td>'+row.months.map((n,i)=>'<td>'+(annual.available[i]?fmt(n):'—')+'</td>').join('')+'<td><b>'+fmt(row.total)+'</b></td></tr>').join(''):'<tr><td colspan="15" class="ana-empty">Chưa có HĐ đã cập nhật nguồn trong năm đang chọn.</td></tr>';
+$('anaYearlyFoot').innerHTML='<tr><th colspan="2">Tổng có nguồn</th>'+annual.totals.map((n,i)=>'<td>'+(annual.available[i]?fmt(n):'—')+'</td>').join('')+'<td>'+fmt(annual.total)+'</td></tr>';
+$('anaYearlyNote').textContent='Có nguồn: '+fmt(annual.total)+' HĐ · Chưa cập nhật nguồn: '+fmt(annual.missing)+' HĐ (không phân vào kênh). Tháng chưa có dữ liệu nhập hiển thị —.';
 }
+let channelMonthYear=$('anaMonth').value.slice(0,4);const yearSelect=$('anaChannelYear'),sourceYears=[...new Set([reportDay().slice(0,4),channelMonthYear,...data().map(row=>row.created?.slice(0,4)).filter(year=>/^\d{4}$/.test(year||''))])].sort().reverse();sourceYears.forEach(year=>yearSelect.add(new Option(year,year)));yearSelect.value=channelMonthYear;yearSelect.addEventListener('change',render);
 const sel=$('anaStaff');names().forEach(x=>{const o=document.createElement('option');o.value=x;o.textContent=x;sel.appendChild(o)});['anaMonth','anaStaff','anaDay'].forEach(id=>$(id).addEventListener('change',render));document.addEventListener('click',e=>{if(e.target?.closest?.('#pendingContracts button'))setTimeout(render,80)});window.addEventListener('storage',render);render();})();
 
 // ---- Original script 10 id="pending-schedule-js" ----

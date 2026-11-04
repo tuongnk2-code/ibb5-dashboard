@@ -14,6 +14,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   );
   legacy.snapshot.data[0].netClbh='Tra truoc 3T 615k/3T';
   legacy.snapshot.data[0].prepaid=0; // The CLBH policy is authoritative.
+  const oldDate=new Date(Date.parse(date+'T12:00:00Z')-8*86400000).toISOString().slice(0,10);
+  legacy.snapshot.data.push({id:'OVERDUE1',type:'Internet',staff:'DNG.ManLM3',created:oldDate,date:'',room:'IBB5',sourceExcel:'IBB'},
+    {id:'PRIVATE1',type:'Internet',staff:'DNG.Vypv',created:oldDate,date:'',room:'IBB5',sourceExcel:'IBB'});
+  legacy.notes.OVERDUE1={expected:date,action:'Khách hẹn cuối tuần',result:'Đã gọi',source:'Zalo',timeSlot:'8h - 10h'};
   const previousDate = new Date(date.slice(0,7)+'-01T12:00:00Z');
   previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
   for(const id of ['PREV1','PREV2']) legacy.snapshot.data.push({id,type:'Internet',staff:'DNG.ManLM3',created:previousDate.toISOString().slice(0,10),date:previousDate.toISOString().slice(0,10),room:'IBB5'});
@@ -46,6 +50,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.locator('[data-k="camera"]').textContent(),'1 / 1');
       assert.equal(await page.locator('[data-k="coverage"]').textContent(),'100%');
       assert.equal(await page.locator('[data-k="prepaid"]').textContent(),'100%');
+      assert.equal(await page.locator('#anaStaffBars .ana-share-value small').textContent(),'100%');
+      assert.match(await page.locator('#anaOldRows').textContent(),/OVERDUE1.*Khách hẹn cuối tuần.*Đã gọi/s);
+      assert.equal((await page.locator('#anaOldRows').textContent()).includes('PRIVATE1'),page===desktop.page);
+      assert.equal(await page.locator('.ana-yearly-table thead th').count(),15);
+      assert.equal(await page.locator('#anaChannelYear').inputValue(),date.slice(0,4));
+      assert.ok(await page.locator('#anaYearlyRows tr[data-acc]').count()>0);
       assert.equal(await page.locator('#priorityOnlinePace').textContent(),await page.locator('#todayOnline').textContent());
       assert.equal(await page.locator('#paceEfficiency').textContent(),await page.locator('#pace').textContent());
       const { dailyPace } = await import('../js/dailyPace.js');
@@ -67,8 +77,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     }
     assert.equal(await mobile.page.evaluate(()=>localStorage.getItem('ibb5_three_source_snapshot_v1')),null);
     await desktop.page.evaluate(async()=>{await window.IBB5_SYNC.pending('SYNC1',{expected:'2026-11-10',action:'Đã gọi',result:'Chờ',source:'Zalo',timeSlot:'8h - 10h'});});
+    await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('OVERDUE1',{expected:date,action:'Khách đổi lịch',result:'Đã xác nhận',source:'Facebook',timeSlot:'8h - 10h'});},date);
+    assert.match(await desktop.page.locator('#anaOldRows').textContent(),/Khách đổi lịch.*Đã xác nhận/s);
+    assert.ok(await desktop.page.locator('#anaYearlyRows tr[data-source="Facebook"]').count()>0);
     await mobile.page.reload();await mobile.page.locator('#dashboardSyncBtn').waitFor();
     assert.equal(await mobile.page.evaluate(()=>window.IBB5_PENDING_NOTES.SYNC1.action),'Đã gọi');
+    assert.match(await mobile.page.locator('#anaOldRows').textContent(),/Khách đổi lịch.*Đã xác nhận/s);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});
       await desktop.page.locator('#ibbUploadNet').setInputFiles(process.env.NET_IMPORT_TEST_FILE);

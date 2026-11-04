@@ -230,3 +230,30 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
   #overview .subkpis.overview-support { grid-template-columns: minmax(0,1fr) !important; gap: 10px !important; }
   #overview .overview-support > .mini { min-height: 125px !important; }
 }
+
+/* Analytics details stay readable within each card on narrow screens. */
+#ibb5Analytics .ana-overdue-scroll { max-height: 370px; overflow: auto; margin: 14px 0 10px; border: 1px solid #e1eaf5; border-radius: 10px; }
+#ibb5Analytics .ana-overdue-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+#ibb5Analytics .ana-overdue-table :is(th,td) { padding: 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #e8eff7; white-space: normal; overflow-wrap: anywhere; }
+#ibb5Analytics .ana-overdue-table th { position: sticky; top: 0; z-index: 1; background: #edf4fc; color: #31577e; }
+#ibb5Analytics .ana-overdue-table td:nth-child(4) { min-width: 180px; max-width: 280px; }
+#ibb5Analytics #anaStaffBars .ana-row { grid-template-columns: minmax(100px,1.15fr) minmax(45px,1.7fr) 82px; }
+#ibb5Analytics .ana-share-value { text-align: right; font-size: 12px; white-space: nowrap; }
+#ibb5Analytics .ana-share-value small { display: block; font-size: 12px; color: #087bdc; margin-top: 3px; }
+#ibb5Analytics .ana-yearly-head { display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+#ibb5Analytics .ana-yearly-head label { display: flex; align-items: center; gap: 8px; color: #4e6e90; font-size: 13px; }
+#ibb5Analytics .ana-yearly-scroll { max-width: 100%; max-height: 530px; overflow: auto; margin: 14px 0 10px; border: 1px solid #dce8f5; border-radius: 10px; }
+#ibb5Analytics .ana-yearly-table { width: 100%; min-width: 1070px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+#ibb5Analytics .ana-yearly-table :is(th,td) { padding: 10px 8px; border-bottom: 1px solid #e4edf6; border-right: 1px solid #eaf0f7; text-align: center; white-space: nowrap; }
+#ibb5Analytics .ana-yearly-table thead th { position: sticky; top: 0; z-index: 3; background: #eaf3ff; color: #204d79; }
+#ibb5Analytics .ana-yearly-table tr > :first-child:not([colspan]) { position: sticky; left: 0; z-index: 1; min-width: 146px; text-align: left; background: #fff; }
+#ibb5Analytics .ana-yearly-table thead tr > :first-child { z-index: 4; background: #eaf3ff; }
+#ibb5Analytics .ana-yearly-table tr > :nth-child(2) { text-align: left; }
+#ibb5Analytics .ana-yearly-table tbody tr:nth-child(even) :is(th,td) { background: #f7faff; }
+#ibb5Analytics .ana-yearly-table tfoot :is(th,td) { background: #eaf3ff; font-weight: 850; color: #1f4f7e; }
+@media(max-width:600px) {
+  #ibb5Analytics #anaStaffBars .ana-row { grid-template-columns: minmax(100px,1.2fr) minmax(25px,1fr) 70px; gap: 7px; }
+  #ibb5Analytics .ana-overdue-scroll { max-height: 320px; }
+}
+
+#ibb5Analytics .ana-overdue-table td small { display: block; color: #70879f; line-height: 1.5; margin-top: 5px; }
