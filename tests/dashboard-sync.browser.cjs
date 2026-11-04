@@ -12,6 +12,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     { id:'SYNC1',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' },
     { id:'CAM_ONLY',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' }
   );
+  const previousDate = new Date(date.slice(0,7)+'-01T12:00:00Z');
+  previousDate.setUTCMonth(previousDate.getUTCMonth()-1);
+  for(const id of ['PREV1','PREV2']) legacy.snapshot.data.push({id,type:'Internet',staff:'DNG.ManLM3',created:previousDate.toISOString().slice(0,10),date:previousDate.toISOString().slice(0,10),room:'IBB5'});
   async function device(manager) {
     const context = await browser.newContext({ viewport: {width:manager?1440:390,height:844} });
     if(manager) await context.addInitScript(old => { localStorage.setItem('ibb5_three_source_snapshot_v1',JSON.stringify(old.snapshot));localStorage.setItem('fpt_ibb_monthly_commitments_v2',JSON.stringify(old.commitments));localStorage.setItem('ibb5_pending_followup_v1',JSON.stringify(old.notes)); },legacy);
@@ -39,6 +42,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.locator('#cameraKpi').textContent(),'2');
       assert.equal(await page.locator('[data-k="camera"]').textContent(),'1 / 1');
       assert.equal(await page.locator('[data-k="coverage"]').textContent(),'100%');
+      assert.equal(await page.locator('#growth').textContent(),'-50%');
+      assert.match(await page.locator('#growthNote').textContent(),/2 HĐ · Giảm 1 HĐ/);
+      await page.locator('#to').evaluate(el=>{el.value='2001-01-04';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      assert.equal(await page.locator('#growth').textContent(),'—');
+      assert.match(await page.locator('#growthNote').textContent(),/Chưa có dữ liệu NET tháng 2000-12/);
+      await page.locator('#to').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));},date);
     }
     assert.equal(await mobile.page.evaluate(()=>localStorage.getItem('ibb5_three_source_snapshot_v1')),null);
     await desktop.page.evaluate(async()=>{await window.IBB5_SYNC.pending('SYNC1',{expected:'2026-11-10',action:'Đã gọi',result:'Chờ',source:'Zalo',timeSlot:'8h - 10h'});});
