@@ -5,6 +5,7 @@ import { managedShare } from './managedKpi.js';
 import { dailyPace } from './dailyPace.js';
 import { periodGrowth } from './periodGrowth.js';
 import { reportDay } from './dailyReportModel.js';
+import { onlineCameraContracts, netWithOnlineCamera } from './cameraKpi.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 
@@ -32,7 +33,7 @@ const IBB_CALC={
  validPrev:(rows,pm)=>rows.some(x=>x.date&&x.date.slice(0,7)===pm),
  notes:()=>{if(window.IBB5_PENDING_NOTES)return window.IBB5_PENDING_NOTES;try{return JSON.parse(localStorage.getItem('ibb5_pending_followup_v1')||'{}')}catch(e){return {}}},
  source:x=>IBB_CALC.notes()[x.id]?.source||x.sourceExcel||'',
- camOnline:(rows,asof)=>rows.filter(x=>x.date&&x.date<=asof&&IBB_CAM_META[x.id]?.date&&IBB_CAM_META[x.id].date<=asof),
+ camOnline:(rows,asof)=>netWithOnlineCamera(rows,DATA,asof),
 };
 const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN');const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(DATA.map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));const dates=DATA.map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();function base(){return DATA.filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
@@ -61,7 +62,7 @@ const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b5
  $('vvip').textContent=fmt(vvipCount);$('vvip').title='V.VIP: '+vvipCount+' mã HĐ duy nhất; gói ở cột H, Ngày Online ở cột P của nguồn Truyền hình mới nhất.';
  const p=onlineRows.filter(x=>Number(x.prepaid)>0).length;
  const cameraOnline=IBB_CALC.camOnline(onlineRows,asOf);
- $('cameraKpi').textContent=fmt(IBB_CALC.unique(cameraOnline));
+ $('cameraKpi').textContent=fmt(onlineCameraContracts(DATA,start,asOf,room).length);$('cameraKpi').title='Mã HĐ Camera duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn Camera mới nhất, không yêu cầu NET Online cùng tháng.';
  $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(formatPercent(payCount/totalOnline*100)):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';
  const managed=managedShare(onlineRows);$('managed').textContent=managed.percent===null?'—':formatPercent(managed.percent);$('managed').title=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01 hoặc DNG_02 · từ '+start+' đến '+asOf;
  $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';
