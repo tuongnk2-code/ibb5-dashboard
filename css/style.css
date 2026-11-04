@@ -1150,3 +1150,5 @@ main{min-width:0!important;flex:1!important}
 #performance .perf-table{min-width:1250px!important}
 #performance .perf-table th:nth-child(n+3){width:7%!important}
 #performance .perf-table th:nth-child(7),#performance .perf-table th:nth-child(9){width:9%!important}
+
+#performance .perf-table #perfRows tr td.perf-growth-negative{color:#c62828!important;background:#ffebee!important;font-weight:800!important}
