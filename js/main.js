@@ -1,4 +1,5 @@
 import { fetchDashboardData } from './api.js';
+import './responsive.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { managedShare } from './managedKpi.js';
 import { dailyPace } from './dailyPace.js';

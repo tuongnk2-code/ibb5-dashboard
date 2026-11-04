@@ -33,16 +33,3 @@ body:has(#dailyReports.page-active) .sidebar>div:not(.logo){display:none!importa
 #dailyReports .dr-dialog{max-width:650px;width:90vw;border:1px solid #d8e5f3;border-radius:16px;padding:24px;color:var(--dr-navy)}#dailyReports .dr-dialog::backdrop{background:#10284270}#dailyReports .dr-dialog pre{white-space:pre-wrap;font:14px/1.8 inherit}
 @media(max-width:1350px){#dailyReports .dr-layout{grid-template-columns:1fr}#dailyReports .dr-card{padding:18px}}
 @media(max-width:650px){#dailyReports .dr-summary{grid-template-columns:1fr 1fr;gap:8px}#dailyReports .dr-stat{padding:12px}#dailyReports .dr-toolbar{gap:8px}#dailyReports .dr-deadline{margin:8px 0 0}#dailyReports .dr-controls{width:100%}#dailyReports .dr-controls label{flex:1}#dailyReports .dr-two{gap:8px}#dailyReports .dr-source-row{grid-template-columns:minmax(85px,1.3fr) 1fr 1fr 23px;gap:4px}}
-@media(max-width:740px){
-  body:has(#dailyReports.page-active) .shell{display:block!important}
-  body:has(#dailyReports.page-active) .sidebar{position:static!important;width:100%!important;min-width:0!important;height:auto!important;box-sizing:border-box;max-height:140px;overflow:auto;padding:10px!important}
-  body:has(#dailyReports.page-active) .sidebar .logo{display:none!important}
-  body:has(#dailyReports.page-active) .sidebar .nav{display:flex!important;flex-wrap:nowrap!important;gap:5px;overflow:auto}
-  body:has(#dailyReports.page-active) .sidebar .nav-group-label,body:has(#dailyReports.page-active) .sidebar .foot{display:none!important}
-  body:has(#dailyReports.page-active) .sidebar>div{display:none!important}
-  body:has(#dailyReports.page-active) .sidebar .nav a{flex:0 0 auto;white-space:nowrap;margin:0!important}
-  body:has(#dailyReports.page-active) main{min-width:0!important;width:100%!important}
-  body:has(#dailyReports.page-active) .top h1{font-size:20px!important}
-  body:has(#dailyReports.page-active) .top .tag{display:none!important}
-  #dailyReports{padding:12px!important}
-}

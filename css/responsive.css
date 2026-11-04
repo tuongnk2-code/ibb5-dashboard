@@ -1,0 +1,100 @@
+/* Shared responsive layout, loaded last to reconcile older per-tab overrides. */
+.mobile-header,.mobile-menu-backdrop{display:none}
+.content,.content>.panel{min-width:0}
+.responsive-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.responsive-table-scroll>table{min-width:max-content}
+.tablewrap,.pending-scroll,.pending-schedule-scroll,.ct-tablewrap,.dp-scroll,.ibbc-scroll,.dr-table-scroll{max-width:100%;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+#performance .tablewrap{overflow-x:auto!important;max-width:100%}
+input,select,textarea{max-width:100%}
+dialog{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+@media(max-width:1200px){
+  .content .tablewrap{overflow-x:auto!important;max-width:100%}
+  #pendingContracts .pending-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;overflow:visible!important}
+}
+@media(max-width:1000px){
+  #appShell.shell{display:block!important}
+  #appShell .mobile-header{display:flex;position:sticky;top:0;z-index:1004;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 16px;background:#082e64;color:white;box-shadow:0 2px 8px #102b4b20}
+  .mobile-brand{font-size:17px;letter-spacing:.03em;font-weight:850;color:white;text-decoration:none}
+  #mobileMenuToggle{background:#ffffff14;color:white;border:1px solid #ffffff40;border-radius:9px;min-height:40px;padding:8px 14px;font-size:14px}
+  #appShell .sidebar{position:fixed!important;left:0!important;top:56px!important;bottom:0!important;height:calc(100dvh - 56px)!important;width:min(290px,86vw)!important;min-width:0!important;max-height:none!important;z-index:1003;transform:translateX(-110%);visibility:hidden;overflow-y:auto!important;padding:20px 12px!important;transition:transform .18s ease,visibility .18s ease}
+  body.mobile-nav-open #appShell .sidebar{transform:translateX(0);visibility:visible}
+  body.mobile-nav-open{overflow:hidden}
+  #appShell .sidebar .logo{display:block!important;font-size:20px!important}
+  #appShell .sidebar .nav{display:block!important;overflow:visible!important;margin-top:18px!important}
+  #appShell .sidebar .nav a{display:block!important;font-size:14px!important;min-height:44px;padding:12px!important;margin:5px 0!important;white-space:normal!important}
+  #appShell .sidebar .nav-group-label{display:block!important}
+  .mobile-menu-backdrop:not([hidden]){display:block;position:fixed;inset:56px 0 0;z-index:1002;border:0;border-radius:0;background:#09213c80;padding:0}
+  #appShell>main{width:100%!important;min-width:0!important}
+  #appShell .top{padding:14px 18px!important;min-height:68px!important;gap:10px;flex-wrap:wrap}
+  #appShell .top h1{font-size:23px!important;overflow-wrap:anywhere}
+  #appShell .content{padding:14px!important}
+  .panel{max-width:100%;padding:18px!important}
+  .heading,.pending-head,.pending-schedule-head,.price-head,.ibbc-head,.ibb-capture-toolbar{align-items:flex-start!important;flex-wrap:wrap!important}
+  .filters,.ana-toolbar,.ibbc-controls,.ct-control{max-width:100%;min-width:0!important;flex-wrap:wrap!important}
+  .grid,.commit-grid,.ana-grid{grid-template-columns:minmax(0,1fr)!important}
+  #overview .executive{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #overview .executive .execbig{grid-column:span 2!important}
+  #overview .executive>.mini:nth-child(n){grid-column:span 1!important;grid-row:auto!important}
+  #overview .subkpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #overview .dailygrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #overview #ibbQualitySummary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #pendingContracts .pending-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #pendingContracts .pending-cards>article{min-height:220px!important;grid-template-rows:44px minmax(65px,1fr) 78px!important}
+  #pendingContracts .pending-cards>article:has(#pendDailyDate){grid-template-rows:44px minmax(65px,1fr) 78px!important}
+  #pendingContracts .pending-scroll{overflow-x:auto!important;max-width:100%}
+  #pendingContracts .pending-table :is(th,td):nth-child(2),#pendingContracts .pending-table :is(th,td):nth-child(3){position:static!important;left:auto!important}
+  #performance .dp-head,#performance .dp-controls{max-width:100%;min-width:0!important}
+  #performance .dp-controls{flex-wrap:wrap!important}
+  #datahub .ibb-import-inputs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #account .acc-me-card{flex-wrap:wrap;gap:12px}
+  #account .acc-me-email{overflow-wrap:anywhere;min-width:0}
+}
+@media(max-width:600px){
+  #appShell .top h1{font-size:20px!important}
+  #appShell .top{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+  #appShell .top>div{min-width:0}
+  #appShell .top .sub{font-size:11px!important}
+  #appShell .top .tag{display:none!important}
+  #appShell .ribbon{padding:10px 14px;font-size:10px;line-height:1.5;letter-spacing:0}
+  #appShell .content{padding:10px!important}
+  .panel{padding:14px!important;border-radius:13px}
+  .heading h2,.pending-head h3,.pending-schedule-head h3{font-size:18px!important;line-height:1.4;overflow-wrap:anywhere}
+  input,select,textarea{font-size:16px!important}
+  button{min-height:40px}
+  input[type="date"],input[type="month"]{min-width:0!important;max-width:100%;box-sizing:border-box}
+  .filters{width:100%;gap:8px!important}
+  .filters>label,.filters>select,.filters>input{flex:1 1 140px;min-width:0!important}
+  .filters label input{width:100%}
+  .filters>button{flex:1 1 100px}
+  #perfSearch{width:100%;min-width:0!important}
+  #overview .executive .execbig{padding:16px!important;min-height:210px!important}
+  #overview .executive .hero{font-size:36px!important}
+  #overview .executive .hero small{font-size:20px!important}
+  #overview .executive>.mini:nth-child(n){padding:12px!important;min-height:120px!important}
+  #overview .subkpis>.mini{padding:12px!important;min-height:130px!important}
+  #overview .dailygrid,#overview #ibbQualitySummary{grid-template-columns:minmax(0,1fr)!important}
+  #overview .mini .value{font-size:28px!important;overflow-wrap:anywhere}
+  .ana-toolbar>label{width:100%}
+  .ana-toolbar input,.ana-toolbar select{width:100%;min-width:0!important}
+  .ibb-capture-toolbar{gap:8px}
+  #pendingContracts .pending-cards{gap:8px!important}
+  #pendingContracts .pending-cards>article:last-child{grid-column:1/-1}
+  #pendingContracts .pending-cards>article{padding:12px 8px!important}
+  #pendingContracts .pending-cards>article>strong{font-size:36px!important}
+  #pendingContracts .pending-head>select{width:100%;min-width:0}
+  #pendingContracts .pending-schedule-head label{width:100%}
+  #pendingContracts .pending-result{gap:8px;flex-wrap:wrap}
+  #pendingContracts .pending-keyword-input{padding:0 10px;gap:6px}
+  #cancelled .ibbc-controls{width:100%}
+  #cancelled .ibbc-controls>input,#cancelled .ibbc-controls>select{flex:1 1 120px;min-width:0!important}
+  #cancelled .ibbc-stat{min-width:0;padding:12px!important}
+  #contacts .ct-control{gap:8px}
+  #contacts .ct-control>input,#contacts .ct-control>select{min-width:0!important;max-width:100%;width:100%}
+  #contacts #ctSearch{min-width:0!important}
+  #datahub .ibb-import-inputs,#datahub .ibb-sync-audit-cols,#account .acc-form-grid{grid-template-columns:minmax(0,1fr)!important}
+  #datahub .ibb-import-inputs>button{grid-column:auto!important}
+  #account .acc-form-actions{flex-wrap:wrap}
+  .ibb-shot-toast{left:12px;right:12px;max-width:none;bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){#appShell .sidebar{transition:none!important}html{scroll-behavior:auto!important}}
