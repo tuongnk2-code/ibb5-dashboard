@@ -631,10 +631,10 @@ function render(){
  el('dpDateWrap').style.display=mode==='day'?'':'none';
  const idx=+day.slice(-2)-1,which=mode==='day'?[idx]:days.map((_,i)=>i);
  const sum=(p,k)=>which.reduce((n,i)=>n+(p[k][i]||0),0);
- const sold=rows.reduce((n,p)=>n+sum(p,'sold'),0),on=rows.reduce((n,p)=>n+sum(p,'online'),0),active=rows.filter(p=>sum(p,'sold')||sum(p,'online')).length;
+ const sold=rows.reduce((n,p)=>n+sum(p,'sold'),0),on=rows.reduce((n,p)=>n+sum(p,'online'),0),active=rows.filter(p=>sum(p,'sold')>0).length,activeOnline=rows.filter(p=>sum(p,'online')>0).length;
  const period=mode==='day'?day.split('-').reverse().join('/'):'tháng '+m.slice(5)+'/'+m.slice(0,4);
  const high=days.map((n,i)=>({n,val:rows.reduce((s,p)=>s+p.online[i],0)})).reduce((a,b)=>b.val>a.val?b:a,{n:1,val:0});
- el('dpKpis').innerHTML=kpi('HĐ bán mới · '+period,fmt(sold)+' HĐ','sold')+kpi('HĐ Online · '+period,fmt(on)+' HĐ','online')+kpi('Chênh lệch Online – Bán',((on-sold)>0?'+':'')+fmt(on-sold)+' HĐ')+kpi(mode==='day'?'Nhân sự có phát sinh':'Ngày Online cao nhất',mode==='day'?active+' NV':'Ngày '+high.n+' · '+high.val+' HĐ');
+ el('dpKpis').innerHTML=kpi('HĐ bán mới · '+period,fmt(sold)+' HĐ','sold')+kpi('HĐ Online · '+period,fmt(on)+' HĐ','online')+kpi('Chênh lệch Online – Bán',((on-sold)>0?'+':'')+fmt(on-sold)+' HĐ')+kpi(mode==='day'?'Nhân sự có bán mới':'Ngày Online cao nhất',mode==='day'?active+' NV':'Ngày '+high.n+' · '+high.val+' HĐ',mode==='day'?'staff-sold':'')+kpi('Nhân sự có HĐ Online',activeOnline+' NV','staff-online');
  el('dpScope').textContent=(team?'Bầy '+team:'Toàn phòng')+(search?' · đang lọc nhân sự':'')+' · '+period;
  // Only the Acc column is fixed; daily columns scroll horizontally.
  el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th>'+

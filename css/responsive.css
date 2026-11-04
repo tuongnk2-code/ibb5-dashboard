@@ -260,3 +260,9 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 
 /* Individual daily sales/online cells below one contract need attention. */
 #performance .ibb-dailyperf #dpTable tbody td.dp-below-one { background: #ffe2e5 !important; color: #c51d32 !important; font-weight: 900 !important; box-shadow: inset 0 0 0 1px #f5aeb8; }
+
+/* Separate personnel counts for new sales and online contracts. */
+#performance #dpKpis { grid-template-columns: repeat(5,minmax(0,1fr)); }
+#performance #dpKpis .staff-online { background: #edf7ff; border-color: #cce5fc; }
+#performance #dpKpis .staff-online strong { color: #087ddd; }
+@media(max-width:1000px) { #performance #dpKpis { grid-template-columns: repeat(2,minmax(0,1fr)); } #performance #dpKpis > .dp-kpi:last-child:nth-child(odd) { grid-column: span 2; } }
