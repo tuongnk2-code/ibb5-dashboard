@@ -142,3 +142,24 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
   #overview .executive > .execbig:first-child .hero small { font-size: 36px !important; }
   #overview #rate { font-size: 30px !important; }
 }
+
+/* Overview: priority indicators, daily results, efficiency, then quality. */
+#overview .executive.overview-priority { grid-template-columns: repeat(4,minmax(0,1fr)) !important; grid-template-rows: auto !important; gap: 16px !important; }
+#overview .executive.overview-priority > :is(.execbig,.mini):nth-child(n) { grid-column: auto !important; grid-row: auto !important; min-height: 240px !important; padding: 22px !important; border-radius: 14px !important; }
+#overview .executive.overview-priority > .mini { background: linear-gradient(132deg,#fff,#f5faff) !important; justify-content: space-between !important; }
+#overview .executive.overview-priority > .mini .name { font-size: 17px !important; font-weight: 900 !important; color: #0c315f !important; line-height: 1.35 !important; }
+#overview .executive.overview-priority > .mini .value { font-size: 42px !important; font-weight: 900 !important; line-height: 1.15 !important; overflow-wrap: anywhere; }
+#overview .executive.overview-priority > .mini .detail { font-size: 12px !important; line-height: 1.4 !important; }
+#overview .executive.overview-priority > .mini .bar { height: 13px !important; }
+#overview .subkpis.overview-secondary { grid-template-columns: repeat(4,minmax(0,1fr)) !important; margin-top: 16px !important; }
+#overview .subkpis.overview-efficiency { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+#overview .overview-secondary > .mini .name { min-height: 48px !important; }
+#overview .overview-secondary > .mini .value { overflow-wrap: anywhere; }
+@media(max-width:1600px) { #overview .executive.overview-priority { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } }
+@media(max-width:1000px) { #overview .subkpis.overview-secondary,#overview .subkpis.overview-efficiency { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } }
+@media(max-width:600px) {
+  #overview .executive.overview-priority,#overview .subkpis.overview-secondary,#overview .subkpis.overview-efficiency { grid-template-columns: minmax(0,1fr) !important; }
+  #overview .executive.overview-priority > :is(.execbig,.mini):nth-child(n) { min-height: 195px !important; padding: 20px !important; }
+  #overview .executive.overview-priority > .mini .value { font-size: 36px !important; }
+  #overview .overview-secondary > .mini .name { min-height: 0 !important; }
+}
