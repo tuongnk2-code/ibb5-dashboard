@@ -15,6 +15,11 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
     await page.route('**/api/daily-reports*', r => r.fulfill({ json: new URL(r.request().url()).searchParams.has('history') ? { reports: [] } : { profiles: [me], reports: [], metrics: {}, previous: null, serverTime: new Date().toISOString() } }));
     await page.route('https://**/*', r => r.abort());
     await page.goto('http://127.0.0.1:5176'); await page.locator('#perfRows tr').first().waitFor({ state: 'attached' });
+    const today = await page.evaluate(() => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
+    assert.equal(await page.locator('#to').inputValue(), today);
+    assert.equal(await page.locator('#pendAsOf').inputValue(), today);
+    // Pin the historical fixture only after verifying the live default.
+    await page.evaluate(() => { for(const [id,value] of Object.entries({from:'2026-10-01',to:'2026-10-30',pendAsOf:'2026-10-30',pendDailyDate:'2026-10-30',psDay:'2026-10-30'})){const el=document.getElementById(id);el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));} });
     const tabs = await page.locator('.sidebar .nav a').evaluateAll(links => links.map(a => a.hash.slice(1)));
     const failures = [];
     for (const width of [360, 390, 768, 1024, 1440]) {

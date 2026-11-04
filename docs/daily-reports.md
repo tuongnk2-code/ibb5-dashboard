@@ -7,7 +7,7 @@
 - Cảnh báo nằm trong tab và tự làm mới mỗi phút khi tab đang mở. Không gửi tin nhắn Zalo, email hay thông báo ngoài ứng dụng.
 - Trưởng Bầy xem Bầy mình; Trưởng phòng xem toàn phòng. Nhân viên chỉ xem và ghi báo cáo của mình. Danh sách theo tài khoản đã cấp, không tính tài khoản quản lý vào số người phải nộp.
 - Quản lý có thể đánh dấu **Ngày nghỉ**, kèm lý do, để miễn cảnh báo. Có thể bỏ đánh dấu nếu cần nộp lại. Không miễn báo cáo đã gửi.
-- HĐ Online ngày và lũy kế tháng lấy từ Supabase, đếm mã HĐ NET duy nhất theo Acc. Cam kết tháng lấy từ dữ liệu cam kết đã duyệt có sẵn trên thiết bị; nếu chưa có hiển thị “—”. Cam kết ngày lấy từ báo cáo đã gửi của ngày hôm trước.
+- HĐ Online ngày và lũy kế tháng lấy từ Supabase, đếm mã HĐ NET duy nhất theo Acc. Cam kết tháng lấy từ dữ liệu cam kết đã duyệt trên hệ thống chung; nếu chưa có hiển thị “—”. Cam kết ngày lấy từ báo cáo đã gửi của ngày hôm trước.
 - Mỗi tài khoản/ngày có một báo cáo. Nếu hai thiết bị sửa cùng lúc, máy chủ yêu cầu tải lại thay vì ghi đè bản mới.
 
 ## Vận hành

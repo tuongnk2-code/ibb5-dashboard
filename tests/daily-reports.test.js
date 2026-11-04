@@ -39,7 +39,7 @@ test('report API restricts access, enforces revisions and never trusts client on
   const oldFetch = globalThis.fetch;
   process.env.SUPABASE_URL = 'https://supabase.test'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
   const people = [{ id: 'a', role: 'staff', acc: 'DNG.ManLM3', full_name: 'A', created_at: '2020-01-01T00:00:00Z' }, { id: 'b', role: 'staff', acc: 'DNG.Vypv', full_name: 'B', created_at: '2020-01-01T00:00:00Z' }];
-  let caller = people[0], record = null;
+  let caller = people[0], record = null, cloudSnapshot = null;
   const date = reportDay();
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(input instanceof Request ? input.url : input), method = init.method || 'GET';
@@ -47,6 +47,7 @@ test('report API restricts access, enforces revisions and never trusts client on
     if (url.pathname === '/auth/v1/user') return json({ id: caller.id });
     if (url.pathname === '/rest/v1/profiles') return json(url.searchParams.has('id') ? caller : people);
     if (url.pathname === '/rest/v1/contracts') return json([{ id: 'NET1', staff: caller.acc, date }]);
+    if (url.pathname === '/rest/v1/dashboard_shared_state') return json(cloudSnapshot);
     if (url.pathname === '/rest/v1/daily_reports') {
       if (method === 'GET') {
         if (url.searchParams.get('report_date')?.startsWith('gte.')) {
@@ -72,6 +73,9 @@ test('report API restricts access, enforces revisions and never trusts client on
     assert.equal((await invoke('GET', {}, false)).code, 401);
     const list = await invoke('GET', {});
     assert.equal(list.code, 200); assert.deepEqual(list.body.profiles.map(p => p.id), ['a']);
+    cloudSnapshot = { data: { data: [{ id: 'SHARED1', type: 'Internet', staff: caller.acc, date }, { id: 'SHARED2', type: 'Internet', staff: caller.acc, date }] } };
+    assert.equal((await invoke('GET', {})).body.metrics.a.online, 2);
+    cloudSnapshot = null;
     assert.equal((await invoke('POST', { action: 'exempt', user_id: 'b', revision: 0 })).code, 403);
     const saved = await invoke('POST', { action: 'submit', revision: 0, data: { ...payload(), online: 999 } });
     assert.equal(saved.code, 200); assert.equal(record.status, 'submitted'); assert.equal(record.data.online, 1);

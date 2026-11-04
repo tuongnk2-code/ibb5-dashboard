@@ -19,10 +19,13 @@ function showLogin(message) {
 }
 
 async function showApp(profile) {
+  const { bootstrapDashboardSync, installSyncControls } = await import('./dashboardSync.js');
+  await bootstrapDashboardSync(profile);
   loginScreen.style.display = 'none';
   appShell.style.display = '';
   window.IBB5_CURRENT_PROFILE = profile;
   await import('./main.js');
+  installSyncControls();
   const reportRoot = document.getElementById('dailyReportsRoot');
   if (reportRoot) {
     const { renderDailyReports } = await import('./dailyReports.js');
@@ -59,7 +62,7 @@ async function boot() {
     showLogin('Tài khoản chưa được cấp quyền truy cập. Liên hệ Trưởng phòng.');
     return;
   }
-  await showApp(profile);
+  try { await showApp(profile); } catch (err) { showLogin(err.message || 'Không tải được dữ liệu đồng bộ. Vui lòng thử lại.'); }
 }
 
 loginForm.addEventListener('submit', async e => {
