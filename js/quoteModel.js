@@ -1,8 +1,9 @@
+import { linkedQuoteFee } from './quotePolicy.js';
 import { validDay, reportDay } from './dailyReportModel.js';
 
 export const quoteMoney = value => Number.isFinite(value) ? value.toLocaleString('vi-VN') + ' ₫' : '—';
 export const MAX_QUOTE_OPTIONS = 9;
-export const QUOTE_PLAN_FIELDS = ['packageName','code','specs','monthly','months','giftMonths','fee','discount','futureMonthly','vat','vatRate','notes','extras','source'];
+export const QUOTE_PLAN_FIELDS = ['packageName','code','specs','monthly','months','giftMonths','fee','discount','futureMonthly','vat','vatRate','notes','extras','source','policies','policyKey'];
 export const quotePlan = quote => structuredClone(Object.fromEntries(QUOTE_PLAN_FIELDS.map(field=>[field,quote[field]])));
 export const quoteOptions = quote => Array.isArray(quote.options)&&quote.options.length
   ? quote.options.map(plan=>({...quote,...Object.fromEntries(QUOTE_PLAN_FIELDS.map(field=>[field,plan?.[field]])),options:undefined}))
@@ -10,7 +11,9 @@ export const quoteOptions = quote => Array.isArray(quote.options)&&quote.options
 const amount = value => value === '' || value == null ? null : Number(value);
 export function quoteTotals(quote) {
   const errors = [], read = (value,label,max=1000000000) => { const n=amount(value); if(n===null||!Number.isFinite(n)||n<0||n>max||!Number.isInteger(n)){errors.push(label+' cần là số nguyên từ 0 đến '+max.toLocaleString('vi-VN')+'.');return null;}return n; };
-  const monthly=read(quote.monthly,'Cước gói/tháng'),months=read(quote.months,'Số tháng thu tiền',36),gift=read(quote.giftMonths,'Số tháng tặng',36),fee=read(quote.fee,'Phí hòa mạng'),discount=read(quote.discount,'Giảm trừ'),future=read(quote.futureMonthly,'Cước định kỳ sau ưu đãi');
+  const feeValue=linkedQuoteFee(quote),missingPolicy=Array.isArray(quote.policies)&&amount(feeValue)===null;
+  if(missingPolicy)errors.push('Chưa xác định phí hòa mạng. Chọn chính sách phù hợp với gói và khu vực.');
+  const monthly=read(quote.monthly,'Cước gói/tháng'),months=read(quote.months,'Số tháng thu tiền',36),gift=read(quote.giftMonths,'Số tháng tặng',36),fee=missingPolicy?null:read(feeValue,'Phí hòa mạng theo chính sách gói'),discount=read(quote.discount,'Giảm trừ'),future=read(quote.futureMonthly,'Cước định kỳ sau ưu đãi');
   if(months===0)errors.push('Số tháng thu tiền phải lớn hơn 0.');
   let once=0,recurring=0;
   const extras=(quote.extras||[]).map((item,index)=>{

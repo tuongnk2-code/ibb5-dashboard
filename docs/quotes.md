@@ -1,8 +1,8 @@
 # Tạo báo giá
 
-Vào **Tạo báo giá**, bấm **Chọn từ Tra cứu giá**, chọn khu vực và bấm **Tạo báo giá với gói này** ở thẻ sản phẩm. Tên gói, mã, cước tháng, thông số và khu vực được chuyển sang báo giá. Nếu nhập JSON dự phòng, nguồn được ghi rõ. Có thể nhập phương án riêng khi chưa có dữ liệu tra cứu phù hợp.
+Vào **Tạo báo giá**, bấm **Chọn từ Tra cứu giá**, chọn khu vực và bấm **Tạo báo giá với gói này** ở thẻ sản phẩm. Tên gói, mã, cước tháng, thông số và khu vực được chuyển sang báo giá. Nếu nhập JSON dự phòng, nguồn được ghi rõ. Chọn chính sách từ gói tra cứu để xác định phí hòa mạng.
 
-Phí hòa mạng, cước toàn bộ sau ưu đãi, VAT và hiệu lực phải được xác nhận; giá trống không được hiểu là 0. Nhân viên nhập 0 khi xác nhận miễn phí. Thiết bị/dịch vụ thêm có số lượng, đơn giá, thu một lần hoặc theo tháng. Dịch vụ đã nằm trong combo không thêm lại.
+Ô nhập phí hòa mạng được ẩn. Khi chọn gói từ Tra cứu giá, hệ thống tải chính sách còn hiệu lực tại đúng khu vực. Chọn Chính sách thanh toán để tự áp dụng số tháng thu tiền, tháng tặng và phí hòa mạng từ `summary.fee_price.price`; chỉ áp dụng khi tiền dịch vụ khớp cước × tháng thu tiền. Thiếu phí không được hiểu là miễn phí. Đổi khu vực, mã gói, cước hoặc thời hạn khác chính sách sẽ không dùng lại phí cũ và chưa cho xuất. Cước toàn bộ sau ưu đãi, VAT và hiệu lực vẫn cần xác nhận. Phiên bản cũ giữ nguyên phí lúc lưu; các bản mới lưu cả chính sách theo từng gói. Thiết bị/dịch vụ thêm có số lượng, đơn giá, thu một lần hoặc theo tháng. Dịch vụ đã nằm trong combo không thêm lại.
 
 Tổng trước VAT = cước gói × tháng thu tiền + dịch vụ thêm theo tháng × tháng thu tiền + thiết bị/phí một lần + hòa mạng − giảm trừ. Tháng tặng không bị thu tiền. Với giá đã gồm VAT, không cộng thuế lại; với giá chưa VAT, cộng thuế sau giảm trừ. Cước sau ưu đãi là tổng toàn phương án do nhân viên xác nhận, không cộng lại dịch vụ thêm. Tất cả số tiền làm tròn theo đồng.
 
