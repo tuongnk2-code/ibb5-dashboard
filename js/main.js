@@ -628,6 +628,7 @@ function inlineCopy(source, target){
 async function exportPNG(id, filename){
  const node=document.getElementById(id);if(!node)throw new Error('Không tìm thấy khu vực báo cáo');
  await document.fonts.ready;
+ if(id==='qDocument')await Promise.all([...node.querySelectorAll('img')].map(image=>image.decode()));
  const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width)),h=Math.ceil(Math.max(node.scrollHeight,rect.height));
  if(!w||!h||w>8000||h>12000)throw new Error('Kích thước khu vực không phù hợp để chụp');
  const clone=node.cloneNode(true);inlineCopy(node,clone);
