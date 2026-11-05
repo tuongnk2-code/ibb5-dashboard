@@ -52,13 +52,19 @@ export default async function handler(req, res) {
       if (caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được nhập dữ liệu hợp đồng.');
       key = 'snapshot'; data = validateSnapshot(body.snapshot);
       data.meta = { ...data.meta, updated: now, audit: { acc: caller.acc || caller.email, identityVerified: true, updated: now, sources: body.types || [] } };
-    } else if (body.kind === 'pending') {
+    } else if (body.kind === 'pending' || body.kind === 'cancelPending') {
+      if (body.kind === 'cancelPending' && caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được duyệt hủy hợp đồng.');
       if (typeof body.id !== 'string' || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(body.id)) return bad(res, 400, 'Mã hợp đồng không hợp lệ.');
       const snapshot = await sharedRow(admin, 'snapshot');
       let contracts = snapshot?.data.data.filter(r => r.type === 'Internet' && r.id === body.id);
       if (!contracts) { const result = await admin.from('contracts').select('id,staff').eq('type', 'Internet').eq('id', body.id); if (result.error) throw result.error; contracts = result.data; }
       if (!contracts.some(r => canSeeReport(caller, { id: normAcc(r.staff)===normAcc(caller.acc)&&caller.acc?caller.id:null, acc: r.staff, role: 'staff' }))) return bad(res, 403, 'Không có quyền cập nhật hợp đồng này.');
-      key = 'pending:' + body.id; data = { ...validateNote(body.value), updated: now, updatedBy: caller.acc || caller.id };
+      key = 'pending:' + body.id;
+      const existing = await sharedRow(admin, key);
+      if (existing?.data.cancellationApproved) return bad(res, 409, 'Hợp đồng đã được Trưởng phòng duyệt hủy. Bấm Đồng bộ để cập nhật danh sách.');
+      data = body.kind === 'cancelPending'
+        ? { ...existing?.data, cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
+        : { ...validateNote(body.value), updated: now, updatedBy: caller.acc || caller.id };
     } else if (body.kind === 'commit') {
       key = monthKey(body.month, body.room || '__ALL__');
       const manager = caller.role === 'manager';

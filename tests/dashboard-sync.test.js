@@ -62,6 +62,26 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('GET',null,false,{keys:'["snapshot"]'})).code,401);
     assert.equal((await invoke('GET',null,true,{keys:'invalid'})).code,400);
     assert.equal((await invoke('GET',null,true,{keys:JSON.stringify(Array(101).fill('snapshot'))})).code,400);
+    // Cancellation approval is a server-owned flag; staff updates cannot forge it.
+    caller = { id: 'staff', role: 'staff', acc: 'DNG.ManLM3' };
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:2})).code,403);
+    assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:2,value:{...note,cancellationApproved:true}})).code,200);
+    assert.equal((await invoke('GET')).body.notes.NET1.cancellationApproved,undefined);
+    caller = { id: 'lead', role: 'lead', acc: 'DNG.HoaNTB6' };
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,403);
+    caller = { id: 'manager', role: 'manager' };
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:2})).code,409);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'MISSING',revision:0})).code,403);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,200);
+    const approved=(await invoke('GET')).body;
+    assert.equal(approved.notes.NET1.cancellationApproved,true);
+    assert.equal(approved.notes.NET1.cancellationApprovedBy,'manager');
+    assert.ok(Date.parse(approved.notes.NET1.cancellationApprovedAt));
+    assert.equal(approved.notes.NET1.action,note.action);
+    assert.equal(approved.snapshot.data[0].id,'NET1');
+    caller = { id: 'staff', role: 'staff', acc: 'DNG.ManLM3' };
+    assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:4,value:note})).code,409);
+    assert.equal((await invoke('GET')).body.notes.NET1.cancellationApproved,true);
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 

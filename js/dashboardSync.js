@@ -68,6 +68,7 @@ export async function bootstrapDashboardSync(profile) {
   apply();
   window.IBB5_SYNC = {
     refresh,
+    async cancelPending(id, expectedRevision) { const result = await request('POST', { kind: 'cancelPending', id, revision: expectedRevision ?? state.revisions['pending:' + id] ?? 0 }); merge([result.row]); return result.row.data; },
     async pending(id, value, expectedRevision) { const result = await request('POST', { kind: 'pending', id, value, revision: expectedRevision ?? state.revisions['pending:' + id] ?? 0 }); merge([result.row]); return result.row.data; },
     async commit(payload) { const { expectedRevision, ...body } = payload; const key = monthKey(body.month, body.room); const result = await request('POST', { kind: 'commit', ...body, revision: expectedRevision ?? state.revisions[key] ?? 0 }); merge([result.row]); return state.commitments; },
     async snapshot(value, types) { const result = await request('POST', { kind: 'snapshot', snapshot: value, types, revision: state.revisions.snapshot || 0 }); merge([result.row]); return result.row.data; },

@@ -5,7 +5,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   const { unpackState, stateSignature, validateSnapshot } = await import('../js/dashboardStateModel.js');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5177, strictPort: true } }); await server.listen();
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
-  const records = new Map(), reports = new Map(), errors = [];
+  const records = new Map(), reports = new Map(), errors = [];let failCancellation=false;
   const profiles=[{id:'manager',role:'manager',acc:'DNG.Manager'}, {id:'lead',role:'lead',acc:'DNG.HoaNTB6',team:3}, {id:'staff',role:'staff',acc:'DNG.ManLM3',team:3}, {id:'outside',role:'staff',acc:'DNG.Vypv',team:1}];
   const date = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Ho_Chi_Minh', year:'numeric',month:'2-digit',day:'2-digit' }).format(new Date());
   const legacy = { snapshot: { data: [{ id:'SYNC1',type:'Internet',staff:'DNG.ManLM3',created:date,date,room:'IBB5',customer:'Khách đồng bộ' }], meta:{} }, commitments: { [date.slice(0,7)]: { __ALL__: { manager:{value:400,status:'signed'},staff:{'DNG.ManLM3':{value:40,status:'approved'}} } } }, notes: { SYNC1:{expected:date,action:'Hẹn KH',result:'Chờ',source:'Zalo',timeSlot:'8h - 10h'} } };
@@ -34,11 +34,14 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         return route.fulfill({json:query.has('keys')?{rows:JSON.parse(query.get('keys')).map(key=>records.get(key)).filter(Boolean)}:query.has('versions')?{signature:stateSignature(rows),revisions:Object.fromEntries(rows.map(row=>[row.key,row.revision]))}:unpackState(rows)});
       }
       const body=req.postDataJSON();
+      if(body.kind==='cancelPending'&&role!=='manager')return route.fulfill({status:403,json:{error:'Chỉ Trưởng phòng được duyệt hủy hợp đồng.'}});
+      if(body.kind==='cancelPending'&&failCancellation){failCancellation=false;return route.fulfill({status:500,json:{error:'Không lưu được dữ liệu thử nghiệm'}});}
       if(body.kind==='migrate') { records.set('snapshot',{key:'snapshot',revision:1,data:body.snapshot});for(const [m,rooms]of Object.entries(body.commitments))for(const [room,data]of Object.entries(rooms))records.set('commit:'+m+':'+room,{key:'commit:'+m+':'+room,revision:1,data});for(const [id,data]of Object.entries(body.notes))records.set('pending:'+id,{key:'pending:'+id,revision:1,data});return route.fulfill({json:{ok:true}}); }
       if(body.kind==='snapshot'){const row={key:'snapshot',revision:body.revision+1,data:validateSnapshot(body.snapshot)};records.set('snapshot',row);return route.fulfill({json:{row}});}
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
+      if(body.kind==='cancelPending')data={...records.get(key)?.data,cancellationApproved:true,cancellationApprovedBy:role,cancellationApprovedAt:new Date().toISOString()};
       if(body.kind==='commit'){data=structuredClone(records.get(key)?.data||{manager:null,staff:{}});data.staff[body.acc]={value:body.value,plan:body.plan,status:'pending'};}
       const row={key,revision:body.revision+1,data};records.set(key,row);return route.fulfill({json:{row}});
     });
@@ -167,6 +170,25 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await mobile.page.locator('[name="actual"]').fill('5');await mobile.page.locator('#drSubmit').click();
     await desktop.page.waitForFunction(()=>[...document.querySelectorAll('#drRows tr')].some(row=>row.textContent.includes('DNG.ManLM3')&&row.textContent.includes('5/1')),null,{timeout:15000});
     assert.equal(await desktop.page.locator('[name="actual"]').inputValue(),'9');
+    // Only the manager can approve; failures leave the row visible, successful approval syncs to all roles.
+    for(const {page}of[desktop,mobile,lead])await page.evaluate(()=>{location.hash='pendingContracts'});
+    assert.equal(await desktop.page.locator('.pending-table thead th').last().textContent(),'TP Duyệt hủy');
+    for(const {page}of[mobile,lead]){
+      assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),0);
+      assert.equal(await page.evaluate(async()=>{try{await window.IBB5_SYNC.cancelPending('OVERDUE1');return false}catch{return true}}),true);
+    }
+    const cancelRow=desktop.page.locator('#pendRows tr[data-id="OVERDUE1"]');
+    failCancellation=true;
+    const failure=desktop.page.waitForEvent('dialog').then(async dialog=>{assert.match(dialog.message(),/Chưa duyệt hủy được/);await dialog.accept()});
+    await cancelRow.locator('.p-cancel-approve').click();await failure;assert.equal(await cancelRow.count(),1);
+    await cancelRow.locator('.p-cancel-approve').click();await cancelRow.waitFor({state:'detached'});
+    for(const {page}of[mobile,lead]){
+      await page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.cancellationApproved,null,{timeout:15000});
+      assert.equal(await page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);
+      await page.locator('#pendQuery').fill('OVERDUE1');assert.equal(await page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);await page.locator('#pendQuery').fill('');
+      assert.ok(!(await page.locator('#psRows .ps-id').allTextContents()).includes('OVERDUE1'));
+    }
+    assert.ok(records.get('snapshot').data.data.some(row=>row.id==='OVERDUE1'));
     for(const count of loads.values())assert.equal(count,0);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});

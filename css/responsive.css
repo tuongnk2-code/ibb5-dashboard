@@ -335,6 +335,13 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
+#pendingContracts .pending-table { width: 1618px!important; min-width: 1618px!important; }
+#pendingContracts .pending-table :is(th,td):nth-child(11) { width: 140px; min-width: 140px; }
+#pendingContracts button.p-cancel-approve { background: #fff0f0; border-color: #f0baba; color: #b42323; font-size: 12px; white-space: nowrap; }
+#pendingContracts button.p-cancel-approve:disabled { opacity: .55; cursor: wait; }
+#pendingContracts .p-manager-only { font-size: 11px; color: #677c94; }
+#pendingMobileEditor .p-cancel-approve { margin-top: 12px; width: 100%; min-height: 42px; }
+@media(max-width:600px) { #pendingContracts .pending-table { width: 1480px!important; min-width: 1480px!important; } }
 
 /* Pending contract summary: a clear total, distinct statuses and readable month detail. */
 #pendingContracts .pending-cards.pending-metrics {
