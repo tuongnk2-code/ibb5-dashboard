@@ -178,17 +178,35 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.evaluate(async()=>{try{await window.IBB5_SYNC.cancelPending('OVERDUE1');return false}catch{return true}}),true);
     }
     const cancelRow=desktop.page.locator('#pendRows tr[data-id="OVERDUE1"]');
+    // Staff-selected "Hủy" without manager approval must not count as a cancellation.
+    await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('PRIVATE1',{expected:date,action:'Khác',result:'Hủy',source:'Web',timeSlot:'8h - 10h'});},date);
+    assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'0');
     failCancellation=true;
     const failure=desktop.page.waitForEvent('dialog').then(async dialog=>{assert.match(dialog.message(),/Chưa duyệt hủy được/);await dialog.accept()});
     await cancelRow.locator('.p-cancel-approve').click();await failure;assert.equal(await cancelRow.count(),1);
     await cancelRow.locator('.p-cancel-approve').click();await cancelRow.waitFor({state:'detached'});
+    assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'1');
+    assert.equal(await desktop.page.locator('#ibbcStaff').textContent(),'1');
+    assert.equal(await desktop.page.locator('#ibbcNet').textContent(),'6');
+    assert.equal(await desktop.page.locator('#ibbcRate').textContent(),'17%');
+    const cancelledStaff=desktop.page.locator('#ibbcCountBody tr').filter({has:desktop.page.locator('.ibbc-acc',{hasText:'DNG.ManLM3'})});
+    assert.equal(await cancelledStaff.locator('.ibbc-month').nth(Number(oldDate.slice(5,7))-1).textContent(),'1');
+    await desktop.page.evaluate(()=>{location.hash='cancelled'});
+    await desktop.page.locator('#ibbcTeam').selectOption('1');assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'0');
+    await desktop.page.locator('#ibbcTeam').selectOption('3');assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'1');
+    await desktop.page.locator('#ibbcTeam').selectOption('');
     for(const {page}of[mobile,lead]){
       await page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.cancellationApproved,null,{timeout:15000});
       assert.equal(await page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);
       await page.locator('#pendQuery').fill('OVERDUE1');assert.equal(await page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);await page.locator('#pendQuery').fill('');
       assert.ok(!(await page.locator('#psRows .ps-id').allTextContents()).includes('OVERDUE1'));
+      assert.equal(await page.locator('#ibbcCount').textContent(),'1');
     }
     assert.ok(records.get('snapshot').data.data.some(row=>row.id==='OVERDUE1'));
+    await desktop.page.evaluate(()=>{location.hash='cancelled'});
+    const download=desktop.page.waitForEvent('download');await desktop.page.locator('[data-ibbc-export="count"]').click();
+    const csv=require('node:fs').readFileSync(await (await download).path(),'utf8');
+    assert.match(csv,/"Toàn phòng","TỔNG PHÒNG"(?:,"\d+"){12},"1"/);
     for(const count of loads.values())assert.equal(count,0);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});

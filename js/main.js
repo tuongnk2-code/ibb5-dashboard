@@ -702,14 +702,13 @@ window.IBB5_RENDER_DAILY_PERFORMANCE=render;
 
 // ---- Original script 17 id="ibbc-report-script" ----
 
-/* HD Huy dashboard: presentation-only add-on; reads original NET DATA and pending-contract localStorage. */
+/* HĐ hủy: count manager approvals from shared pending notes, grouped by NET creation month. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id),root=$('cancelled');if(!root)return;
 const storeKey='ibb5_pending_followup_v1';
 const norm=s=>String(s??'').trim().toLocaleLowerCase('vi-VN');
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const whole=n=>Number(n||0).toLocaleString('vi-VN');
-const isCancelled=s=>['hủy','huỷ'].includes(norm(s));
 const datestr=s=>typeof s==='string'&&/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(s);
 const ORDER=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trinp','dng.dathx4','dng.hoantt','dng.nhannt137','dng.namnh170','dng.hoantb6','dng.manlm3','dng.tienna2','dng.hannvn','dng.bachnd7','dng.doanlt4','dng.lanmh2','dng.datbth'];
 let current=null;
@@ -726,7 +725,7 @@ function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value
  const rows=new Map(visible.map(p=>[norm(p.acc),{acc:p.acc,team:String(p.team),sold:Array(12).fill(0),cancel:Array(12).fill(0)}]));
  const notMapped={acc:'KHÔNG KHỚP MÃ ACC',team:'?',sold:Array(12).fill(0),cancel:Array(12).fill(0)};
  let invalidMonth=0,unmatched=0,yearCancellations=0;
- for(const r of all){const n=ns[r.id]||ns[String(r.id||'').trim()]||{},cancelled=isCancelled(n.result),acc=norm(r.staff),p=allMap.get(acc);
+ for(const r of all){const n=ns[r.id]||ns[String(r.id||'').trim()]||{},cancelled=n.cancellationApproved===true,acc=norm(r.staff),p=allMap.get(acc);
   if(!datestr(r.created)){if(cancelled)invalidMonth++;continue;}
   if(Number(r.created.slice(0,4))!==year)continue;
   const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12)continue;
@@ -764,7 +763,7 @@ function render(){if(!$('ibbcYear')?.value)return;const v=build();
   const count=renderOne('count',v),rateTab=renderOne('rate',v),total=count.totals;
   $('ibbcCount').textContent=whole(nsum(total.cancel));$('ibbcNet').textContent=whole(nsum(total.sold));$('ibbcRate').textContent=rate(nsum(total.cancel),nsum(total.sold));
   $('ibbcStaff').textContent=whole([...v.rows.values()].filter(x=>nsum(x.cancel)>0).length);
-  let warning=[];if(v.invalidMonth)warning.push(whole(v.invalidMonth)+' HĐ có Kết quả Hủy nhưng thiếu Ngày tạo hợp lệ nên chưa thể phân tháng');
+  let warning=[];if(v.invalidMonth)warning.push(whole(v.invalidMonth)+' HĐ đã được TP duyệt hủy nhưng thiếu Ngày tạo hợp lệ nên chưa thể phân tháng');
   if(v.unmatched&&!v.team)warning.push(whole(v.unmatched)+' HĐ NET có mã Acc chưa nằm trong danh sách nhân sự; vẫn được tính vào TỔNG PHÒNG nhưng không hiển thị thành dòng riêng');
   $('ibbcMissing').hidden=!warning.length;$('ibbcMissing').textContent=warning.join(' · ');
   current={...v,countRows:count.exportRows,rateRows:rateTab.exportRows};

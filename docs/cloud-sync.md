@@ -23,3 +23,5 @@ Git push triển khai code trên Vercel; SQL trong `supabase/dashboard-shared-st
 Cột cuối **TP Duyệt hủy** chỉ có nút thao tác cho Trưởng phòng. Trên điện thoại, nút này cũng có trong cửa sổ **Cập nhật**. Nhân viên chọn kết quả “Hủy” chưa tự ẩn hợp đồng; chỉ thao tác duyệt của Trưởng phòng mới ẩn khỏi hồ sơ HĐ tồn, tìm kiếm, xuất CSV và lịch hẹn trong tab HĐ tồn. Các chỉ số tồn trong tab loại hợp đồng đã được duyệt khỏi danh sách cần xử lý.
 
 API xác thực vai trò trên máy chủ, kiểm tra phiên bản để tránh duyệt trên dữ liệu cũ và lưu dấu duyệt cùng người duyệt/thời gian trong ghi chú dùng chung. Không xóa hợp đồng nguồn, không đổi số Online, không thay chính sách RLS. Tài khoản khác tự nhận trạng thái ẩn qua đồng bộ; cập nhật từ thiết bị cũ không thể xóa dấu duyệt.
+
+Tab **HĐ hủy** chỉ đếm mã HĐ NET có `cancellationApproved === true` từ TP Duyệt hủy. Quy tắc áp dụng cho số lượng theo nhân sự/Bầy/tháng, tổng năm, tỷ lệ, số nhân sự có HĐ hủy và CSV. Kết quả “Hủy” do nhân viên chọn mà chưa được duyệt không tính. Tháng/năm vẫn theo Ngày tạo HĐ NET; mẫu số tỷ lệ vẫn là toàn bộ mã HĐ NET tạo trong kỳ, đếm mỗi mã một lần.
