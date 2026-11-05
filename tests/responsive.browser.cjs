@@ -35,6 +35,21 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
       }
     }
     console.log('LAYOUT', JSON.stringify(failures));
+    await page.evaluate(()=>{location.hash='performance'});await page.locator('#performance.page-active').waitFor();
+    const performanceValues=await page.locator('#perfRows').innerHTML();
+    for(const width of [1440,390]){
+      await page.setViewportSize({width,height:900});
+      assert.ok(await page.locator('#perfRows tr:not(.perf-team-total)').first().locator('td').nth(2).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);
+      await page.locator('#perfExpand').click();
+      assert.equal(await page.locator('#perfExpand').getAttribute('aria-expanded'),'true');
+      const bounds=await page.locator('#performance').boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=901);
+      if(output)await page.screenshot({path:output+'/performance-expanded-'+width+'.png'});
+      assert.equal(await page.locator('#perfRows').innerHTML(),performanceValues);
+      if(width===390)assert.ok(await page.locator('#performance > .tablewrap').evaluate(el=>{el.scrollLeft=200;return el.scrollLeft>0}));
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#perfExpand').getAttribute('aria-expanded'),'false');
+      assert.equal(await page.evaluate(()=>document.body.classList.contains('perf-table-expanded')),false);
+    }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('#mobileMenuToggle').click(); assert.equal(await page.locator('#mobileMenuToggle').getAttribute('aria-expanded'), 'true');
     await page.locator('.sidebar a[href="#pendingContracts"]').click(); assert.equal(await page.locator('#mobileMenuToggle').getAttribute('aria-expanded'), 'false'); assert.equal(await page.locator('#pendingContracts').isVisible(), true);
