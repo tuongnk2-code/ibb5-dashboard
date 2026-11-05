@@ -306,3 +306,5 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .perf-font-controls button:disabled { opacity: .4; }
 #performance .perf-table :is(td.perf-person-cell,.perf-team-total td:first-child,tfoot td:first-child),#performance .perf-table thead th:first-child { position: sticky !important; left: 0 !important; z-index: 4; box-shadow: 2px 0 0 #c5d8ec !important; }
 #performance .perf-table thead th:first-child { z-index: 8 !important; }
+
+#pendingContracts .pending-schedule-list .ps-person { font-size: 14px !important; font-weight: 850 !important; line-height: 1.35; }

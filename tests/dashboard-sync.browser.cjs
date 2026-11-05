@@ -52,6 +52,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.locator('[data-k="prepaid"]').textContent(),'100%');
       assert.equal(await page.locator('#anaStaffBars .ana-share-value small').textContent(),'100%');
       assert.match(await page.locator('#anaOldRows').textContent(),/OVERDUE1.*Khách hẹn cuối tuần.*Đã gọi/s);
+      assert.ok((await page.locator('#psRows .ps-person').allTextContents()).includes('DNG.ManLM3'));
+      assert.equal(await page.locator('#psRows .ps-acc').count(),0);
       assert.equal((await page.locator('#anaOldRows').textContent()).includes('PRIVATE1'),page===desktop.page);
       assert.equal(await page.locator('.ana-yearly-table thead th').count(),15);
       assert.equal(await page.locator('#anaChannelYear').inputValue(),date.slice(0,4));

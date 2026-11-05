@@ -373,12 +373,12 @@ let html='';const sum=Array(5).fill(0);
 for(let team=1;team<=3;team++){
  const members=[...grouped.values()].filter(p=>p.team===team).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
  const subtot=Array(5).fill(0);
- for(const p of members){p.values.forEach((v,i)=>subtot[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.name)+'</div><div class="ps-acc">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
+ for(const p of members){p.values.forEach((v,i)=>subtot[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
  subtot.forEach((v,i)=>sum[i]+=v);
  html+='<tr class="ps-team"><td>TỔNG BẦY '+team+'</td><td>'+subtot.reduce((a,b)=>a+b,0)+'</td>'+subtot.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
 }
 const unknown=[...grouped.values()].filter(p=>!p.team);
-for(const p of unknown){p.values.forEach((v,i)=>sum[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.name)+'</div><div class="ps-acc">Chưa phân Bầy</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
+for(const p of unknown){p.values.forEach((v,i)=>sum[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
 html+='<tr class="ps-total"><td>TỔNG PHÒNG</td><td>'+rows.length+'</td>'+sum.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
 $('psRows').innerHTML=html;
 }
