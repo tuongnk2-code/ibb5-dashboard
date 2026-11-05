@@ -338,7 +338,13 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #lookup .price-controls .price-location-search { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #cbdff4; border-radius: 10px; background: #f7faff; color: #173b60; font: inherit; font-size: 14px; font-weight: 500; }
 #lookup .price-location-search:focus { outline: 2px solid #1684e6; outline-offset: 1px; }
 #lookup .price-location-search:disabled { opacity: .6; cursor: not-allowed; }
-#lookup .price-location-matches { min-height: 16px; color: #526e8a; font-size: 11px; font-weight: 500; line-height: 1.4; text-transform: none; }
+#lookup .price-location-picker { position: relative; min-width: 0; }
+#lookup select.price-location-native { display: none!important; }
+#lookup .price-location-options { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 40; max-height: 260px; overflow-y: auto; background: white; border: 1px solid #cbdff4; border-radius: 10px; padding: 5px; box-shadow: 0 10px 28px #123c7226; }
+#lookup .price-location-options[hidden] { display: none!important; }
+#lookup .price-location-options button { display: block; width: 100%; text-align: left; border: 0; border-radius: 6px; background: white; color: #173b60; padding: 11px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+#lookup .price-location-options button:is(:hover,.is-active),#lookup .price-location-options button[aria-selected="true"] { background: #eaf3ff; color: #075dba; }
+#lookup .price-location-empty { padding: 12px; font-size: 13px; font-weight: 500; color: #647a94; }
 #datahub .ibb-sync-file-list { display: grid; gap: 10px; }
 #datahub .ibb-sync-file { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 20px; border: 1px solid #dde8f4; border-left: 4px solid #1684e6; border-radius: 10px; padding: 14px 16px; background: #f7faff; }
 #datahub .ibb-sync-file[data-source="Camera"] { border-left-color: #f47b20; }
