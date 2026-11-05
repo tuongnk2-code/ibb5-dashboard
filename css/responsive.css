@@ -343,6 +343,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts button.p-cancel-approve { background: #fff0f0; border-color: #f0baba; color: #b42323; font-size: 12px; white-space: nowrap; }
 #pendingContracts button.p-cancel-approve:disabled { opacity: .55; cursor: wait; }
 #pendingContracts .p-manager-only { font-size: 11px; color: #677c94; }
+#pendingContracts .p-save.is-saved:disabled { color: #087653; background: #e9f7ef; border-color: #b7dfca; opacity: 1; cursor: default; }
 #pendingMobileEditor .p-cancel-approve { margin-top: 12px; width: 100%; min-height: 42px; }
 #pendingContracts :is(.p-cancel-reason-wrap,.pm-cancel-reason)[hidden] { display: none!important; }
 #pendingContracts .p-cancel-reason-wrap { margin: 0; }

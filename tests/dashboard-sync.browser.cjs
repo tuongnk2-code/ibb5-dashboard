@@ -41,7 +41,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
-      if(body.kind==='pending'){try{data=validateNote(body.value)}catch(err){return route.fulfill({status:400,json:{error:err.message}})}}
+      if(body.kind==='pending'){try{data={...validateNote(body.value),updated:new Date().toISOString()}}catch(err){return route.fulfill({status:400,json:{error:err.message}})}}
       if(body.kind==='cancelPending'&&(!isCancellationResult(records.get(key)?.data.result)||!records.get(key)?.data.cancelReason))return route.fulfill({status:400,json:{error:'Cần kết quả Hủy và lý do hủy trước khi duyệt'}});
       if(body.kind==='cancelPending')data={...records.get(key)?.data,cancellationApproved:true,cancellationApprovedBy:role,cancellationApprovedAt:new Date().toISOString()};
       if(body.kind==='commit'){data=structuredClone(records.get(key)?.data||{manager:null,staff:{}});data.staff[body.acc]={value:body.value,plan:body.plan,status:'pending'};}
@@ -141,12 +141,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     // An active desktop edit survives a remote save and retains its original revision.
     await desktop.page.evaluate(()=>{location.hash='pendingContracts'});
     const reason=desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-note');await reason.selectOption('Đang còn cước đối thủ');
+    assert.equal(await desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-save').textContent(),'Lưu');
     await mobile.page.evaluate(async date=>{await window.IBB5_SYNC.pending('OVERDUE1',{expected:date,action:'KH chưa đồng ý PHM',result:'Chưa Online',source:'Web',timeSlot:'10h - 12h'});},date);
     await desktop.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.action==='KH chưa đồng ý PHM',null,{timeout:15000});
     assert.equal(await reason.inputValue(),'Đang còn cước đối thủ');
     const conflict=desktop.page.waitForEvent('dialog').then(async alert=>{assert.match(alert.message(),/đã thay đổi/);await alert.accept();});await desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-save').click();await conflict;
     assert.equal(records.get('pending:OVERDUE1').data.action,'KH chưa đồng ý PHM');
+    assert.equal(await desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-save').textContent(),'Lưu');
     await desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-discard').click();assert.equal(await reason.inputValue(),'KH chưa đồng ý PHM');
+    assert.equal(await desktop.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-save').textContent(),'Đã lưu');
     // Manager target draft is retained while a new staff commitment arrives.
     await desktop.page.evaluate(()=>{const input=document.getElementById('ckManagerGoal');input.value='777';input.dispatchEvent(new Event('input',{bubbles:true}));});
     await mobile.page.evaluate(async month=>{await window.IBB5_SYNC.commit({action:'submit',month,room:'__ALL__',acc:'DNG.ManLM3',value:55,plan:'Kế hoạch mới'});},date.slice(0,7));
@@ -195,6 +198,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await cancelEditor.locator('[type="submit"]').click();await cancelEditor.waitFor({state:'hidden'});
     await desktop.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.result==='Hủy',null,{timeout:15000});
     assert.equal(await cancelRow.locator('.p-cancel-reason').inputValue(),'Khách chuyển nơi ở, không còn nhu cầu');
+    assert.equal(await cancelRow.locator('.p-save').textContent(),'Đã lưu');
     assert.equal(await cancelRow.locator('.p-result').evaluate(el=>el.closest('td').cellIndex),7);
     assert.equal(await cancelRow.locator('.p-cancel-reason').evaluate(el=>el.closest('td').cellIndex),8);
     assert.match(await desktop.page.locator('.pending-table thead th').nth(8).textContent(),/Lý do hủy/);
