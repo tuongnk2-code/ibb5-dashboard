@@ -335,3 +335,114 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
+
+/* Pending contract summary: a clear total, distinct statuses and readable month detail. */
+#pendingContracts .pending-cards.pending-metrics {
+  gap: 14px!important;
+  margin: 24px 0!important;
+  grid-template-columns: repeat(5,minmax(0,1fr))!important;
+}
+#pendingContracts .pending-metrics>article {
+  --metric-color: #2362b5;
+  --metric-tint: #eef5ff;
+  display: grid!important;
+  grid-template-rows: 48px 82px minmax(72px,auto)!important;
+  gap: 12px!important;
+  min-height: 250px!important;
+  padding: 20px 18px 18px!important;
+  border: 1px solid #dce7f4!important;
+  border-top: 4px solid var(--metric-color)!important;
+  border-radius: 18px!important;
+  background: linear-gradient(160deg,var(--metric-tint),#fff 75%)!important;
+  box-shadow: 0 6px 18px #163e6710!important;
+}
+#pendingContracts .pending-metrics>article>span {
+  color: #24476b!important;
+  font-size: 15px!important;
+  font-weight: 800!important;
+  line-height: 1.45!important;
+}
+#pendingContracts .pending-metrics>article>strong {
+  justify-self: start!important;
+  align-self: center!important;
+  color: var(--metric-color)!important;
+  font-size: clamp(44px,3.8vw,60px)!important;
+  font-weight: 850!important;
+  letter-spacing: -1.5px;
+  text-align: left!important;
+  white-space: nowrap;
+}
+#pendingContracts .pending-metrics>article>strong::after {
+  content: 'HĐ';
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-left: 8px;
+  opacity: .75;
+}
+#pendingContracts .pending-metrics>article>small {
+  color: #536d88!important;
+  font-size: 12px!important;
+  line-height: 1.5!important;
+  border-color: #dce7f4!important;
+}
+#pendingContracts .pending-metrics>.pending-metric-total {
+  background: linear-gradient(135deg,#123c72,#126dcc)!important;
+  border-color: #185a9c!important;
+  box-shadow: 0 8px 22px #1059a729!important;
+}
+#pendingContracts .pending-metrics>.pending-metric-total>:is(span,strong) { color: #fff!important; }
+#pendingContracts .pending-metrics>.pending-metric-total>small { color: #e1edff!important; border-color: #ffffff30!important; }
+#pendingContracts .pending-metrics>.pending-metric-due { --metric-color: #087653; --metric-tint: #eaf8f2; }
+#pendingContracts .pending-metrics>.pending-metric-missing { --metric-color: #b54b13; --metric-tint: #fff3e7; }
+#pendingContracts .pending-metrics>.pending-old-card { --metric-color: #7747b5; --metric-tint: #f5efff; }
+#pendingContracts .pending-metrics>.pending-forward-card { --metric-color: #126b9a; --metric-tint: #edf8ff; }
+#pendingContracts .pending-metrics>article>.pending-kpi-date-label {
+  flex-direction: column!important;
+  align-items: stretch!important;
+  gap: 6px!important;
+  color: #34674f!important;
+  font-size: 12px!important;
+}
+#pendingContracts .pending-cards.pending-metrics>article>.pending-kpi-date-label input#pendDailyDate {
+  flex: none!important;
+  width: 100%!important;
+  max-width: 100%!important;
+  height: 38px!important;
+  border-color: #bfddcf!important;
+  font-size: 13px!important;
+}
+#pendingContracts .pending-cards.pending-metrics>article:has(#pendDailyDate) { grid-template-rows: 48px 82px minmax(72px,auto)!important; }
+#pendingContracts .pending-metrics>article>.pending-forward-breakdown { gap: 5px!important; }
+#pendingContracts .pending-metrics>article>.pending-forward-breakdown>div {
+  background: var(--metric-tint)!important;
+  border: 1px solid color-mix(in srgb,var(--metric-color) 16%,white);
+  border-radius: 9px!important;
+  padding: 8px 2px!important;
+  color: var(--metric-color)!important;
+  font-size: 11px!important;
+}
+#pendingContracts .pending-metrics .pending-forward-breakdown b { font-size: 22px!important; color: var(--metric-color)!important; line-height: 1.4; }
+#pendingContracts .pending-metrics .pending-forward-breakdown small { color: #536d88!important; font-size: 10px!important; }
+@media(max-width:1200px) {
+  #pendingContracts .pending-cards.pending-metrics { grid-template-columns: repeat(3,minmax(0,1fr))!important; overflow: visible!important; }
+}
+@media(max-width:800px) {
+  #pendingContracts .pending-cards.pending-metrics { grid-template-columns: repeat(2,minmax(0,1fr))!important; gap: 12px!important; }
+  #pendingContracts .pending-metrics>article:last-child { grid-column: 1/-1; }
+}
+@media(max-width:560px) {
+  #pendingContracts .pending-metrics>article {
+    grid-template-rows: 44px 60px minmax(62px,auto)!important;
+    min-height: 210px!important;
+    padding: 16px 12px!important;
+    gap: 8px!important;
+  }
+  #pendingContracts .pending-metrics>article>span { font-size: 14px!important; }
+  #pendingContracts .pending-cards.pending-metrics>article:has(#pendDailyDate) { grid-template-rows: 44px 60px minmax(62px,auto)!important; }
+  #pendingContracts .pending-metrics>article>strong { font-size: 42px!important; }
+  #pendingContracts .pending-metrics>:is(.pending-metric-total,.pending-old-card,.pending-forward-card) { grid-column: 1/-1; }
+  #pendingContracts .pending-metrics>.pending-metric-total { grid-template-rows: auto 60px auto!important; min-height: 185px!important; }
+  #pendingContracts .pending-metrics .pending-forward-breakdown b { font-size: 24px!important; }
+  #pendingContracts .pending-metrics .pending-forward-breakdown small { font-size: 12px!important; }
+}
