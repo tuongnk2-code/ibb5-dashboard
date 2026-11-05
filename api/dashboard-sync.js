@@ -18,8 +18,15 @@ export default async function handler(req, res) {
     if (auth.error) return bad(res, auth.status, auth.error);
     const { admin, caller } = auth;
     if (req.method === 'GET') {
+      if (req.query?.keys) {
+        let keys; try { keys = JSON.parse(req.query.keys); } catch { return bad(res, 400, 'Danh sách mục đồng bộ không hợp lệ.'); }
+        if (!Array.isArray(keys) || !keys.length || keys.length > 100 || keys.some(key => typeof key !== 'string' || !key || key.length > 200)) return bad(res, 400, 'Danh sách mục đồng bộ không hợp lệ.');
+        const result = await admin.from(STATE_TABLE).select('*').in('key', [...new Set(keys)]);
+        if (result.error) throw result.error;
+        return res.status(200).json({ rows: result.data });
+      }
       const versionsOnly = req.query?.versions === '1', rows = await sharedRows(admin, versionsOnly);
-      return res.status(200).json(versionsOnly ? { signature: stateSignature(rows) } : unpackState(rows));
+      return res.status(200).json(versionsOnly ? { signature: stateSignature(rows), revisions: Object.fromEntries(rows.map(row => [row.key, row.revision])) } : unpackState(rows));
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return bad(res, 405, 'Phương thức không hỗ trợ.'); }
     const body = req.body || {}, now = new Date().toISOString();

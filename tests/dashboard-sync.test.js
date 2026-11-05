@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unpackState, monthKey, validateSnapshot } from '../js/dashboardStateModel.js';
+import { unpackState, monthKey, validateSnapshot, mergeStateRows } from '../js/dashboardStateModel.js';
 
 test('shared dashboard API migrates once, enforces ownership and detects concurrent writes', async () => {
   const oldFetch = globalThis.fetch;
@@ -12,7 +12,11 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     if (url.pathname === '/auth/v1/user') return json({ id: caller.id });
     if (url.pathname === '/rest/v1/profiles') return json(caller);
     if (url.pathname !== '/rest/v1/dashboard_shared_state') throw Error(url.pathname);
-    const key = url.searchParams.get('key')?.slice(3);
+    const filter = url.searchParams.get('key'), key = filter?.slice(3);
+    if (method === 'GET' && filter?.startsWith('in.')) {
+      const keys = filter.slice(4,-1).split(',').map(value=>value.replace(/^"|"$/g,''));
+      return json(keys.map(key=>rows.get(key)).filter(Boolean));
+    }
     if (method === 'GET') return json(key ? rows.get(key) || null : [...rows.values()]);
     const value = JSON.parse(init.body);
     if (Array.isArray(value)) { for (const row of value) if (!rows.has(row.key)) rows.set(row.key, row); return new Response(null, { status: 201 }); }
@@ -21,9 +25,9 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
   };
   try {
     const { default: handler } = await import('../api/dashboard-sync.js');
-    const invoke = async (method, body, authorized = true) => {
+    const invoke = async (method, body, authorized = true, query = {}) => {
       const res = { setHeader() {}, status(code) { this.code = code; return this; }, json(value) { this.body = value; return this; } };
-      await handler({ method, headers: authorized ? { authorization: 'Bearer test' } : {}, query: {}, body }, res); return res;
+      await handler({ method, headers: authorized ? { authorization: 'Bearer test' } : {}, query, body }, res); return res;
     };
     assert.equal((await invoke('GET', null, false)).code, 401);
     const snapshot = { data: [{ id: 'NET1', type: 'Internet', staff: 'DNG.ManLM3', created: '2026-11-01', date: '2026-11-04' }], meta: {} };
@@ -51,7 +55,23 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal(mobile.notes.NET1.expected, '2026-11-06');
     assert.equal(mobile.snapshot.data[0].date, '2026-11-04');
     assert.equal(mobile.revisions[monthKey('2026-11')], 2);
+    const versions = await invoke('GET',null,true,{versions:'1'});
+    assert.equal(versions.body.revisions['pending:NET1'],2);
+    const changed = await invoke('GET',null,true,{keys:JSON.stringify(['pending:NET1'])});
+    assert.equal(changed.code,200);assert.deepEqual(changed.body.rows.map(row=>row.key),['pending:NET1']);
+    assert.equal((await invoke('GET',null,false,{keys:'["snapshot"]'})).code,401);
+    assert.equal((await invoke('GET',null,true,{keys:'invalid'})).code,400);
+    assert.equal((await invoke('GET',null,true,{keys:JSON.stringify(Array(101).fill('snapshot'))})).code,400);
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('live merging never replaces a successful local write with an older response',()=>{
+  const state=unpackState([{key:'pending:NET1',revision:3,data:{action:'Latest local save'}},{key:'snapshot',revision:1,data:{data:[],meta:{}}}]);
+  const stale=mergeStateRows(state,[{key:'pending:NET1',revision:2,data:{action:'Older response'}}],{'pending:NET1':2});
+  assert.equal(stale.state.notes.NET1.action,'Latest local save');assert.deepEqual(stale.changed,[]);
+  const next=mergeStateRows(state,[{key:'pending:NET2',revision:1,data:{action:'New row'}},{key:'pending:NET1',revision:4,data:{action:'New remote save'}}]);
+  assert.equal(next.state.notes.NET1.action,'New remote save');assert.equal(next.state.notes.NET2.action,'New row');
+  assert.equal(next.state.snapshot,state.snapshot);
 });
 
 test('snapshot validation and month keys reject malformed records', () => {

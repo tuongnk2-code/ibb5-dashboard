@@ -332,3 +332,6 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #ibb5Analytics .ana-monthly-table .ana-channel-grand :is(th,td) { background: #193d64; color: white; font-weight: 850; }
 #ibb5Analytics .ana-monthly-table .ana-channel-ratio :is(th,td) { background: #e4f2ff; color: #185d96; font-weight: 850; }
 #ibb5Analytics .ana-monthly-table tr > :last-child { width: 84px; font-weight: 850; }
+
+#pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
+#ckDiscard { margin-left: 6px; }

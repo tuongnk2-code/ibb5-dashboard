@@ -6,6 +6,16 @@ export const monthKey = (month, room = '__ALL__') => {
   return 'commit:' + month + ':' + room;
 };
 export const stateSignature = rows => rows.map(r => r.key + ':' + r.revision).sort().join('|');
+export function stateRows(state) {
+  return Object.entries(state.revisions).map(([key, revision]) => ({ key, revision, data: key === 'snapshot' ? state.snapshot : key.startsWith('pending:') ? state.notes[key.slice(8)] : state.commitments[key.slice(7, 14)]?.[key.slice(15)] }));
+}
+export function mergeStateRows(state, incoming, removed = {}) {
+  const rows = new Map(stateRows(state).map(row => [row.key, row]));
+  const changed = [];
+  for (const row of incoming) if (row.revision > (rows.get(row.key)?.revision || 0)) { rows.set(row.key, row); changed.push(row.key); }
+  for (const [key, revision] of Object.entries(removed)) if (rows.get(key)?.revision === revision) { rows.delete(key); changed.push(key); }
+  return { state: unpackState([...rows.values()]), changed };
+}
 export function unpackState(rows) {
   const state = { snapshot: null, commitments: {}, notes: {}, revisions: {}, signature: stateSignature(rows) };
   for (const row of rows) {

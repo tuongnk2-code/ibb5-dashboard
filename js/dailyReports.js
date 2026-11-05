@@ -39,6 +39,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     const session = await getSession();
     if (!session) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     const response = await fetch('/api/daily-reports' + (method === 'GET' ? '?' + (query || 'date=' + date) : ''), {
+      cache: 'no-store', signal: AbortSignal.timeout(15000),
       method, headers: { Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
       body: method === 'GET' ? undefined : JSON.stringify(body),
     });
@@ -109,6 +110,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
   }
   async function load(fill = true) {
     const version = ++generation;
+    const before = snapshot ? JSON.stringify([own(), snapshot.metrics[me.id], getMonthlyTarget(date.slice(0,7),me.acc)]) : null;
     try {
       const next = await api('GET');
       if (version !== generation) return;
@@ -118,7 +120,8 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
         const editing = own(); next.reports = next.reports.filter(r => r.user_id !== me.id); if (editing) next.reports.push(editing);
       }
       snapshot = next; initialized = true;
-      if (fill || !dirty) fillForm(); drawBoard();
+      const changed = before !== JSON.stringify([own(), snapshot.metrics[me.id], getMonthlyTarget(date.slice(0,7),me.acc)]);
+      if (fill || (!dirty && changed)) fillForm(); drawBoard();
     } catch (err) { message(err.message, true); if (fill) { $('#drFields').disabled = true; $('#drRows').innerHTML = '<tr><td colspan="8">Chưa tải được báo cáo. Bấm Tải lại để thử lại.</td></tr>'; } }
   }
   function formData() {
@@ -183,8 +186,15 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     if (report) showDetail(me, report, report.report_date);
   };
   window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
-  // Refresh only this open tab. No external messages or background automation.
-  setInterval(() => { if (!document.hidden && root.closest('.panel').classList.contains('page-active') && !busy && initialized) load(false); }, 60000);
+  // Refresh other people's reports without replacing the report currently being edited.
+  let autoLoading = false;
+  async function autoRefresh() {
+    if (document.hidden || !root.closest('.panel').classList.contains('page-active') || busy || !initialized || autoLoading) return;
+    autoLoading = true; try { await load(false); } finally { autoLoading = false; }
+  }
+  setInterval(autoRefresh, 5000);
+  document.addEventListener('visibilitychange', autoRefresh); document.addEventListener('ibb5-shared-updated', autoRefresh);
+  window.addEventListener('hashchange', autoRefresh); window.addEventListener('focus', autoRefresh); window.addEventListener('online', autoRefresh);
   load();
   loadHistory();
 }
