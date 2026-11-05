@@ -1,4 +1,5 @@
 import { validDay } from './dailyReportModel.js';
+import { STAFF_ROSTER } from './staffRoster.js';
 
 const unique = rows => [...new Map(rows.filter(row => row.id).map(row => [row.id, row])).values()];
 
@@ -9,19 +10,34 @@ export function overdueContracts(rows, asOf) {
     .filter(row => row.age > 5).sort((a,b) => b.age-a.age || a.id.localeCompare(b.id));
 }
 
-// Use creation date and the same source priority as the existing channel chart.
-export function yearlyStaffChannels(rows, notes, year, staff = '') {
-  const sourceRows = unique(rows).filter(row => validDay(row.created) && row.created.slice(0,4) === String(year));
-  const available = Array.from({length:12},(_,i) => sourceRows.some(row => Number(row.created.slice(5,7)) === i+1));
-  const groups = new Map(), totals = Array(12).fill(0);
-  let missing = 0;
-  for (const row of sourceRows.filter(row => !staff || row.staff === staff)) {
+export const SALES_CHANNELS = ['Face Book','Web','Thị Trường','Đại Lý','Top Zalo','SMS','KH cũ','Tờ Dán','Phướn','Người Quen + Thân','Telesale','Khác'];
+const normalized = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]/g,'');
+const aliases = new Map(SALES_CHANNELS.map(channel=>[normalized(channel),channel]));
+for (const [alias,channel] of [['facebookads','Face Book'],['fb','Face Book'],['fbads','Face Book'],['website','Web'],['zalo','Top Zalo'],['khachhangcu','KH cũ'],['nguoiquen','Người Quen + Thân'],['nguoithan','Người Quen + Thân'],['telesales','Telesale'],['ibb','IBB']]) aliases.set(alias,channel);
+
+// Creation month and source priority are unchanged. Unknown sources retain their own columns.
+export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER) {
+  const sourceRows = unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month);
+  const sourceOf = row => {
     const source = String(notes[row.id]?.source || row.sourceExcel || '').trim();
-    if (!source) { missing++; continue; }
-    const acc = row.staff || 'Chưa gán', key = JSON.stringify([acc,source]), month = Number(row.created.slice(5,7))-1;
-    if (!groups.has(key)) groups.set(key,{acc,source,months:Array(12).fill(0),total:0});
-    const group = groups.get(key); group.months[month]++; group.total++; totals[month]++;
+    return source ? aliases.get(normalized(source)) || source : 'Chưa cập nhật';
+  };
+  const extra = [...new Set(sourceRows.map(sourceOf))].filter(channel=>!SALES_CHANNELS.includes(channel)).sort((a,b)=>a.localeCompare(b,'vi'));
+  const channels = [...SALES_CHANNELS,...extra];
+  const normAcc = value=>String(value||'').trim().toLowerCase();
+  const people = new Map(roster.filter(person=>!staff||normAcc(person.acc)===normAcc(staff)).map(person=>[normAcc(person.acc),{acc:person.acc,team:person.team,counts:Object.fromEntries(channels.map(channel=>[channel,0])),total:0}]));
+  let missing=0;
+  for (const row of sourceRows.filter(row=>!staff||normAcc(row.staff)===normAcc(staff))) {
+    const key=normAcc(row.staff)||'unknown';
+    if (!people.has(key)) people.set(key,{acc:row.staff||'Chưa gán',team:0,counts:Object.fromEntries(channels.map(channel=>[channel,0])),total:0});
+    const person=people.get(key),channel=sourceOf(row);
+    person.counts[channel]++;person.total++;if(channel==='Chưa cập nhật')missing++;
   }
-  return { rows:[...groups.values()].sort((a,b) => a.acc.localeCompare(b.acc,'vi') || a.source.localeCompare(b.source,'vi')),
-    available, totals, total:totals.reduce((a,b)=>a+b,0), missing };
+  const totalCounts = members=>Object.fromEntries(channels.map(channel=>[channel,members.reduce((sum,person)=>sum+person.counts[channel],0)]));
+  const groups=[1,2,3,0].map(team=>{
+    const members=[...people.values()].filter(person=>Number(person.team)===team);
+    return {team,rows:members,counts:totalCounts(members),total:members.reduce((sum,person)=>sum+person.total,0)};
+  }).filter(group=>group.rows.length);
+  const all=groups.flatMap(group=>group.rows);
+  return {channels,groups,counts:totalCounts(all),total:all.reduce((sum,person)=>sum+person.total,0),missing,available:sourceRows.length>0};
 }

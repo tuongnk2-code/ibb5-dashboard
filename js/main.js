@@ -8,7 +8,7 @@ import { periodGrowth } from './periodGrowth.js';
 import { reportDay } from './dailyReportModel.js';
 import { onlineCameraContracts, netWithOnlineCamera } from './cameraKpi.js';
 import { prepaidShare } from './prepaidKpi.js';
-import { overdueContracts, yearlyStaffChannels } from './analyticsDetails.js';
+import { overdueContracts, monthlyStaffChannels } from './analyticsDetails.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 
@@ -340,14 +340,16 @@ $('anaOldScope').textContent=visibleOverdue.length===overdue.length?'Danh sách 
 const onlineSubset=subset.filter(x=>x.date?.slice(0,7)===m);$('anaPrepaid').textContent=onlineSubset.length?formatPercent(prepaidShare(onlineSubset).percent):'—';$('anaCam').textContent=IBB_CALC.unique(IBB_CALC.camOnline(onlineSubset,IBB_CALC.monthEnd(m)));
 const onlineMonth=all.filter(x=>x.date?.slice(0,7)===m),counts=new Map();onlineMonth.forEach(x=>counts.set(x.staff||'Chưa gán',1+(counts.get(x.staff||'Chưa gán')||0)));barRows('anaStaffBars',[...counts].sort((a,b)=>b[1]-a[1]),onlineMonth.length,true);
 const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source){annotated++;chan.set(source,1+(chan.get(source)||0))}});barRows('anaChannelBars',[...chan].sort((a,b)=>b[1]-a[1]),annotated);$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Chưa cập nhật nguồn không được tự gán vào kênh.';
-if(channelMonthYear!==m.slice(0,4)){channelMonthYear=m.slice(0,4);if(![...$('anaChannelYear').options].some(option=>option.value===channelMonthYear))$('anaChannelYear').add(new Option(channelMonthYear,channelMonthYear));$('anaChannelYear').value=channelMonthYear;}
-const year=$('anaChannelYear').value,annual=yearlyStaffChannels(all,ns,year,staff);
-$('anaYearlyScope').textContent='Năm '+year+' · '+(staff||'Toàn phòng')+' · Đếm HĐ NET theo ngày tạo';
-$('anaYearlyRows').innerHTML=annual.rows.length?annual.rows.map(row=>'<tr data-acc="'+esc(row.acc)+'" data-source="'+esc(row.source)+'"><th scope="row">'+esc(row.acc)+'</th><td>'+esc(row.source)+'</td>'+row.months.map((n,i)=>'<td>'+(annual.available[i]?fmt(n):'—')+'</td>').join('')+'<td><b>'+fmt(row.total)+'</b></td></tr>').join(''):'<tr><td colspan="15" class="ana-empty">Chưa có HĐ đã cập nhật nguồn trong năm đang chọn.</td></tr>';
-$('anaYearlyFoot').innerHTML='<tr><th colspan="2">Tổng có nguồn</th>'+annual.totals.map((n,i)=>'<td>'+(annual.available[i]?fmt(n):'—')+'</td>').join('')+'<td>'+fmt(annual.total)+'</td></tr>';
-$('anaYearlyNote').textContent='Có nguồn: '+fmt(annual.total)+' HĐ · Chưa cập nhật nguồn: '+fmt(annual.missing)+' HĐ (không phân vào kênh). Tháng chưa có dữ liệu nhập hiển thị —.';
+$('anaChannelMonth').value=m;
+const monthly=monthlyStaffChannels(all,ns,m,staff),channels=monthly.channels,cellCount=channels.length+2;
+const countCell=(value,channel)=>'<td data-channel="'+esc(channel)+'">'+(monthly.available?fmt(value):'—')+'</td>';
+$('anaMonthlyScope').textContent='Tháng '+m.slice(5)+'/'+m.slice(0,4)+' · '+(staff||'Toàn phòng')+' · HĐ NET theo ngày tạo';
+$('anaMonthlyHead').innerHTML='<tr><th>Sale / Kênh bán</th>'+channels.map(channel=>'<th data-channel="'+esc(channel)+'">'+esc(channel)+'</th>').join('')+'<th>Tổng PTTB</th></tr>';
+$('anaMonthlyRows').innerHTML=monthly.groups.map(group=>group.rows.map(person=>'<tr data-acc="'+esc(person.acc)+'"><th scope="row">'+esc(person.acc)+'</th>'+channels.map(channel=>countCell(person.counts[channel],channel)).join('')+'<td><b>'+(monthly.available?fmt(person.total):'—')+'</b></td></tr>').join('')+'<tr class="ana-channel-team"><th scope="row">'+(group.team?'TỔNG BẦY '+group.team:'CHƯA PHÂN BẦY')+'</th>'+channels.map(channel=>countCell(group.counts[channel],channel)).join('')+'<td>'+ (monthly.available?fmt(group.total):'—')+'</td></tr>').join('')||'<tr><td colspan="'+cellCount+'">Không có nhân sự phù hợp.</td></tr>';
+$('anaMonthlyFoot').innerHTML='<tr class="ana-channel-grand"><th>TỔNG PHÒNG'+(staff?' (đang lọc)':'')+'</th>'+channels.map(channel=>countCell(monthly.counts[channel],channel)).join('')+'<td>'+(monthly.available?fmt(monthly.total):'—')+'</td></tr><tr class="ana-channel-ratio"><th>Tỷ trọng</th>'+channels.map(channel=>'<td>'+(monthly.total?formatPercent(monthly.counts[channel]/monthly.total*100):'—')+'</td>').join('')+'<td>'+(monthly.total?'100%':'—')+'</td></tr>';
+$('anaMonthlyNote').textContent=monthly.available?'Tổng '+fmt(monthly.total)+' HĐ · '+fmt(monthly.missing)+' HĐ chưa cập nhật nguồn. Nguồn nhân viên cập nhật được ưu tiên; các kênh ngoài mẫu giữ cột riêng.':'Chưa có dữ liệu NET nhập cho tháng '+m+'. Chọn tháng khác để đối chiếu.';
 }
-let channelMonthYear=$('anaMonth').value.slice(0,4);const yearSelect=$('anaChannelYear'),sourceYears=[...new Set([reportDay().slice(0,4),channelMonthYear,...data().map(row=>row.created?.slice(0,4)).filter(year=>/^\d{4}$/.test(year||''))])].sort().reverse();sourceYears.forEach(year=>yearSelect.add(new Option(year,year)));yearSelect.value=channelMonthYear;yearSelect.addEventListener('change',render);
+$('anaChannelMonth').addEventListener('change',()=>{const month=$('anaChannelMonth').value;if(!month){$('anaChannelMonth').value=$('anaMonth').value;return;}$('anaMonth').value=month;render();});
 const sel=$('anaStaff');names().forEach(x=>{const o=document.createElement('option');o.value=x;o.textContent=x;sel.appendChild(o)});['anaMonth','anaStaff','anaDay'].forEach(id=>$(id).addEventListener('change',render));document.addEventListener('click',e=>{if(e.target?.closest?.('#pendingContracts button'))setTimeout(render,80)});window.addEventListener('storage',render);render();})();
 
 // ---- Original script 10 id="pending-schedule-js" ----
