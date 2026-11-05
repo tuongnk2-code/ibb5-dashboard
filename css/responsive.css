@@ -335,6 +335,16 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
+#datahub .ibb-sync-file-list { display: grid; gap: 10px; }
+#datahub .ibb-sync-file { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 20px; border: 1px solid #dde8f4; border-left: 4px solid #1684e6; border-radius: 10px; padding: 14px 16px; background: #f7faff; }
+#datahub .ibb-sync-file[data-source="Camera"] { border-left-color: #f47b20; }
+#datahub .ibb-sync-file[data-source="Truyền hình"] { border-left-color: #15996d; }
+#datahub .ibb-sync-file>div { min-width: 0; }
+#datahub .ibb-sync-file strong { display: block; color: #173b60; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+#datahub .ibb-sync-file .ibb-sync-file-name { font-size: 13px; font-weight: 600; margin-top: 4px; }
+#datahub .ibb-sync-file-source { color: #0b549e; font-size: 14px; font-weight: 850; }
+#datahub .ibb-sync-file small { display: block; margin-top: 4px; color: #647e9a; font-size: 11px; }
+@media(max-width:700px) { #datahub .ibb-sync-file { grid-template-columns: minmax(0,1fr); gap: 12px; padding: 14px; } #datahub .ibb-sync-audit-top { flex-wrap: wrap; gap: 10px; } }
 #pendingContracts .pending-table { width: 1818px!important; min-width: 1818px!important; }
 #pendingContracts .pending-table :is(th,td):nth-child(9) { width: 200px!important; min-width: 200px!important; max-width: 200px!important; }
 #pendingContracts .pending-table :is(th,td):nth-child(10) { width: 155px!important; min-width: 155px!important; max-width: 155px!important; }

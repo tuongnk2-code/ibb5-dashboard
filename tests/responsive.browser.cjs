@@ -15,6 +15,7 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
     await page.route('**/api/daily-reports*', r => r.fulfill({ json: new URL(r.request().url()).searchParams.has('history') ? { reports: [] } : { profiles: [me], reports: [], metrics: {}, previous: null, serverTime: new Date().toISOString() } }));
     await page.route('https://**/*', r => r.abort());
     await page.goto('http://127.0.0.1:5176'); await page.locator('#perfRows tr').first().waitFor({ state: 'attached' });
+    await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');
     const today = await page.evaluate(() => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
     assert.equal(await page.locator('#to').inputValue(), today);
     assert.equal(await page.locator('#pendAsOf').inputValue(), today);
@@ -31,7 +32,7 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
           const offenders = await page.evaluate(() => [...document.querySelectorAll('.panel.page-active *')].map(el => ({ tag: el.tagName, cls: el.className, id: el.id, right: Math.round(el.getBoundingClientRect().right), width: Math.round(el.getBoundingClientRect().width) })).filter(e => e.right > innerWidth + 10).slice(0, 12));
           failures.push({ width, tab: id, ...layout, offenders });
         }
-        if (output && [390, 1440].includes(width) && ['overview', 'performance', 'pendingContracts', 'account', 'dailyReports', 'lookup'].includes(id)) await page.screenshot({ path: output + '/responsive-' + id + '-' + width + '.png' });
+        if (output && [390, 1440].includes(width) && ['overview', 'performance', 'pendingContracts', 'account', 'dailyReports', 'lookup', 'datahub'].includes(id)) await page.screenshot({ path: output + '/responsive-' + id + '-' + width + '.png' });
       }
     }
     console.log('LAYOUT', JSON.stringify(failures));

@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot, validateNote } from '../js/dashboardStateModel.js';
+import { importAudit } from '../api/_dashboardState.js';
+
+test('each file keeps its last successful uploader and server time independently',()=>{
+  const previous={files:{Camera:{name:'cam-old.xlsx',acc:'DNG.Previous',updated:'2026-11-01T01:00:00Z',count:4},Internet:{name:'net-old.xlsx',acc:'DNG.Old',updated:'2026-11-02T02:00:00Z',count:3}}};
+  const incoming={files:{Internet:{name:'net-new.xlsx',count:5,acc:'forged',updated:'2099-01-01T00:00:00Z'},Camera:{name:'tampered.xlsx'}}};
+  const updated=importAudit(previous,incoming,['Internet'],{id:'manager',acc:'DNG.Manager'},'2026-11-05T03:48:32Z',[]);
+  assert.deepEqual(updated.files.Camera,previous.files.Camera);
+  assert.deepEqual(updated.files.Internet,{name:'net-new.xlsx',count:5,acc:'DNG.Manager',updated:'2026-11-05T03:48:32Z',identityVerified:true});
+  assert.equal(previous.files.Internet.name,'net-old.xlsx');
+  const cam=importAudit(updated,{files:{Camera:{name:'cam-new.xlsx',count:6}}},['Camera'],{id:'other',email:'manager@example.com'},'2026-11-06T00:00:00Z',[]);
+  assert.deepEqual(cam.files.Internet,updated.files.Internet);assert.equal(cam.files.Camera.acc,'manager@example.com');
+  assert.throws(()=>importAudit(previous,incoming,['Other'],{},'2026-11-05',[]));
+});
 
 test('shared dashboard API migrates once, enforces ownership and detects concurrent writes', async () => {
   const oldFetch = globalThis.fetch;

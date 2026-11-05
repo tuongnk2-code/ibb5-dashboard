@@ -1,5 +1,5 @@
 import { requireProfile } from './_supabaseAdmin.js';
-import { STATE_TABLE, sharedRow, sharedRows } from './_dashboardState.js';
+import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
 import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay } from '../js/dailyReportModel.js';
 
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       key = 'snapshot';
       const previous = await sharedRow(admin, key);
       data = mergeNetSnapshot(previous?.data, body.snapshot);
-      data.meta = { ...data.meta, updated: now, audit: { acc: caller.acc || caller.email, identityVerified: true, updated: now, sources: body.types || [] } };
+      data.meta = importAudit(previous?.data.meta, data.meta, body.types || [], caller, now, data.data);
     } else if (body.kind === 'pending' || body.kind === 'cancelPending') {
       if (body.kind === 'cancelPending' && caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được duyệt hủy hợp đồng.');
       if (typeof body.id !== 'string' || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(body.id)) return bad(res, 400, 'Mã hợp đồng không hợp lệ.');

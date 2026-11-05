@@ -499,7 +499,18 @@ function authenticatedUploadAccount(){
  }catch(e){console.warn('Không thể đọc phiên đăng nhập xác thực:',e)}
  return '';
 }
-function updateAudit(){const m=window.IBB5_IMPORT_META||{},a=m.audit||{};$('ibbAuditAccount').textContent=a.identityVerified?a.acc:'Chưa xác thực đăng nhập';$('ibbAuditTime').textContent=fmtVietnamTime(a.updated||m.updated);$('ibbAuditFiles').textContent=(a.sources||[]).join(' · ')||'Chưa có thông tin';$('ibbAuditBadge').textContent=(a.updated||m.updated)?'Đã cập nhật thành công':'Chưa có lịch sử cập nhật';$('ibbAuditIdentity').textContent='Chỉ ghi nhận từ phiên đăng nhập xác thực; không lấy mã Acc mô phỏng';}
+const auditEscape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+function updateAudit(){
+ const meta=window.IBB5_IMPORT_META||{},audit=meta.audit||{},sources=['Internet','Camera','Truyền hình'];
+ $('ibbAuditRows').innerHTML=sources.map(type=>{
+  const file=meta.files?.[type]||{},latest=audit.sources?.includes(type),acc=latest&&audit.identityVerified?audit.acc:file.acc;
+  const updated=latest?(audit.updated||file.updated):file.updated;
+  return '<article class="ibb-sync-file" data-source="'+auditEscape(type)+'"><div><span class="ibb-sync-file-source">'+(type==='Internet'?'NET · Internet':auditEscape(type))+'</span><strong class="ibb-sync-file-name">'+auditEscape(file.name||'Chưa nhập file')+'</strong><small>'+(Number.isInteger(file.count)?file.count.toLocaleString('vi-VN')+' HĐ trong file':'Chưa có thông tin file')+'</small></div><div><span class="ibb-sync-audit-label">Acc cập nhật</span><strong class="ibb-sync-file-account">'+auditEscape(acc||'Chưa ghi nhận')+'</strong></div><div><span class="ibb-sync-audit-label">Cập nhật gần nhất · Giờ Việt Nam</span><strong class="ibb-sync-file-time">'+auditEscape(fmtVietnamTime(updated))+'</strong></div></article>';
+ }).join('');
+ const count=sources.filter(type=>meta.files?.[type]?.updated||audit.sources?.includes(type)&&audit.updated).length;
+ $('ibbAuditBadge').textContent=count?'Đã ghi nhận '+count+' nguồn':'Chưa có lịch sử cập nhật';
+}
+
 async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).files[0]})).filter(v=>v.file),msg=$('ibbImportMessage'),btn=$('ibbImportBtn');if(!files.length){msg.textContent='Chọn ít nhất 1 file .xlsx trước khi cập nhật.';return;}btn.disabled=true;msg.textContent='Đang đọc và kiểm tra '+files.length+' file...';try{
  const parsed=[];for(const x of files){const rows=transform(await parseXlsx(x.file),x.type,x.file.name);parsed.push({...x,rows})}
  const previous=Array.isArray(window.IBB5_IMPORTED_DATA)?window.IBB5_IMPORTED_DATA:DATA;

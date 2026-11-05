@@ -3,6 +3,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 (async () => {
   const { createServer } = await import('../node_modules/vite/dist/node/index.js');
   const { unpackState, stateSignature, mergeNetSnapshot, validateNote, isCancellationResult } = await import('../js/dashboardStateModel.js');
+  const { importAudit } = await import('../api/_dashboardState.js');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5177, strictPort: true } }); await server.listen();
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
   const records = new Map(), reports = new Map(), errors = [];let failCancellation=false;
@@ -14,6 +15,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     { id:'CAM_ONLY',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' }
   );
   legacy.snapshot.data[0].netClbh='Tra truoc 3T 615k/3T';
+  legacy.snapshot.meta={files:{Internet:{name:'net-old.xlsx',count:1,acc:'DNG.OldNet',updated:'2026-11-01T01:00:00Z'},Camera:{name:'cam-old.xlsx',count:2,acc:'DNG.OldCam',updated:'2026-11-02T02:00:00Z'},'Truyền hình':{name:'tv-old.xlsx',count:1,acc:'DNG.OldTv',updated:'2026-11-03T03:00:00Z'}}};
   legacy.snapshot.data[0].prepaid=0; // The CLBH policy is authoritative.
   const oldDate=new Date(Date.parse(date+'T12:00:00Z')-8*86400000).toISOString().slice(0,10);
   legacy.snapshot.data.push({id:'OVERDUE1',type:'Internet',staff:'DNG.ManLM3',created:oldDate,date:'',room:'IBB5',sourceExcel:'IBB'},
@@ -37,7 +39,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if(body.kind==='cancelPending'&&role!=='manager')return route.fulfill({status:403,json:{error:'Chỉ Trưởng phòng được duyệt hủy hợp đồng.'}});
       if(body.kind==='cancelPending'&&failCancellation){failCancellation=false;return route.fulfill({status:500,json:{error:'Không lưu được dữ liệu thử nghiệm'}});}
       if(body.kind==='migrate') { records.set('snapshot',{key:'snapshot',revision:1,data:body.snapshot});for(const [m,rooms]of Object.entries(body.commitments))for(const [room,data]of Object.entries(rooms))records.set('commit:'+m+':'+room,{key:'commit:'+m+':'+room,revision:1,data});for(const [id,data]of Object.entries(body.notes))records.set('pending:'+id,{key:'pending:'+id,revision:1,data});return route.fulfill({json:{ok:true}}); }
-      if(body.kind==='snapshot'){const row={key:'snapshot',revision:body.revision+1,data:mergeNetSnapshot(records.get('snapshot')?.data,body.snapshot)};records.set('snapshot',row);return route.fulfill({json:{row}});}
+      if(body.kind==='snapshot'){const previous=records.get('snapshot')?.data,row={key:'snapshot',revision:body.revision+1,data:mergeNetSnapshot(previous,body.snapshot)};row.data.meta=importAudit(previous?.meta,row.data.meta,body.types||[],{id:role,acc:'DNG.ManLM3'},new Date().toISOString(),row.data.data);records.set('snapshot',row);return route.fulfill({json:{row}});}
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
@@ -254,6 +256,26 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"]').count(),1);
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"] .p-note').inputValue(),'');
+    const netFile=structuredClone(records.get('snapshot').data.meta.files.Internet),tvFile=structuredClone(records.get('snapshot').data.meta.files['Truyền hình']);
+    const netAudit=desktop.page.locator('#ibbAuditRows [data-source="Internet"]');
+    assert.equal(await desktop.page.locator('#ibbAuditRows .ibb-sync-file').count(),3);
+    assert.equal(await netAudit.locator('.ibb-sync-file-name').textContent(),'net-latest.xlsx');
+    assert.equal(await netAudit.locator('.ibb-sync-file-account').textContent(),'DNG.ManLM3');
+    const netTime=await netAudit.locator('.ibb-sync-file-time').textContent();
+    assert.match(netTime,/\d{2}:\d{2}:\d{2}/);
+    await desktop.page.locator('#ibbUploadNet').setInputFiles([]);
+    await desktop.page.locator('#ibbUploadCam').setInputFiles({name:'cam-latest.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});
+    await desktop.page.locator('#ibbImportBtn').click();await desktop.page.waitForFunction(()=>window.IBB5_IMPORT_META.files.Camera.name==='cam-latest.xlsx');
+    assert.deepEqual(records.get('snapshot').data.meta.files.Internet,netFile);assert.deepEqual(records.get('snapshot').data.meta.files['Truyền hình'],tvFile);
+    assert.equal(await netAudit.locator('.ibb-sync-file-time').textContent(),netTime);
+    await mobile.page.waitForFunction(()=>window.IBB5_IMPORT_META.files.Camera.name==='cam-latest.xlsx',null,{timeout:15000});
+    assert.equal(await mobile.page.locator('#ibbAuditRows [data-source="Camera"] .ibb-sync-file-name').textContent(),'cam-latest.xlsx');
+    assert.equal(await mobile.page.locator('#ibbAuditRows [data-source="Truyền hình"] .ibb-sync-file-account').textContent(),'DNG.OldTv');
+    const auditBeforeFailure=structuredClone(records.get('snapshot').data.meta);
+    await desktop.page.locator('#ibbUploadCam').setInputFiles({name:'invalid.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from('invalid')});
+    await desktop.page.locator('#ibbImportBtn').click();await desktop.page.waitForFunction(()=>document.getElementById('ibbImportMessage').textContent.startsWith('Không thể cập nhật:'));
+    assert.deepEqual(records.get('snapshot').data.meta,auditBeforeFailure);
+    await desktop.page.locator('#ibbUploadCam').setInputFiles([]);
     for(const count of loads.values())assert.equal(count,0);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});
