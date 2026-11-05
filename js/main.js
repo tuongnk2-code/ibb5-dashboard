@@ -42,6 +42,9 @@ const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b5
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
  const netRows=DATA.filter(x=>x.type==='Internet'&&(!room||x.room===room));const onlineRows=netRows.filter(x=>x.id&&/^[A-Z0-9]+$/.test(x.id)&&typeof x.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date>=start&&x.date<=asOf);
  const totalOnline=IBB_CALC.unique(onlineRows),target=getCommit(month,room||'__ALL__').manager;
+ const staffCount=new Set(PERSONNEL.filter(person=>!room||person.room===room).map(person=>person.acc.trim().toLowerCase())).size;
+ $('staffProductivity').textContent=staffCount?fmt(totalOnline/staffCount):'—';$('staffProductivity').setAttribute('aria-label',$('staffProductivity').textContent+' HĐ/NS');
+ $('staffProductivityNote').textContent=staffCount?fmt(totalOnline)+' HĐ NET Online / '+staffCount+' nhân sự · Gồm cả NS chưa có Online':'Chưa có danh sách nhân sự của phòng đang chọn';
  const elapsed=IBB_CALC.calendarDays(start,asOf),remaining=IBB_CALC.calendarDays(IBB_CALC.next(asOf),last),allDays=elapsed+remaining;
  // Cửa sổ 7 ngày lịch gần nhất (bao gồm ngày chốt), tính cả Chủ nhật.
  const windowDate=new Date(asOf+'T12:00:00');windowDate.setDate(windowDate.getDate()-6);
