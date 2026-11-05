@@ -335,6 +335,10 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
+#lookup .price-controls .price-location-search { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #cbdff4; border-radius: 10px; background: #f7faff; color: #173b60; font: inherit; font-size: 14px; font-weight: 500; }
+#lookup .price-location-search:focus { outline: 2px solid #1684e6; outline-offset: 1px; }
+#lookup .price-location-search:disabled { opacity: .6; cursor: not-allowed; }
+#lookup .price-location-matches { min-height: 16px; color: #526e8a; font-size: 11px; font-weight: 500; line-height: 1.4; text-transform: none; }
 #datahub .ibb-sync-file-list { display: grid; gap: 10px; }
 #datahub .ibb-sync-file { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 20px; border: 1px solid #dde8f4; border-left: 4px solid #1684e6; border-radius: 10px; padding: 14px 16px; background: #f7faff; }
 #datahub .ibb-sync-file[data-source="Camera"] { border-left-color: #f47b20; }
