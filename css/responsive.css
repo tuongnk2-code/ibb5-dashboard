@@ -279,7 +279,7 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #performance .perf-table :is(tbody,tfoot) td { font-size: var(--perf-font-size,20px) !important; line-height: 1.3 !important; font-weight: 600; padding: 7px 6px !important; height: 44px !important; }
 #performance .perf-table .perf-person-cell .person { font-size: calc(var(--perf-font-size,20px) - 2px) !important; line-height: 1.25 !important; font-weight: 800 !important; }
 #performance .perf-table .perf-person-cell .acc { font-size: calc(var(--perf-font-size,20px) - 4px) !important; line-height: 1.25 !important; color: #4c6e92 !important; margin-top: 2px !important; }
-#performance .perf-table thead th:nth-child(1) { width: calc(var(--perf-font-size,20px) * 11.5) !important; }
+#performance .perf-table thead th:nth-child(1) { width: calc(var(--perf-font-size,20px) * 10) !important; }
 #performance .perf-table thead th:nth-child(2) { width: calc(var(--perf-font-size,20px) * 4.8) !important; }
 #performance .perf-table thead th:nth-child(7),#performance .perf-table thead th:nth-child(9) { width: calc(var(--perf-font-size,20px) * 7) !important; }
 #performance .perf-table tbody tr.perf-team-total td,#performance .perf-table tfoot td { font-size: var(--perf-font-size,20px) !important; height: 38px !important; font-weight: 850 !important; }

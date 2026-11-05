@@ -36,6 +36,9 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
     }
     console.log('LAYOUT', JSON.stringify(failures));
     await page.evaluate(()=>{location.hash='performance'});await page.locator('#performance.page-active').waitFor();
+    assert.equal(await page.locator('#performance .perf-table thead th').first().textContent(),'Mã Acc');
+    assert.equal(await page.locator('#perfRows .perf-person-cell .person').first().textContent(),'DNG.Vypv');
+    assert.equal(await page.locator('#perfRows .perf-person-cell .acc').count(),0);
     const performanceValues=await page.locator('#perfRows').innerHTML();
     for(const width of [1440,390]){
       await page.setViewportSize({width,height:900});
