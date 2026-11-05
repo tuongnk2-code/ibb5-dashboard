@@ -335,17 +335,20 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
-#pendingContracts .pending-table { width: 1618px!important; min-width: 1618px!important; }
-#pendingContracts .pending-table :is(th,td):nth-child(11) { width: 140px; min-width: 140px; }
+#pendingContracts .pending-table { width: 1818px!important; min-width: 1818px!important; }
+#pendingContracts .pending-table :is(th,td):nth-child(9) { width: 200px!important; min-width: 200px!important; max-width: 200px!important; }
+#pendingContracts .pending-table :is(th,td):nth-child(10) { width: 155px!important; min-width: 155px!important; max-width: 155px!important; }
+#pendingContracts .pending-table :is(th,td):nth-child(11) { width: 112px!important; min-width: 112px!important; max-width: 112px!important; }
+#pendingContracts .pending-table :is(th,td):nth-child(12) { width: 140px!important; min-width: 140px!important; max-width: 140px!important; }
 #pendingContracts button.p-cancel-approve { background: #fff0f0; border-color: #f0baba; color: #b42323; font-size: 12px; white-space: nowrap; }
 #pendingContracts button.p-cancel-approve:disabled { opacity: .55; cursor: wait; }
 #pendingContracts .p-manager-only { font-size: 11px; color: #677c94; }
 #pendingMobileEditor .p-cancel-approve { margin-top: 12px; width: 100%; min-height: 42px; }
 #pendingContracts :is(.p-cancel-reason-wrap,.pm-cancel-reason)[hidden] { display: none!important; }
-#pendingContracts .p-cancel-reason-wrap { margin-top: 8px; color: #a33333; font-size: 11px; gap: 5px; }
-#pendingContracts .p-cancel-reason { background: #fff8f8; border-color: #e7bcbc; line-height: 1.5; }
+#pendingContracts .p-cancel-reason-wrap { margin: 0; }
+#pendingContracts .pending-table .p-cancel-reason { box-sizing: border-box; height: 54px; min-height: 54px; max-height: 140px; background: #fff8f8; border-color: #e7bcbc; line-height: 1.5; }
 #pendingMobileEditor textarea[name="cancelReason"] { width: 100%; box-sizing: border-box; border: 1px solid #e7bcbc; background: #fff8f8; border-radius: 10px; padding: 10px; font: inherit; resize: vertical; }
-@media(max-width:600px) { #pendingContracts .pending-table { width: 1480px!important; min-width: 1480px!important; } }
+@media(max-width:600px) { #pendingContracts .pending-table { width: 1680px!important; min-width: 1680px!important; } }
 
 /* Pending contract summary: a clear total, distinct statuses and readable month detail. */
 #pendingContracts .pending-cards.pending-metrics {

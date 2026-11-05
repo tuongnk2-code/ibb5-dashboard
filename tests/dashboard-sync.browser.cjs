@@ -195,6 +195,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await cancelEditor.locator('[type="submit"]').click();await cancelEditor.waitFor({state:'hidden'});
     await desktop.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.result==='Hủy',null,{timeout:15000});
     assert.equal(await cancelRow.locator('.p-cancel-reason').inputValue(),'Khách chuyển nơi ở, không còn nhu cầu');
+    assert.equal(await cancelRow.locator('.p-result').evaluate(el=>el.closest('td').cellIndex),7);
+    assert.equal(await cancelRow.locator('.p-cancel-reason').evaluate(el=>el.closest('td').cellIndex),8);
+    assert.match(await desktop.page.locator('.pending-table thead th').nth(8).textContent(),/Lý do hủy/);
+    if(process.env.RESPONSIVE_SCREENSHOT_DIR){await cancelRow.locator('.p-cancel-reason').scrollIntoViewIfNeeded();await desktop.page.screenshot({path:process.env.RESPONSIVE_SCREENSHOT_DIR+'/pending-cancellation-reason-column.png'});}
     assert.equal(await cancelRow.locator('.p-cancel-approve').isEnabled(),true);
     // Staff-selected "Hủy" without manager approval must not count as a cancellation.
     await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('PRIVATE1',{expected:date,action:'Khác',result:'Hủy',cancelReason:'Khách đổi ý',source:'Web',timeSlot:'8h - 10h'});},date);
