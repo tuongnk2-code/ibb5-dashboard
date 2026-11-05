@@ -38,6 +38,7 @@ function prepareTables(node) {
   if (!(node instanceof Element)) return;
   const tables = node.matches('table') ? [node] : node.querySelectorAll('table');
   for (const table of tables) {
+    if (!table.isConnected || !table.parentElement || table.closest('.q-sheet')) continue;
     if (table.closest(scrollAreas)) continue;
     const overflow = getComputedStyle(table.parentElement).overflowX;
     if (overflow === 'auto' || overflow === 'scroll') continue;
