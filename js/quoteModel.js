@@ -1,6 +1,12 @@
 import { validDay, reportDay } from './dailyReportModel.js';
 
 export const quoteMoney = value => Number.isFinite(value) ? value.toLocaleString('vi-VN') + ' ₫' : '—';
+export const MAX_QUOTE_OPTIONS = 9;
+export const QUOTE_PLAN_FIELDS = ['packageName','code','specs','monthly','months','giftMonths','fee','discount','futureMonthly','vat','vatRate','notes','extras','source'];
+export const quotePlan = quote => structuredClone(Object.fromEntries(QUOTE_PLAN_FIELDS.map(field=>[field,quote[field]])));
+export const quoteOptions = quote => Array.isArray(quote.options)&&quote.options.length
+  ? quote.options.map(plan=>({...quote,...Object.fromEntries(QUOTE_PLAN_FIELDS.map(field=>[field,plan?.[field]])),options:undefined}))
+  : [{...quote,options:undefined}];
 const amount = value => value === '' || value == null ? null : Number(value);
 export function quoteTotals(quote) {
   const errors = [], read = (value,label,max=1000000000) => { const n=amount(value); if(n===null||!Number.isFinite(n)||n<0||n>max||!Number.isInteger(n)){errors.push(label+' cần là số nguyên từ 0 đến '+max.toLocaleString('vi-VN')+'.');return null;}return n; };
@@ -27,6 +33,10 @@ export function quoteTotals(quote) {
   return {errors,monthly,months,gift,fee,discount,extras,once,recurring,subtotal,tax,total,ongoing};
 }
 export function quoteErrors(quote) {
+  if(Array.isArray(quote.options)&&quote.options.length){
+    if(quote.options.length>MAX_QUOTE_OPTIONS)return ['Một báo giá tối đa '+MAX_QUOTE_OPTIONS+' phương án.'];
+    return quoteOptions(quote).flatMap((option,index)=>quoteErrors(option).map(error=>(quote.options.length>1?'Gói '+(index+1)+': ':'')+error));
+  }
   const errors=[...quoteTotals(quote).errors];
   for(const [field,label]of Object.entries({customer:'Tên khách hàng',address:'Địa chỉ lắp đặt',province:'Tỉnh/thành',ward:'Phường/xã',packageName:'Tên gói/phương án',advisor:'Nhân viên tư vấn',contact:'Số liên hệ nhân viên'}))if(!quote[field]?.trim())errors.push('Cần nhập '+label+'.');
   if(!validDay(quote.date)||!validDay(quote.validUntil)||quote.validUntil<quote.date)errors.push('Chọn hạn báo giá không trước ngày lập.');

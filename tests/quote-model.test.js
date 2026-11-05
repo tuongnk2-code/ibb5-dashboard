@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { quoteTotals,quoteErrors } from '../js/quoteModel.js';
+import { quoteTotals,quoteErrors,quotePlan,quoteOptions } from '../js/quoteModel.js';
 
 const base=()=>({customer:'Khách hàng',address:'123 Đường A',province:'Đà Nẵng',ward:'Hòa Xuân',packageName:'Giga',advisor:'Nhân viên',contact:'0900000000',date:'2026-11-05',validUntil:'2099-11-12',monthly:200000,months:6,giftMonths:1,fee:300000,discount:100000,futureMonthly:250000,vat:'included',vatRate:'',extras:[{name:'Camera',qty:2,price:500000,billing:'once'},{name:'Cloud',qty:1,price:50000,billing:'monthly'}],confirmed:true});
 test('quote totals separate upfront/recurring fees and never charge gifted months',()=>{
@@ -23,4 +23,12 @@ test('missing prices and unconfirmed policies cannot produce a customer quote',(
   assert.ok(quoteErrors({...base(),months:1.5}).length);
   assert.ok(quoteErrors({...base(),validUntil:'2001-01-01'}).length);
   assert.ok(quoteErrors({...base(),extras:[{name:'Camera',qty:1,price:'',billing:'once'}]}).length);
+});
+test('multiple quote options retain independent charges and validate every option',()=>{
+  const first=quotePlan(base()),second=quotePlan({...base(),packageName:'Sky',monthly:300000,months:3,fee:0,discount:0,extras:[],futureMonthly:350000});
+  const quote={...base(),options:[first,second]};
+  const options=quoteOptions(quote);assert.equal(quoteTotals(options[0]).total,2700000);assert.equal(quoteTotals(options[1]).total,900000);
+  assert.deepEqual(quoteErrors(quote),[]);second.fee='';assert.ok(quoteErrors(quote).some(error=>error.startsWith('Gói 2:')));
+  assert.equal(first.fee,300000);assert.equal(quoteOptions(base()).length,1);
+  assert.ok(quoteErrors({...quote,options:Array.from({length:10},()=>first)}).length);
 });

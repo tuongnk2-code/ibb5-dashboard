@@ -13,3 +13,9 @@ Xuất **Ảnh PNG** để gửi khách. **PDF / In** mở bản in A4 riêng: c
 Kiểm thử: `node --test tests/quote-model.test.js`; `node tests/quote.browser.cjs`; `node tests/responsive.browser.cjs`; `npm run build`.
 
 Logo chuẩn được lấy từ ảnh do người dùng cung cấp tại `assets/fpt-telecom-logo.webp`, nhúng trực tiếp để luôn có trong PNG/PDF. Dòng khu vực dưới logo và cuối báo giá lấy từ Tỉnh/Thành + Phường/Xã ở mục 01, không cố định Đà Nẵng; mở phiên bản cũ dùng khu vực đã lưu trong phiên bản đó.
+
+## Nhiều gói trong một báo giá
+
+Bấm **Thêm gói so sánh** để tạo phương án mới và chọn thêm từ Tra cứu giá. Mỗi báo giá hỗ trợ tối đa 9 phương án; nút Chọn/Đổi gói chỉ thay gói đang sửa. Dùng các thẻ Gói 1, Gói 2… để chỉnh cước, VAT, phí, thiết bị, ưu đãi riêng. Thông tin khách hàng, khu vực, nhân viên và hiệu lực dùng chung. Chỉ xuất khi tất cả phương án đủ điều kiện; không cộng tiền các phương án.
+
+Một gói giữ bố cục chi tiết. Hai gói dùng hai thẻ so sánh cạnh nhau. Ba gói trở lên dùng bảng so sánh, tối đa 3 cột gói mỗi nhóm để đọc rõ trên A4. Xóa gói tự chuyển về bố cục phù hợp. PNG/PDF và phiên bản lưu giữ toàn bộ phương án; phiên bản cũ một gói vẫn mở được.
