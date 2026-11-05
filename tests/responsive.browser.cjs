@@ -39,7 +39,14 @@ const output = process.env.RESPONSIVE_SCREENSHOT_DIR;
     const performanceValues=await page.locator('#perfRows').innerHTML();
     for(const width of [1440,390]){
       await page.setViewportSize({width,height:900});
-      assert.ok(await page.locator('#perfRows tr:not(.perf-team-total)').first().locator('td').nth(2).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);
+      const numberCell=page.locator('#perfRows tr:not(.perf-team-total)').first().locator('td').nth(2);
+      assert.equal(await numberCell.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)),20);
+      await page.locator('#perfFontIncrease').click();
+      assert.equal(await numberCell.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)),22);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('ibb5_perf_font_size_v1')),'22');
+      assert.equal(await page.locator('#perfRows').innerHTML(),performanceValues);
+      await page.locator('#perfFontDecrease').click();
+      assert.equal(await numberCell.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)),20);
       await page.locator('#perfExpand').click();
       assert.equal(await page.locator('#perfExpand').getAttribute('aria-expanded'),'true');
       const bounds=await page.locator('#performance').boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width+1&&bounds.y+bounds.height<=901);
