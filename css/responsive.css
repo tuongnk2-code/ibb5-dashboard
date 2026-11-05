@@ -308,3 +308,24 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .perf-table thead th:first-child { z-index: 8 !important; }
 
 #pendingContracts .pending-schedule-list .ps-person { font-size: 14px !important; font-weight: 850 !important; line-height: 1.35; }
+
+/* Show every appointment row without an inner scrolling window. */
+#pendingContracts .pending-schedule-scroll { overflow: visible !important; max-height: none !important; height: auto !important; }
+#pendingContracts .pending-schedule-list table { width: 100% !important; min-width: 0 !important; table-layout: fixed !important; }
+#pendingContracts .pending-schedule-list th { position: static !important; font-size: 12px !important; padding: 10px 6px !important; white-space: normal !important; }
+#pendingContracts .pending-schedule-list td { padding: 7px 6px !important; font-size: 13px !important; overflow-wrap: anywhere; }
+#pendingContracts .pending-schedule-list th:nth-child(n) { width: 16% !important; }
+#pendingContracts .pending-schedule-list th:first-child { width: 14% !important; }
+#pendingContracts .pending-schedule-list th:nth-child(2) { width: 6% !important; }
+#pendingContracts #psRows .ps-id { max-width: 100%; font-size: 12px !important; white-space: normal !important; overflow-wrap: anywhere; }
+@media(max-width:600px) {
+  #pendingContracts .pending-schedule-list table,#pendingContracts .pending-schedule-list tbody { display: block; }
+  #pendingContracts .pending-schedule-list thead { display: none; }
+  #pendingContracts #psRows tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 10px 0; padding: 12px; border: 1px solid #d7e5f4; border-radius: 10px; }
+  #pendingContracts #psRows tr > td { display: block; min-width: 0; width: auto !important; text-align: left !important; border: 0 !important; padding: 7px !important; }
+  #pendingContracts #psRows tr > td:first-child,#pendingContracts #psRows tr > td:nth-child(2),#pendingContracts #psRows tr > td:last-child { grid-column: 1 / -1; }
+  #pendingContracts #psRows tr > td:not(:first-child)::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 750; color: #456c94; margin-bottom: 5px; }
+  #pendingContracts #psRows .ps-team { background: #fff2e5; border-color: #f1c59a; }
+  #pendingContracts #psRows .ps-total { background: #173b61; border-color: #173b61; }
+  #pendingContracts #psRows .ps-total td::before { color: #dcecff !important; }
+}
