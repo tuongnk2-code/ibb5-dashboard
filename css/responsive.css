@@ -258,10 +258,6 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #performance #dpKpis .staff-online strong { color: #087ddd; }
 @media(max-width:1000px) { #performance #dpKpis { grid-template-columns: repeat(2,minmax(0,1fr)); } #performance #dpKpis > .dp-kpi:last-child:nth-child(odd) { grid-column: span 2; } }
 
-#overview .overview-efficiency > .nsld-card { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px 20px; background: #f3f9ff !important; }
-#overview .overview-efficiency > .nsld-card .name { grid-column: 1; grid-row: 1; }
-#overview .overview-efficiency > .nsld-card .value { grid-column: 2; grid-row: 1 / span 2; margin: 0 !important; font-size: 38px !important; }
-#overview .overview-efficiency > .nsld-card .detail { grid-column: 1; grid-row: 2; }
 #overview #staffProductivity::after { content: 'HĐ/NS'; display: block; font-size: 14px; line-height: 1.4; font-weight: 750; margin-top: 4px; color: #5f7e9e; }
 
 /* Readable staff performance table: preserve type size instead of squeezing columns. */

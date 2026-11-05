@@ -86,7 +86,6 @@ function base(){return DATA.filter(x=>(!$('from').value||day(x)>=$('from').value
  // Additional display positions reuse the existing calculated values.
  const [paceActual,paceNeeded]=$('todayOnline').textContent.split(' / ');$('priorityOnlinePace').innerHTML='<span class="pace-actual">'+esc(paceActual)+'</span><span class="pace-needed"> / '+esc(paceNeeded)+'</span>';$('priorityOnlinePace').title=$('todayOnline').title;
  $('priorityPaceDescription').textContent=$('todayPaceDescription').textContent;$('priorityPaceBar').style.width=$('todayBar').style.width;
- $('paceEfficiency').textContent=$('pace').textContent;
  $('remainingDailyOnline').textContent=show(dailyBenchmark);$('remainingDailyOnline').title=$('todayOnline').title;
  $('remainingDailyOnlineNote').textContent=gap===null?'Chưa có target tháng đã ký':paceDays.days===0?'Tháng đã hết ngày còn lại':fmt(gap)+' HĐ / '+paceDays.days+' ngày còn lại, gồm Chủ nhật';
  $('rangeLabel').textContent='Tháng '+month+' · đến '+asOf+' · '+(room||'Toàn phòng')+' · Pace gồm Chủ nhật';
