@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 (async () => {
   const { createServer } = await import('../node_modules/vite/dist/node/index.js');
-  const { unpackState, stateSignature, mergeNetSnapshot } = await import('../js/dashboardStateModel.js');
+  const { unpackState, stateSignature, mergeNetSnapshot, validateNote, isCancellationResult } = await import('../js/dashboardStateModel.js');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5177, strictPort: true } }); await server.listen();
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
   const records = new Map(), reports = new Map(), errors = [];let failCancellation=false;
@@ -41,6 +41,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
+      if(body.kind==='pending'){try{data=validateNote(body.value)}catch(err){return route.fulfill({status:400,json:{error:err.message}})}}
+      if(body.kind==='cancelPending'&&(!isCancellationResult(records.get(key)?.data.result)||!records.get(key)?.data.cancelReason))return route.fulfill({status:400,json:{error:'Cần kết quả Hủy và lý do hủy trước khi duyệt'}});
       if(body.kind==='cancelPending')data={...records.get(key)?.data,cancellationApproved:true,cancellationApprovedBy:role,cancellationApprovedAt:new Date().toISOString()};
       if(body.kind==='commit'){data=structuredClone(records.get(key)?.data||{manager:null,staff:{}});data.staff[body.acc]={value:body.value,plan:body.plan,status:'pending'};}
       const row={key,revision:body.revision+1,data};records.set(key,row);return route.fulfill({json:{row}});
@@ -178,8 +180,24 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.evaluate(async()=>{try{await window.IBB5_SYNC.cancelPending('OVERDUE1');return false}catch{return true}}),true);
     }
     const cancelRow=desktop.page.locator('#pendRows tr[data-id="OVERDUE1"]');
+    assert.equal(await cancelRow.locator('.p-cancel-approve').count(),0);
+    await cancelRow.locator('.p-result').selectOption('Dự Kiến Hủy');
+    assert.equal(await cancelRow.locator('.p-cancel-reason-wrap').isVisible(),false);assert.equal(await cancelRow.locator('.p-cancel-approve').count(),0);
+    await cancelRow.locator('.p-discard').click();
+    // Mobile staff request cancellation with a reason; the manager sees it after the save.
+    await mobile.page.locator('#pendRows tr[data-id="OVERDUE1"] .p-mobile-edit').click();
+    const cancelEditor=mobile.page.locator('#pendingMobileEditor');
+    assert.equal(await cancelEditor.locator('.pm-cancel-reason').isVisible(),false);
+    await cancelEditor.locator('[name="result"]').selectOption('Hủy');
+    assert.equal(await cancelEditor.locator('.pm-cancel-reason').isVisible(),true);
+    assert.equal(await cancelEditor.locator('[name="cancelReason"]').evaluate(el=>el.checkValidity()),false);
+    await cancelEditor.locator('[name="cancelReason"]').fill('Khách chuyển nơi ở, không còn nhu cầu');
+    await cancelEditor.locator('[type="submit"]').click();await cancelEditor.waitFor({state:'hidden'});
+    await desktop.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.result==='Hủy',null,{timeout:15000});
+    assert.equal(await cancelRow.locator('.p-cancel-reason').inputValue(),'Khách chuyển nơi ở, không còn nhu cầu');
+    assert.equal(await cancelRow.locator('.p-cancel-approve').isEnabled(),true);
     // Staff-selected "Hủy" without manager approval must not count as a cancellation.
-    await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('PRIVATE1',{expected:date,action:'Khác',result:'Hủy',source:'Web',timeSlot:'8h - 10h'});},date);
+    await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('PRIVATE1',{expected:date,action:'Khác',result:'Hủy',cancelReason:'Khách đổi ý',source:'Web',timeSlot:'8h - 10h'});},date);
     assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'0');
     failCancellation=true;
     const failure=desktop.page.waitForEvent('dialog').then(async dialog=>{assert.match(dialog.message(),/Chưa duyệt hủy được/);await dialog.accept()});

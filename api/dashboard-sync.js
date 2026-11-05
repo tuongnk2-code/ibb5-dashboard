@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, monthKey, normAcc } from '../js/dashboardStateModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay } from '../js/dailyReportModel.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       for (const [month, rooms] of Object.entries(body.commitments || {})) for (const [room, value] of Object.entries(rooms || {})) rows.push({ key: monthKey(month, room), data: cleanCommit(value) });
       for (const [id, value] of Object.entries(body.notes || {})) {
         if (!/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(id)) continue;
-        if(value&&typeof value==='object'){const note={};for(const field of ['expected','timeSlot','action','reason','result','source','updated'])if(typeof value[field]==='string')note[field]=value[field].slice(0,300);if(note.expected&&!validDay(note.expected))delete note.expected;if(!note.action&&note.reason)note.action=note.reason;rows.push({key:'pending:'+id,data:note});}
+        if(value&&typeof value==='object'){const note={};for(const field of ['expected','timeSlot','action','reason','result','source','updated','cancelReason'])if(typeof value[field]==='string')note[field]=value[field].slice(0,field==='cancelReason'?1000:300);if(note.expected&&!validDay(note.expected))delete note.expected;if(!note.action&&note.reason)note.action=note.reason;rows.push({key:'pending:'+id,data:note});}
       }
       if (rows.length > 10000) return bad(res, 400, 'Dữ liệu chuyển lên quá lớn.');
       // Insert missing keys only: an old device cannot overwrite a cloud record.
@@ -64,9 +64,10 @@ export default async function handler(req, res) {
       key = 'pending:' + body.id;
       const existing = await sharedRow(admin, key);
       if (existing?.data.cancellationApproved) return bad(res, 409, 'Hợp đồng đã được Trưởng phòng duyệt hủy. Bấm Đồng bộ để cập nhật danh sách.');
+      if (body.kind === 'cancelPending' && (!isCancellationResult(existing?.data.result) || !existing?.data.cancelReason?.trim())) return bad(res, 400, 'Hợp đồng cần lưu Kết quả Hủy và lý do hủy trước khi TP duyệt.');
       data = body.kind === 'cancelPending'
         ? { ...existing?.data, cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
-        : { ...validateNote(body.value), updated: now, updatedBy: caller.acc || caller.id };
+        : { ...validateNote({ ...body.value, cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' }), updated: now, updatedBy: caller.acc || caller.id };
     } else if (body.kind === 'commit') {
       key = monthKey(body.month, body.room || '__ALL__');
       const manager = caller.role === 'manager';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot } from '../js/dashboardStateModel.js';
+import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot, validateNote } from '../js/dashboardStateModel.js';
 
 test('shared dashboard API migrates once, enforces ownership and detects concurrent writes', async () => {
   const oldFetch = globalThis.fetch;
@@ -70,14 +70,18 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     caller = { id: 'lead', role: 'lead', acc: 'DNG.HoaNTB6' };
     assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,403);
     caller = { id: 'manager', role: 'manager' };
-    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:2})).code,409);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,400);
+    assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:3,value:{...note,result:'Hủy'}})).code,400);
+    assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:3,value:{...note,result:'Hủy',cancelReason:'Khách không còn nhu cầu'}})).code,200);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,409);
     assert.equal((await invoke('POST',{kind:'cancelPending',id:'MISSING',revision:0})).code,403);
-    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:3})).code,200);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:4})).code,200);
     const approved=(await invoke('GET')).body;
     assert.equal(approved.notes.NET1.cancellationApproved,true);
     assert.equal(approved.notes.NET1.cancellationApprovedBy,'manager');
     assert.ok(Date.parse(approved.notes.NET1.cancellationApprovedAt));
     assert.equal(approved.notes.NET1.action,note.action);
+    assert.equal(approved.notes.NET1.cancelReason,'Khách không còn nhu cầu');
     assert.equal(approved.snapshot.data[0].id,'NET1');
     caller = { id: 'staff', role: 'staff', acc: 'DNG.ManLM3' };
     assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:4,value:note})).code,409);
@@ -96,6 +100,16 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal(repeated.snapshot.data.length,2);assert.equal(repeated.snapshot.data[0].date,'2026-11-06');
     assert.deepEqual(repeated.notes,approved.notes);
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('cancellation requires a reason only for the final Hủy result',()=>{
+  const note={expected:'2026-11-05',timeSlot:'8h - 10h',action:'Khác',source:'Web',result:'Hủy'};
+  assert.throws(()=>validateNote(note),/lý do hủy/);
+  assert.throws(()=>validateNote({...note,cancelReason:'  '}),/lý do hủy/);
+  assert.throws(()=>validateNote({...note,cancelReason:'x'.repeat(1001)}),/1.000/);
+  assert.equal(validateNote({...note,cancelReason:' Khách không còn nhu cầu '}).cancelReason,'Khách không còn nhu cầu');
+  assert.equal(validateNote({...note,result:'Dự Kiến Hủy'}).cancelReason,'');
+  assert.equal(validateNote({...note,result:'Chưa Online'}).cancelReason,'');
 });
 
 test('NET import retains omitted IDs, updates matching source data and replaces selected non-NET sources',()=>{

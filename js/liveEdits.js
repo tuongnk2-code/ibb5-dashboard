@@ -7,7 +7,7 @@ export function rememberFocus(root) {
   else if (active.dataset.goal) selector = '[data-goal="' + CSS.escape(active.dataset.goal) + '"]';
   else if (active.dataset.plan) selector = '[data-plan="' + CSS.escape(active.dataset.plan) + '"]';
   else {
-    const row = active.closest('tr[data-id]'), field = [...active.classList].find(name => ['p-date','p-time-slot','p-note','p-result','p-source'].includes(name));
+    const row = active.closest('tr[data-id]'), field = [...active.classList].find(name => ['p-date','p-time-slot','p-note','p-result','p-source','p-cancel-reason'].includes(name));
     if (row && field) selector = 'tr[data-id="' + CSS.escape(row.dataset.id) + '"] .' + field;
   }
   const start = active.selectionStart, end = active.selectionEnd;

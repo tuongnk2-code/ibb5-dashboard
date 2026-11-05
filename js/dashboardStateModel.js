@@ -58,6 +58,7 @@ export function mergeNetSnapshot(previous, incoming) {
   for (const row of next.data) merged.set(row.type + ':' + row.id, row);
   return validateSnapshot({ data: [...merged.values()], meta: next.meta });
 }
+export const isCancellationResult = value => ['hủy', 'huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN'));
 export function validateNote(value) {
   if (!value || !validDay(value.expected)) throw new Error('Cần chọn ngày Online dự kiến hợp lệ.');
   const result = { expected: value.expected };
@@ -65,5 +66,8 @@ export function validateNote(value) {
     if (typeof value[field] !== 'string' || !value[field].trim() || value[field].length > 300) throw new Error('Cần điền đủ mốc hẹn, nguyên nhân, kết quả và nguồn.');
     result[field] = value[field].trim();
   }
+  if (value.cancelReason != null && (typeof value.cancelReason !== 'string' || value.cancelReason.length > 1000)) throw new Error('Lý do hủy tối đa 1.000 ký tự.');
+  result.cancelReason = String(value.cancelReason || '').trim();
+  if (isCancellationResult(result.result) && !result.cancelReason) throw new Error('Vui lòng nhập lý do hủy hợp đồng.');
   return result;
 }
