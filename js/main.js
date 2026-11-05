@@ -2,6 +2,7 @@ import { fetchDashboardData } from './api.js';
 import './responsive.js';
 import './performanceView.js';
 import { rememberFocus } from './liveEdits.js';
+import { mergeNetSnapshot } from './dashboardStateModel.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { managedShare } from './managedKpi.js';
 import { dailyPace } from './dailyPace.js';
@@ -491,7 +492,7 @@ function updateAudit(){const m=window.IBB5_IMPORT_META||{},a=m.audit||{};$('ibbA
 async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).files[0]})).filter(v=>v.file),msg=$('ibbImportMessage'),btn=$('ibbImportBtn');if(!files.length){msg.textContent='Chọn ít nhất 1 file .xlsx trước khi cập nhật.';return;}btn.disabled=true;msg.textContent='Đang đọc và kiểm tra '+files.length+' file...';try{
  const parsed=[];for(const x of files){const rows=transform(await parseXlsx(x.file),x.type,x.file.name);parsed.push({...x,rows})}
  const previous=Array.isArray(window.IBB5_IMPORTED_DATA)?window.IBB5_IMPORTED_DATA:DATA;
- const replaced=new Set(parsed.map(x=>x.type));const combined=[...previous.filter(x=>!replaced.has(x.type)),...parsed.flatMap(x=>x.rows)];
+ const replaced=new Set(parsed.map(x=>x.type));const combined=mergeNetSnapshot({data:previous},{data:[...previous.filter(x=>!replaced.has(x.type)),...parsed.flatMap(x=>x.rows)]}).data;
  const prior=window.IBB5_IMPORT_META||{};const stamp=new Date().toISOString();const meta={files:{...(prior.files||{})},updated:stamp,audit:{acc:authenticatedUploadAccount()||'Chưa xác thực đăng nhập',identityVerified:!!authenticatedUploadAccount(),updated:stamp,sources:parsed.map(x=>x.type)}};for(const x of parsed)meta.files[x.type]={name:x.file.name,count:x.rows.length,updated:meta.updated,acc:meta.audit.acc};
  if(window.IBB5_SYNC)await window.IBB5_SYNC.snapshot({data:combined,meta},parsed.map(x=>x.type));else localStorage.setItem(STORAGE,JSON.stringify({data:combined,meta}));msg.textContent='Đã cập nhật '+parsed.map(x=>x.type+': '+x.rows.length+' HĐ').join(' · ')+(window.IBB5_SYNC?' lên hệ thống dùng chung.':'')+(window.IBB5_SYNC?' Dashboard đã được đồng bộ.':' Đang làm mới Dashboard...');
  if(!window.IBB5_SYNC)location.reload();

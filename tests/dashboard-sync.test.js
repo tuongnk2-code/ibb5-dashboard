@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unpackState, monthKey, validateSnapshot, mergeStateRows } from '../js/dashboardStateModel.js';
+import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot } from '../js/dashboardStateModel.js';
 
 test('shared dashboard API migrates once, enforces ownership and detects concurrent writes', async () => {
   const oldFetch = globalThis.fetch;
@@ -82,7 +82,29 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     caller = { id: 'staff', role: 'staff', acc: 'DNG.ManLM3' };
     assert.equal((await invoke('POST',{kind:'pending',id:'NET1',revision:4,value:note})).code,409);
     assert.equal((await invoke('GET')).body.notes.NET1.cancellationApproved,true);
+    // A narrower NET file must not discard old contracts or their shared annotations.
+    caller = { id: 'manager', role: 'manager' };
+    const narrow = {data:[{id:' new2 ',type:'Internet',staff:'DNG.ManLM3',created:'2026-11-05'},{id:'NEW2',type:'Internet',staff:'DNG.ManLM3',created:'2026-11-05'}],meta:{}};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:narrow,revision:1,types:['Internet']})).code,200);
+    const imported=(await invoke('GET')).body;
+    assert.deepEqual(imported.snapshot.data.map(row=>row.id),['NET1','NEW2']);
+    assert.deepEqual(imported.notes,approved.notes);
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:narrow,revision:1,types:['Internet']})).code,409);
+    const updated={data:[{...snapshot.data[0],date:'2026-11-06'}],meta:{}};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:updated,revision:2,types:['Internet']})).code,200);
+    const repeated=(await invoke('GET')).body;
+    assert.equal(repeated.snapshot.data.length,2);assert.equal(repeated.snapshot.data[0].date,'2026-11-06');
+    assert.deepEqual(repeated.notes,approved.notes);
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('NET import retains omitted IDs, updates matching source data and replaces selected non-NET sources',()=>{
+  const previous={data:[{id:'OLD',type:'Internet',created:'2026-10-01'},{id:'MATCH',type:'Internet',created:'2026-11-01',date:''},{id:'CAMOLD',type:'Camera',date:'2026-11-01'}]};
+  const incoming={data:[{id:' match ',type:'Internet',created:'2026-11-01',date:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'CAMNEW',type:'Camera',date:'2026-11-05'}],meta:{files:{Internet:{count:2}}}};
+  const merged=mergeNetSnapshot(previous,incoming);
+  assert.deepEqual(merged.data.map(row=>row.id),['OLD','MATCH','NEW','CAMNEW']);
+  assert.equal(merged.data.find(row=>row.id==='MATCH').date,'2026-11-05');
+  assert.deepEqual(mergeNetSnapshot(merged,incoming),merged);
 });
 
 test('live merging never replaces a successful local write with an older response',()=>{

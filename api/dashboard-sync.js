@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, validateNote, monthKey, normAcc } from '../js/dashboardStateModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, monthKey, normAcc } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay } from '../js/dailyReportModel.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
@@ -50,7 +50,9 @@ export default async function handler(req, res) {
     let key, data;
     if (body.kind === 'snapshot') {
       if (caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được nhập dữ liệu hợp đồng.');
-      key = 'snapshot'; data = validateSnapshot(body.snapshot);
+      key = 'snapshot';
+      const previous = await sharedRow(admin, key);
+      data = mergeNetSnapshot(previous?.data, body.snapshot);
       data.meta = { ...data.meta, updated: now, audit: { acc: caller.acc || caller.email, identityVerified: true, updated: now, sources: body.types || [] } };
     } else if (body.kind === 'pending' || body.kind === 'cancelPending') {
       if (body.kind === 'cancelPending' && caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được duyệt hủy hợp đồng.');

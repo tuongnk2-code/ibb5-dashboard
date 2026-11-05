@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 (async () => {
   const { createServer } = await import('../node_modules/vite/dist/node/index.js');
-  const { unpackState, stateSignature, validateSnapshot } = await import('../js/dashboardStateModel.js');
+  const { unpackState, stateSignature, mergeNetSnapshot } = await import('../js/dashboardStateModel.js');
   const server = await createServer({ server: { host: '127.0.0.1', port: 5177, strictPort: true } }); await server.listen();
   const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
   const records = new Map(), reports = new Map(), errors = [];let failCancellation=false;
@@ -37,7 +37,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if(body.kind==='cancelPending'&&role!=='manager')return route.fulfill({status:403,json:{error:'Chỉ Trưởng phòng được duyệt hủy hợp đồng.'}});
       if(body.kind==='cancelPending'&&failCancellation){failCancellation=false;return route.fulfill({status:500,json:{error:'Không lưu được dữ liệu thử nghiệm'}});}
       if(body.kind==='migrate') { records.set('snapshot',{key:'snapshot',revision:1,data:body.snapshot});for(const [m,rooms]of Object.entries(body.commitments))for(const [room,data]of Object.entries(rooms))records.set('commit:'+m+':'+room,{key:'commit:'+m+':'+room,revision:1,data});for(const [id,data]of Object.entries(body.notes))records.set('pending:'+id,{key:'pending:'+id,revision:1,data});return route.fulfill({json:{ok:true}}); }
-      if(body.kind==='snapshot'){const row={key:'snapshot',revision:body.revision+1,data:validateSnapshot(body.snapshot)};records.set('snapshot',row);return route.fulfill({json:{row}});}
+      if(body.kind==='snapshot'){const row={key:'snapshot',revision:body.revision+1,data:mergeNetSnapshot(records.get('snapshot')?.data,body.snapshot)};records.set('snapshot',row);return route.fulfill({json:{row}});}
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
@@ -207,16 +207,37 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     const download=desktop.page.waitForEvent('download');await desktop.page.locator('[data-ibbc-export="count"]').click();
     const csv=require('node:fs').readFileSync(await (await download).path(),'utf8');
     assert.match(csv,/"Toàn phòng","TỔNG PHÒNG"(?:,"\d+"){12},"1"/);
+    // Upload an actual XLSX with repeated and mixed-case NET IDs, then upload it again.
+    const savedNotes=structuredClone(Object.fromEntries([...records].filter(([key])=>key.startsWith('pending:'))));
+    const xlsx=await desktop.page.evaluate(async date=>{
+      const rows=[['Hợp đồng','Ngày tạo HĐ','Ngày Online','Acc nhân viên bán','CLBH Net Thời điểm hiện tại','Tên khách hàng'],['PRIVATE1',date,date,'DNG.Vypv','Trả trước 3T','Khách cập nhật'],['newimport',date,'','DNG.ManLM3','Trả trước 3T','Khách mới'],['NEWIMPORT',date,'','DNG.ManLM3','Trả trước 3T','Khách mới']];
+      const esc=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      const xml='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((value,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr"><is><t>'+esc(value)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData></worksheet>';
+      return await new JSZip().file('xl/worksheets/sheet1.xml',xml).generateAsync({type:'base64'});
+    },date);
+    await desktop.page.evaluate(()=>{location.hash='datahub'});
+    for(let upload=0;upload<2;upload++){
+      await desktop.page.locator('#ibbUploadNet').setInputFiles({name:'net-latest.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});
+      await desktop.page.locator('#ibbImportBtn').click();await desktop.page.waitForFunction(()=>document.getElementById('ibbImportMessage').textContent.includes('Dashboard đã được đồng bộ.'));
+      const net=records.get('snapshot').data.data.filter(row=>row.type==='Internet');
+      assert.equal(net.length,7);assert.equal(net.filter(row=>row.id==='NEWIMPORT').length,1);assert.equal(net.find(row=>row.id==='PRIVATE1').date,date);
+      assert.ok(net.some(row=>row.id==='OVERDUE1'));assert.ok(net.some(row=>row.id==='SYNC1'));
+      assert.deepEqual(Object.fromEntries([...records].filter(([key])=>key.startsWith('pending:'))),savedNotes);
+    }
+    await mobile.page.waitForFunction(()=>window.IBB5_IMPORTED_DATA.some(row=>row.id==='NEWIMPORT'),null,{timeout:15000});
+    assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"]').count(),1);
+    assert.equal(await mobile.page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);
+    assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"] .p-note').inputValue(),'');
     for(const count of loads.values())assert.equal(count,0);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});
       await desktop.page.locator('#ibbUploadNet').setInputFiles(process.env.NET_IMPORT_TEST_FILE);
       await desktop.page.locator('#ibbImportBtn').click();
-      await desktop.page.waitForFunction(()=>window.IBB5_IMPORTED_DATA?.filter(r=>r.type==='Internet').length===956);
+      await desktop.page.waitForFunction(()=>window.IBB5_IMPORT_META?.files?.Internet?.count===956);
       for(const [id,value] of Object.entries({from:'2026-11-01',to:'2026-11-04'}))await desktop.page.locator('#'+id).evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));},value);
       assert.equal(await desktop.page.locator('[data-k="prepaid"]').textContent(),'47%');
       assert.match(await desktop.page.locator('[data-k="prepaid"]').getAttribute('title'),/^28 \/ 60 HĐ/);
-      assert.equal(records.get('snapshot').data.data.filter(r=>r.type==='Internet'&&typeof r.netClbh==='string').length,956);
+      assert.ok(records.get('snapshot').data.data.filter(r=>r.type==='Internet'&&typeof r.netClbh==='string').length>=956);
       console.log('PASS: real NET Excel import retains CLBH for 956 contracts and computes 28/60 = 47%');
     }
     assert.deepEqual(errors,[]);console.log('PASS: automatic manager/lead/staff updates without reload, draft preservation, conflict protection, contract snapshot refresh and existing dashboard checks');

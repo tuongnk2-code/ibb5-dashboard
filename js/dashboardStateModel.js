@@ -33,8 +33,9 @@ export function validateSnapshot(snapshot) {
   if (!snapshot || !Array.isArray(snapshot.data) || !snapshot.data.length || snapshot.data.length > 20000 || JSON.stringify(snapshot).length > 3000000) throw new Error('Dữ liệu nhập không hợp lệ hoặc vượt quá giới hạn 3 MB.');
   const types = ['Internet', 'Camera', 'Truyền hình'];
   const rows = snapshot.data.map(row => {
-    if (!types.includes(row.type) || typeof row.id !== 'string' || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(row.id)) throw new Error('Mã hoặc loại hợp đồng không hợp lệ.');
-    const result = { type: row.type, id: row.id };
+    const id = typeof row.id === 'string' ? row.id.trim().toUpperCase() : '';
+    if (!types.includes(row.type) || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(id)) throw new Error('Mã hoặc loại hợp đồng không hợp lệ.');
+    const result = { type: row.type, id };
     for (const field of ['date', 'created']) {
       const value = row[field] || '';
       if (value && !validDay(value)) throw new Error('Ngày hợp đồng không hợp lệ.');
@@ -47,6 +48,15 @@ export function validateSnapshot(snapshot) {
     return result;
   });
   return { data: [...new Map(rows.map(r => [r.type + ':' + r.id, r])).values()], meta: snapshot.meta || {} };
+}
+// NET files can cover a narrower period than the current tracking register.
+// Refresh matching source records and retain omitted NET IDs; notes stay in their own rows.
+export function mergeNetSnapshot(previous, incoming) {
+  const next = validateSnapshot(incoming);
+  const retained = (previous?.data || []).filter(row => row.type === 'Internet');
+  const merged = new Map(retained.map(row => ['Internet:' + String(row.id).trim().toUpperCase(), row]));
+  for (const row of next.data) merged.set(row.type + ':' + row.id, row);
+  return validateSnapshot({ data: [...merged.values()], meta: next.meta });
 }
 export function validateNote(value) {
   if (!value || !validDay(value.expected)) throw new Error('Cần chọn ngày Online dự kiến hợp lệ.');
