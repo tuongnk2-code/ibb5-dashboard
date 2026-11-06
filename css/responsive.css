@@ -491,3 +491,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #cancelled .ibbc-month-checks label{display:flex;flex-direction:row;align-items:center;gap:9px;padding:8px;border-radius:6px;color:#173b5c;cursor:pointer;font-size:13px}
 #cancelled .ibbc-month-checks label:hover{background:#eef6ff}
 #cancelled .ibbc-month-checks input{width:17px;height:17px;min-width:17px;margin:0;accent-color:#1684e6}
+
+#pendingContracts .pending-header-filters{display:grid;gap:10px;min-width:240px;align-self:start}
+#pendingContracts .pending-header-filters select{width:100%;min-width:0;box-sizing:border-box}
+#pendingContracts .pending-created-month-label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#58799b}
+@media(max-width:650px){#pendingContracts .pending-header-filters{width:100%;min-width:0}}
