@@ -681,8 +681,8 @@ async function exportPNG(id, filename){
  // Avoid duplicate generated/decorative pseudo-elements in SVG export.
  const xml=new XMLSerializer().serializeToString(clone);
  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%">'+xml+'</foreignObject></svg>';
- const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
- const url=(id==='qDocument'||id==='dpTableCapture'||perfShot)?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):URL.createObjectURL(blob);
+ // Data URLs keep SVG foreignObject captures exportable in Chromium.
+ const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
  try{
   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Trình duyệt không hỗ trợ chụp PNG với nội dung hiện tại'));img.src=url;});
   const canvas=document.createElement('canvas');const scale=2;canvas.width=w*scale;canvas.height=h*scale;const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
