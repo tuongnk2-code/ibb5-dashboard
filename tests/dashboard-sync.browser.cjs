@@ -14,6 +14,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     { id:'SYNC1',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' },
     { id:'CAM_ONLY',type:'Camera',staff:'DNG.ManLM3',created:date,date,room:'IBB5' }
   );
+  legacy.snapshot.data[0].status='Đã chấm dứt hợp đồng';
   legacy.snapshot.data[0].netClbh='Tra truoc 3T 615k/3T';
   legacy.snapshot.meta={files:{Internet:{name:'net-old.xlsx',count:1,acc:'DNG.OldNet',updated:'2026-11-01T01:00:00Z'},Camera:{name:'cam-old.xlsx',count:2,acc:'DNG.OldCam',updated:'2026-11-02T02:00:00Z'},'Truyền hình':{name:'tv-old.xlsx',count:1,acc:'DNG.OldTv',updated:'2026-11-03T03:00:00Z'}}};
   legacy.snapshot.data[0].prepaid=0; // The CLBH policy is authoritative.
@@ -211,9 +212,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.match(await desktop.page.locator('.pending-table thead th').nth(8).textContent(),/Lý do hủy/);
     if(process.env.RESPONSIVE_SCREENSHOT_DIR){await cancelRow.locator('.p-cancel-reason').scrollIntoViewIfNeeded();await desktop.page.screenshot({path:process.env.RESPONSIVE_SCREENSHOT_DIR+'/pending-cancellation-reason-column.png'});}
     assert.equal(await cancelRow.locator('.p-cancel-approve').isEnabled(),true);
-    // Staff-selected "Hủy" without manager approval must not count as a cancellation.
+    // Only the terminated NET source row counts; staff results and approvals do not add cancellations.
     await desktop.page.evaluate(async date=>{await window.IBB5_SYNC.pending('PRIVATE1',{expected:date,action:'Khác',result:'Hủy',cancelReason:'Khách đổi ý',source:'Web',timeSlot:'8h - 10h'});},date);
-    assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'0');
+    assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'1');
     failCancellation=true;
     const failure=desktop.page.waitForEvent('dialog').then(async dialog=>{assert.match(dialog.message(),/Chưa duyệt hủy được/);await dialog.accept()});
     await cancelRow.locator('.p-cancel-approve').click();await failure;assert.equal(await cancelRow.count(),1);
@@ -223,7 +224,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await desktop.page.locator('#ibbcNet').textContent(),'6');
     assert.equal(await desktop.page.locator('#ibbcRate').textContent(),'17%');
     const cancelledStaff=desktop.page.locator('#ibbcCountBody tr').filter({has:desktop.page.locator('.ibbc-acc',{hasText:'DNG.ManLM3'})});
-    assert.equal(await cancelledStaff.locator('.ibbc-month').nth(Number(oldDate.slice(5,7))-1).textContent(),'1');
+    assert.equal(await cancelledStaff.locator('.ibbc-month').nth(Number(date.slice(5,7))-1).textContent(),'1');
     await desktop.page.evaluate(()=>{location.hash='cancelled'});
     await desktop.page.locator('#ibbcTeam').selectOption('1');assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'0');
     await desktop.page.locator('#ibbcTeam').selectOption('3');assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'1');
@@ -243,7 +244,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     // Upload an actual XLSX with repeated and mixed-case NET IDs, then upload it again.
     const savedNotes=structuredClone(Object.fromEntries([...records].filter(([key])=>key.startsWith('pending:'))));
     const xlsx=await desktop.page.evaluate(async date=>{
-      const rows=[['Hợp đồng','Ngày tạo HĐ','Ngày Online','Acc nhân viên bán','CLBH Net Thời điểm hiện tại','Tên khách hàng'],['PRIVATE1',date,date,'DNG.Vypv','Trả trước 3T','Khách cập nhật'],['newimport',date,'','DNG.ManLM3','Trả trước 3T','Khách mới'],['NEWIMPORT',date,'','DNG.ManLM3','Trả trước 3T','Khách mới']];
+      const rows=[['Hợp đồng','Ngày tạo HĐ','Ngày Online','Acc nhân viên bán','CLBH Net Thời điểm hiện tại','Tên khách hàng','Tình trạng'],['PRIVATE1',date,date,'DNG.Vypv','Trả trước 3T','Khách cập nhật','Đã chấm dứt hợp đồng'],['newimport',date,'','DNG.ManLM3','Trả trước 3T','Khách mới','Bình thường'],['NEWIMPORT',date,'','DNG.ManLM3','Trả trước 3T','Khách mới','Bình thường']];
       const esc=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;');
       const xml='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((value,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr"><is><t>'+esc(value)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData></worksheet>';
       return await new JSZip().file('xl/worksheets/sheet1.xml',xml).generateAsync({type:'base64'});
@@ -256,6 +257,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await uploader.page.locator('#ibbUploadNet').setInputFiles({name:'net-latest.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});
       await uploader.page.locator('#ibbImportBtn').click();await uploader.page.waitForFunction(()=>document.getElementById('ibbImportMessage').textContent.includes('Dashboard đã được đồng bộ.'));
       const net=records.get('snapshot').data.data.filter(row=>row.type==='Internet');
+      assert.equal(await uploader.page.locator('#ibbcCount').textContent(),'2');
+      assert.equal(net.find(row=>row.id==='PRIVATE1').status,'Đã chấm dứt hợp đồng');
       assert.equal(net.length,7);assert.equal(net.filter(row=>row.id==='NEWIMPORT').length,1);assert.equal(net.find(row=>row.id==='PRIVATE1').date,date);
       assert.ok(net.some(row=>row.id==='OVERDUE1'));assert.ok(net.some(row=>row.id==='SYNC1'));
       assert.deepEqual(Object.fromEntries([...records].filter(([key])=>key.startsWith('pending:'))),savedNotes);

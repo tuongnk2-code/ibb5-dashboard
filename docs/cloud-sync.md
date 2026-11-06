@@ -24,7 +24,7 @@ Cột cuối **TP Duyệt hủy** chỉ có nút thao tác cho Trưởng phòng.
 
 API xác thực vai trò trên máy chủ, kiểm tra phiên bản để tránh duyệt trên dữ liệu cũ và lưu dấu duyệt cùng người duyệt/thời gian trong ghi chú dùng chung. Không xóa hợp đồng nguồn, không đổi số Online, không thay chính sách RLS. Tài khoản khác tự nhận trạng thái ẩn qua đồng bộ; cập nhật từ thiết bị cũ không thể xóa dấu duyệt.
 
-Tab **HĐ hủy** chỉ đếm mã HĐ NET có `cancellationApproved === true` từ TP Duyệt hủy. Quy tắc áp dụng cho số lượng theo nhân sự/Bầy/tháng, tổng năm, tỷ lệ, số nhân sự có HĐ hủy và CSV. Kết quả “Hủy” do nhân viên chọn mà chưa được duyệt không tính. Tháng/năm vẫn theo Ngày tạo HĐ NET; mẫu số tỷ lệ vẫn là toàn bộ mã HĐ NET tạo trong kỳ, đếm mỗi mã một lần.
+Tab **HĐ hủy** đếm mã HĐ NET có cột **Tình trạng** là **Đã chấm dứt hợp đồng** trong dữ liệu nguồn (chuẩn hóa khoảng trắng và chữ hoa/thường). Quy tắc áp dụng thống nhất cho Bảng 1 số lượng, Bảng 2 tỷ lệ, KPI và CSV. Kết quả Hủy hoặc dấu TP Duyệt hủy ở tab HĐ tồn không phải nguồn đếm. Tháng/năm theo Ngày tạo HĐ NET; mẫu số tỷ lệ vẫn là toàn bộ mã HĐ NET tạo trong kỳ, đếm mỗi mã một lần.
 
 Khi nhập NET mới, hệ thống gộp mã HĐ đã chuẩn hóa (bỏ khoảng trắng đầu/cuối, viết hoa). Mỗi mã chỉ có một hồ sơ: mã trùng cập nhật dữ liệu nguồn như ngày Online, mã mới được bổ sung, mã vắng trong file mới vẫn giữ trong kho theo dõi. Ghi chú nhân viên/trưởng bầy và dấu TP duyệt hủy lưu riêng theo mã HĐ, không bị nhập Excel ghi đè; HĐ đã duyệt hủy tiếp tục ẩn. Quy tắc gộp được kiểm tra lại tại API để các máy dùng chung một danh sách. Camera/Truyền hình vẫn thay thế nguồn đã chọn.
 

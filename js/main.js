@@ -13,7 +13,7 @@ import { periodGrowth } from './periodGrowth.js';
 import { reportDay } from './dailyReportModel.js';
 import { onlineCameraContracts, netWithOnlineCamera } from './cameraKpi.js';
 import { prepaidShare } from './prepaidKpi.js';
-import { overdueContracts, monthlyStaffChannels } from './analyticsDetails.js';
+import { overdueContracts, monthlyStaffChannels, isTerminatedNetContract } from './analyticsDetails.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 
@@ -747,7 +747,7 @@ window.IBB5_RENDER_DAILY_PERFORMANCE=render;
 
 // ---- Original script 17 id="ibbc-report-script" ----
 
-/* HĐ hủy: count manager approvals from shared pending notes, grouped by NET creation month. */
+/* HĐ hủy: count terminated NET source contracts, grouped by NET creation month. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id),root=$('cancelled');if(!root)return;
 const storeKey='ibb5_pending_followup_v1';
@@ -757,7 +757,7 @@ const whole=n=>Number(n||0).toLocaleString('vi-VN');
 const datestr=s=>typeof s==='string'&&/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(s);
 const ORDER=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trinp','dng.dathx4','dng.hoantt','dng.nhannt137','dng.namnh170','dng.hoantb6','dng.manlm3','dng.tienna2','dng.hannvn','dng.bachnd7','dng.doanlt4','dng.lanmh2','dng.datbth'];
 let current=null;
-function getNotes(){if(window.IBB5_PENDING_NOTES)return window.IBB5_PENDING_NOTES;try{const obj=JSON.parse(localStorage.getItem(storeKey)||'{}');return obj&&typeof obj==='object'?obj:{}}catch(e){return {}}}
+
 function netRows(){const uniq=new Map();for(const r of DATA){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}return [...uniq.entries()].map(([id,r])=>({...r,id}));}
 function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
   const ta=Number(a.team)||99,tb=Number(b.team)||99;if(ta!==tb)return ta-tb;
@@ -765,12 +765,12 @@ function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
 });}
 function getYears(){const years=new Set([new Date().getFullYear(),Number(($('to')?.value||reportDay().slice(0,7)).slice(0,4))]);for(const x of netRows()){const y=Number((x.created||'').slice(0,4));if(y>=2020&&y<=2100)years.add(y)}return [...years].sort((a,b)=>b-a)}
 function refreshYears(){const e=$('ibbcYear'),old=e.value,ys=getYears();e.innerHTML=ys.map(y=>`<option value="${y}">${y}</option>`).join('');const follow=Number(($('to')?.value||'').slice(0,4));e.value=ys.includes(Number(old))?old:ys.includes(follow)?String(follow):String(ys[0]);}
-function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,ns=getNotes(),all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
+function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
  const visible=people.filter(p=>!team||String(p.team)===team);
  const rows=new Map(visible.map(p=>[norm(p.acc),{acc:p.acc,team:String(p.team),sold:Array(12).fill(0),cancel:Array(12).fill(0)}]));
  const notMapped={acc:'KHÔNG KHỚP MÃ ACC',team:'?',sold:Array(12).fill(0),cancel:Array(12).fill(0)};
  let invalidMonth=0,unmatched=0,yearCancellations=0;
- for(const r of all){const n=ns[r.id]||ns[String(r.id||'').trim()]||{},cancelled=n.cancellationApproved===true,acc=norm(r.staff),p=allMap.get(acc);
+ for(const r of all){const cancelled=isTerminatedNetContract(r),acc=norm(r.staff),p=allMap.get(acc);
   if(!datestr(r.created)){if(cancelled)invalidMonth++;continue;}
   if(Number(r.created.slice(0,4))!==year)continue;
   const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12)continue;
@@ -808,7 +808,7 @@ function render(){if(!$('ibbcYear')?.value)return;const v=build();
   const count=renderOne('count',v),rateTab=renderOne('rate',v),total=count.totals;
   $('ibbcCount').textContent=whole(nsum(total.cancel));$('ibbcNet').textContent=whole(nsum(total.sold));$('ibbcRate').textContent=rate(nsum(total.cancel),nsum(total.sold));
   $('ibbcStaff').textContent=whole([...v.rows.values()].filter(x=>nsum(x.cancel)>0).length);
-  let warning=[];if(v.invalidMonth)warning.push(whole(v.invalidMonth)+' HĐ đã được TP duyệt hủy nhưng thiếu Ngày tạo hợp lệ nên chưa thể phân tháng');
+  let warning=[];if(v.invalidMonth)warning.push(whole(v.invalidMonth)+' HĐ có tình trạng Đã chấm dứt hợp đồng nhưng thiếu Ngày tạo hợp lệ nên chưa thể phân tháng');
   if(v.unmatched&&!v.team)warning.push(whole(v.unmatched)+' HĐ NET có mã Acc chưa nằm trong danh sách nhân sự; vẫn được tính vào TỔNG PHÒNG nhưng không hiển thị thành dòng riêng');
   $('ibbcMissing').hidden=!warning.length;$('ibbcMissing').textContent=warning.join(' · ');
   current={...v,countRows:count.exportRows,rateRows:rateTab.exportRows};

@@ -41,3 +41,6 @@ export function monthlyStaffChannels(rows, notes, month, staff = '', roster = ST
   const all=groups.flatMap(group=>group.rows);
   return {channels,groups,counts:totalCounts(all),total:all.reduce((sum,person)=>sum+person.total,0),missing,available:sourceRows.length>0};
 }
+
+// NET source status, independent of the pending-follow-up cancellation workflow.
+export const isTerminatedNetContract = row => row?.type === 'Internet' && String(row.status || '').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('vi-VN') === 'đã chấm dứt hợp đồng';
