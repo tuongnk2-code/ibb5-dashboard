@@ -221,6 +221,17 @@ const opts=(arr,selected)=>'<option value="">Chọn...</option>'+[...new Set([..
 const customer=x=>x.customer||x.customerName||x.customer_name||x.tenKhachHang||x.ten_khach_hang||'';
 function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn / quá hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
 function filtered(){let q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),a=(q?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>!isCancelled(x.id)&&(window.IBB5_ROLE?.canView(x)??true)),mode=el('pendStatus').value,asof=el('pendAsOf').value;
+a=a.filter(x=>{
+ if(mode==='all')return true;
+ // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
+ if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
+ if(mode==='notonline')return true;
+ if(mode==='due')return status(x)==='due';
+ if(mode==='missing')return status(x)==='missing';
+ if(mode==='old')return x.created.slice(0,7)<asof.slice(0,7);
+ if(mode==='aged')return (Date.parse(asof+'T12:00:00Z')-Date.parse(x.created+'T12:00:00Z'))/86400000>7;
+ return false;
+});
 a=a.filter(x=>!q||[x.id,customer(x),x.staff,x.created,x.date,x.package,teamMap[x.staff],notes[x.id]?.expected,notes[x.id]?.timeSlot,notes[x.id]?.reason,notes[x.id]?.cancelReason,notes[x.id]?.result,notes[x.id]?.source,...fields.map(f=>cellValue(x,f))].some(v=>String(v??'').toLocaleLowerCase('vi').includes(q)));
 const createdMonth=el('pendCreatedMonth').value;if(createdMonth)a=a.filter(x=>String(x.created||'').slice(0,7)===createdMonth);
 header.querySelectorAll('.ph-filter').forEach(sel=>{if(sel.value && !sel.value.startsWith('__SORT_'))a=a.filter(x=>pendingDrafts.has(x.id)||String(cellValue(x,sel.dataset.field))===sel.value)});
