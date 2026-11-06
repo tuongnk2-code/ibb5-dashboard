@@ -24,3 +24,14 @@ test('inactive and expired policies are omitted, missing prices never imply free
   assert.deepEqual(quotePolicies(null),[]);
   const quote=base();quote.policies[0].fee=-1;chooseQuotePolicy(quote,'0');assert.equal(linkedQuoteFee(quote),'');
 });
+test('postpaid upfront excludes monthly charges while keeping setup, once-only fees and VAT',()=>{
+ const quote=base();quote.policies[0].billing='Trả sau';chooseQuotePolicy(quote,'0');
+ let result=quoteTotals(quote);
+ assert.equal(result.total,300000);assert.equal(result.serviceUpfront,0);assert.equal(result.ongoing,200000);assert.deepEqual(result.errors,[]);
+ quote.extras=[{name:'Thiết bị',qty:1,price:100000,billing:'once'},{name:'Cloud',qty:1,price:50000,billing:'monthly'}];
+ result=quoteTotals(quote);assert.equal(result.total,400000);assert.equal(result.recurring,50000);
+ quote.vat='excluded';quote.vatRate=10;result=quoteTotals(quote);assert.equal(result.tax,40000);assert.equal(result.total,440000);
+ quote.discount=500000;assert.ok(quoteTotals(quote).errors.some(error=>error.includes('Giảm trừ')));
+ quote.discount=0;quote.vat='included';quote.extras=[];chooseQuotePolicy(quote,'1');
+ result=quoteTotals(quote);assert.equal(result.postpaid,false);assert.equal(result.total,1200000);assert.equal(result.serviceUpfront,1200000);
+});

@@ -12,6 +12,10 @@ export function policyMatches(quote,policy) {
   return policyActive(policy) && Number.isInteger(policy.duration) && policy.duration===Number(quote.months)+Number(quote.giftMonths)
     && Number.isFinite(policy.service) && policy.service>=0 && Math.abs(policy.service-Number(quote.monthly)*Number(quote.months))<1;
 }
+export function quoteIsPostpaid(quote) {
+  const policy=quote.policies?.find(item=>item.key===quote.policyKey);
+  return String(policy?.billing||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase()==='tra sau';
+}
 export function linkedQuoteFee(quote) {
   // Old saved versions retain their original fee snapshot.
   if(!Array.isArray(quote.policies))return quote.fee;

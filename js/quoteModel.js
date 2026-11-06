@@ -1,4 +1,4 @@
-import { linkedQuoteFee } from './quotePolicy.js';
+import { linkedQuoteFee, quoteIsPostpaid } from './quotePolicy.js';
 import { validDay, reportDay } from './dailyReportModel.js';
 
 export const quoteMoney = value => Number.isFinite(value) ? value.toLocaleString('vi-VN') + ' ₫' : '—';
@@ -27,13 +27,15 @@ export function quoteTotals(quote) {
   });
   const taxRate=quote.vat==='excluded'?read(quote.vatRate,'Thuế suất VAT',100):0;
   if(!['included','excluded'].includes(quote.vat))errors.push('Xác nhận giá đã gồm hay chưa gồm VAT.');
-  const subtotal=[monthly,months,fee].some(n=>n===null)?null:monthly*months+recurring*months+once+fee;
+  const postpaid=quoteIsPostpaid(quote),chargeMonths=postpaid?0:months;
+  const serviceUpfront=monthly===null||chargeMonths===null?null:monthly*chargeMonths;
+  const subtotal=[serviceUpfront,months,fee].some(n=>n===null)?null:serviceUpfront+recurring*chargeMonths+once+fee;
   if(subtotal!==null&&discount!==null&&discount>subtotal)errors.push('Giảm trừ không được lớn hơn tổng chi phí.');
   const net=subtotal===null||discount===null?null:subtotal-discount;
   const tax=net===null||taxRate===null?null:quote.vat==='excluded'?Math.round(net*taxRate/100):0;
   const total=net===null||tax===null?null:net+tax;
   const ongoing=future===null||taxRate===null?null:quote.vat==='excluded'?future+Math.round(future*taxRate/100):future;
-  return {errors,monthly,months,gift,fee,discount,extras,once,recurring,subtotal,tax,total,ongoing};
+  return {errors,monthly,months,gift,fee,discount,extras,once,recurring,subtotal,tax,total,ongoing,postpaid,chargeMonths,serviceUpfront};
 }
 export function quoteErrors(quote) {
   if(Array.isArray(quote.options)&&quote.options.length){

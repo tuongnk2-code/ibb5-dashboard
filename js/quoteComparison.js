@@ -5,7 +5,7 @@ const vatLabel=option=>option.vat==='included'?'Đã gồm VAT':option.vat==='ex
 const total=totals=>money(totals.errors.length?null:totals.total);
 function extras(option){return option.extras?.length?option.extras.map(item=>esc(item.name||'Dịch vụ thêm')+' × '+esc(item.qty)+' · '+money(item.price===''?null:Number(item.price))+(item.billing==='monthly'?'/tháng':'/một lần')).join('<br>'):'Không có';}
 function source(option){return option.source?esc((option.source.customized?'Gói tham khảo, giá đã điều chỉnh':option.source.manual?'JSON nhập tay':'Tra cứu giá FPT')+' · '+option.source.province+' / '+option.source.ward):'Phương án nhập tay';}
-const period=totals=>(totals.months??'—')+' tháng thu tiền + '+(totals.gift??'—')+' tháng tặng';
+const period=totals=>totals.postpaid?'Trả sau · Chu kỳ '+(totals.months??'—')+' tháng · Cước tháng không thu ban đầu':(totals.months??'—')+' tháng thu tiền + '+(totals.gift??'—')+' tháng tặng';
 export function quoteComparison(quote){
   const options=quoteOptions(quote),totals=options.map(quoteTotals);
   const intro='<div class="q-compare-intro"><strong>'+options.length+' PHƯƠNG ÁN ĐỂ KHÁCH LỰA CHỌN</strong><p>Chi phí được tính riêng từng gói; không cộng tổng các phương án.</p></div>';
