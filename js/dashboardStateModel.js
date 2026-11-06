@@ -53,12 +53,12 @@ export function validateSnapshot(snapshot) {
   const rows=cleanRows(snapshot.data),archive=cleanRows(snapshot.cancelledNet||[]);
   return { data: [...new Map(rows.map(r => [r.type + ':' + r.id, r])).values()], meta: snapshot.meta || {}, cancelledNet:mergeCancellationArchive(archive,rows) };
 }
-// NET files can cover a narrower period than the current tracking register.
-// Refresh matching source records and retain omitted NET IDs; notes stay in their own rows.
+// Source files may cover any month/year. Keep omitted records for every service;
+// update matching service + contract IDs, while notes and cancellation history stay separate.
 export function mergeNetSnapshot(previous, incoming) {
   const next = validateSnapshot(incoming);
-  const retained = (previous?.data || []).filter(row => row.type === 'Internet');
-  const merged = new Map(retained.map(row => ['Internet:' + String(row.id).trim().toUpperCase(), row]));
+  const retained = (previous?.data || []).filter(row => ['Internet','Camera','Truyền hình'].includes(row.type));
+  const merged = new Map(retained.map(row => [row.type + ':' + String(row.id).trim().toUpperCase(), row]));
   for (const row of next.data) merged.set(row.type + ':' + row.id, row);
   const cancelledNet=mergeCancellationArchive(previous?.cancelledNet,retained,next.data);
   return validateSnapshot({ data: [...merged.values()], meta: next.meta, cancelledNet });

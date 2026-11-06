@@ -136,6 +136,17 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[terminated('NOV','11'),terminated('NEW','11')]},revision:6,types:['Internet']})).code,200);
     assert.deepEqual((await invoke('GET')).body.snapshot.cancelledNet.map(row=>row.id),['SEP','OCT','NOV','NEW']);
     assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[terminated('NOV','11')]},revision:6,types:['Internet']})).code,409);
+    const historicServices={data:[{id:'CAM2026',type:'Camera',created:'2026-09-01',date:'2026-09-02',staff:'DNG.ManLM3'},{id:'TV2026',type:'Truyền hình',created:'2026-11-01',date:'2026-11-02',staff:'DNG.ManLM3'}]};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:historicServices,revision:7,types:['Camera','Truyền hình']})).code,200);
+    const historyBeforeMay=(await invoke('GET')).body;
+    const mayOnly={data:['Internet','Camera','Truyền hình'].map(type=>({id:'MAY2027',type,created:'2027-05-01',date:'2027-05-02',staff:'DNG.ManLM3'}))};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:mayOnly,revision:8,types:['Internet','Camera','Truyền hình']})).code,200);
+    const mayState=(await invoke('GET')).body;
+    for(const old of historyBeforeMay.snapshot.data)assert.deepEqual(mayState.snapshot.data.find(row=>row.id===old.id&&row.type===old.type),old);
+    assert.equal(mayState.snapshot.data.length,historyBeforeMay.snapshot.data.length+3);
+    assert.deepEqual(mayState.notes,historyBeforeMay.notes);
+    assert.deepEqual(mayState.snapshot.cancelledNet,historyBeforeMay.snapshot.cancelledNet);
+
 
 
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
@@ -151,11 +162,11 @@ test('cancellation requires a reason only for the final Hủy result',()=>{
   assert.equal(validateNote({...note,result:'Chưa Online'}).cancelReason,'');
 });
 
-test('NET import retains omitted IDs, updates matching source data and replaces selected non-NET sources',()=>{
+test('source import retains omitted service IDs and updates only matching source records',()=>{
   const previous={data:[{id:'OLD',type:'Internet',created:'2026-10-01'},{id:'MATCH',type:'Internet',created:'2026-11-01',date:''},{id:'CAMOLD',type:'Camera',date:'2026-11-01'}]};
   const incoming={data:[{id:' match ',type:'Internet',created:'2026-11-01',date:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'CAMNEW',type:'Camera',date:'2026-11-05'}],meta:{files:{Internet:{count:2}}}};
   const merged=mergeNetSnapshot(previous,incoming);
-  assert.deepEqual(merged.data.map(row=>row.id),['OLD','MATCH','NEW','CAMNEW']);
+  assert.deepEqual(merged.data.map(row=>row.id),['OLD','MATCH','CAMOLD','NEW','CAMNEW']);
   assert.equal(merged.data.find(row=>row.id==='MATCH').date,'2026-11-05');
   assert.deepEqual(mergeNetSnapshot(merged,incoming),merged);
 });
@@ -173,4 +184,16 @@ test('snapshot validation and month keys reject malformed records', () => {
   assert.throws(() => monthKey('2026-13'));
   assert.throws(() => validateSnapshot({ data: [{ type: 'Internet', id: 'NET', date: '2026-02-30' }] }));
   assert.equal(unpackState([]).snapshot, null);
+});
+
+
+test('May 2027 imports preserve September-November 2026 metrics for every service',()=>{
+ const types=['Internet','Camera','Truyền hình'];
+ const old=mergeNetSnapshot(null,{data:types.flatMap(type=>['09','10','11'].map(month=>({type,id:'OLD'+month,created:'2026-'+month+'-01',date:'2026-'+month+'-02',staff:'DNG.ManLM3',status:type==='Internet'?'Đã chấm dứt hợp đồng':'Bình thường'})))});
+ let current=old;
+ for(const type of types)current=mergeNetSnapshot(current,{data:[{type,id:'MAY2027',created:'2027-05-01',date:'2027-05-02',staff:'DNG.ManLM3'}]});
+ for(const type of types)for(const month of ['09','10','11'])assert.equal(current.data.filter(row=>row.type===type&&row.date.startsWith('2026-'+month)).length,1);
+ for(const row of old.data)assert.deepEqual(current.data.find(value=>value.type===row.type&&value.id===row.id),row);
+ assert.equal(current.data.length,12);assert.equal(current.cancelledNet.length,3);
+ assert.deepEqual(mergeNetSnapshot(current,{data:[{type:'Camera',id:'MAY2027',created:'2027-05-01',date:'2027-05-02',staff:'DNG.ManLM3'}]}),current);
 });

@@ -26,7 +26,7 @@ API xác thực vai trò trên máy chủ, kiểm tra phiên bản để tránh 
 
 Tab **HĐ hủy** đếm mã HĐ NET có cột **Tình trạng** là **Đã chấm dứt hợp đồng** trong dữ liệu nguồn (chuẩn hóa khoảng trắng và chữ hoa/thường). Quy tắc áp dụng thống nhất cho Bảng 1 số lượng, Bảng 2 tỷ lệ, KPI và CSV. Kết quả Hủy hoặc dấu TP Duyệt hủy ở tab HĐ tồn không phải nguồn đếm. Tháng/năm theo Ngày tạo HĐ NET; mẫu số tỷ lệ vẫn là toàn bộ mã HĐ NET tạo trong kỳ, đếm mỗi mã một lần.
 
-Khi nhập NET mới, hệ thống gộp mã HĐ đã chuẩn hóa (bỏ khoảng trắng đầu/cuối, viết hoa). Mỗi mã chỉ có một hồ sơ: mã trùng cập nhật dữ liệu nguồn như ngày Online, mã mới được bổ sung, mã vắng trong file mới vẫn giữ trong kho theo dõi. Ghi chú nhân viên/trưởng bầy và dấu TP duyệt hủy lưu riêng theo mã HĐ, không bị nhập Excel ghi đè; HĐ đã duyệt hủy tiếp tục ẩn. Quy tắc gộp được kiểm tra lại tại API để các máy dùng chung một danh sách. Camera/Truyền hình vẫn thay thế nguồn đã chọn.
+Khi nhập NET mới, hệ thống gộp mã HĐ đã chuẩn hóa (bỏ khoảng trắng đầu/cuối, viết hoa). Mỗi mã chỉ có một hồ sơ: mã trùng cập nhật dữ liệu nguồn như ngày Online, mã mới được bổ sung, mã vắng trong file mới vẫn giữ trong kho theo dõi. Ghi chú nhân viên/trưởng bầy và dấu TP duyệt hủy lưu riêng theo mã HĐ, không bị nhập Excel ghi đè; HĐ đã duyệt hủy tiếp tục ẩn. Quy tắc gộp được kiểm tra lại tại API để các máy dùng chung một danh sách. Camera/Truyền hình cũng gộp theo loại dịch vụ + mã HĐ và giữ các mã vắng trong file mới.
 
 Khi chọn Kết quả **Hủy**, hiện ô **Lý do hủy** (bắt buộc, tối đa 1.000 ký tự) ở cột riêng ngay sau Kết quả và trong cửa sổ cập nhật trên điện thoại. Lý do lưu chung trong `cancelReason`, giữ khi nhập NET và có trong tìm kiếm/CSV hồ sơ tồn. Nút TP Duyệt hủy chỉ hiện cho kết quả Hủy; cần lưu lý do và các thay đổi trước khi duyệt. Dự Kiến Hủy và các kết quả khác không có nút duyệt. API cũng kiểm tra điều kiện này. HĐ Hủy cũ thiếu lý do cần bổ sung rồi lưu trước khi TP duyệt.
 
@@ -45,3 +45,7 @@ Bộ lọc HĐ tồn: Chưa Online lấy HĐ chưa có Ngày Online thực tế 
 ## Lịch sử HĐ hủy lũy kế
 
 Snapshot dùng chung lưu thêm `cancelledNet`: các mã HĐ NET từng được ghi nhận Tình trạng Đã chấm dứt hợp đồng, kèm tháng tạo, Acc và phòng. Khi nhập file, API gộp lịch sử đã lưu với các HĐ hủy mới, chuẩn hóa mã và chỉ tính một lần. File chỉ có tháng 10–11 hoặc chỉ tháng 11 không xóa các tháng trước; trạng thái nguồn thay đổi cũng không tự xóa lịch sử hủy. Bảng HĐ hủy kết hợp nguồn hiện tại với lịch sử, giữ cách phân tháng tạo HĐ và mẫu số NET cùng kỳ. Dữ liệu hiện tại được khởi tạo bằng SQL backfill, không đổi bảng hay policy. Cập nhật tiếp tục dùng quyền Trưởng phòng/Trưởng Bầy và kiểm tra phiên bản để tránh ghi đè.
+
+## Duy trì dữ liệu qua các năm
+
+Lưu lũy kế áp dụng cho cả NET, Camera, Truyền hình và không giới hạn theo tháng/năm cụ thể. Khi nhập riêng 05/2027, các mã HĐ và dữ liệu 09–11/2026 đã lưu vẫn còn để tính báo cáo theo kỳ cũ. Mã trùng trong cùng dịch vụ cập nhật dữ liệu nguồn; mã khác dịch vụ vẫn là các bản ghi riêng. File tháng mới không xóa hợp đồng, ghi chú, cam kết hoặc lịch sử HĐ hủy của kỳ trước.

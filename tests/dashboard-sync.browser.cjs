@@ -303,6 +303,13 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.ok(records.get('snapshot').data.cancelledNet.some(row=>row.id==='PRIVATE1'));
     await mobile.page.waitForFunction(()=>window.IBB5_CANCELLED_NET.length===3,null,{timeout:15000});assert.equal(await mobile.page.locator('#ibbcCount').textContent(),'3');
     await lead.page.reload();await lead.page.locator('#dashboardSyncBtn').waitFor();await lead.page.locator('#ibbcAllMonths').evaluate(el=>el.click());assert.equal(await lead.page.locator('#ibbcCount').textContent(),'3');
+    const historical=structuredClone(records.get('snapshot').data.data),oldKpis=await desktop.page.locator('#online,#cameraKpi,#ibbcCount').allTextContents();
+    const mayOnly={data:['Internet','Camera','Truyền hình'].map(type=>({id:'MAY2027',type,created:'2027-05-01',date:'2027-05-02',staff:'DNG.ManLM3',room:'IBB5'})),meta:structuredClone(records.get('snapshot').data.meta)};
+    await desktop.page.evaluate(async snapshot=>{await window.IBB5_SYNC.snapshot(snapshot,['Internet','Camera','Truyền hình']);},mayOnly);
+    for(const row of historical)assert.deepEqual(records.get('snapshot').data.data.find(value=>value.id===row.id&&value.type===row.type),row);
+    assert.deepEqual(await desktop.page.locator('#online,#cameraKpi,#ibbcCount').allTextContents(),oldKpis);
+    await mobile.page.waitForFunction(()=>window.IBB5_IMPORTED_DATA.filter(row=>row.id==='MAY2027').length===3,null,{timeout:15000});
+    assert.deepEqual(await mobile.page.locator('#online,#cameraKpi,#ibbcCount').allTextContents(),oldKpis);
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});
       await desktop.page.locator('#ibbUploadNet').setInputFiles(process.env.NET_IMPORT_TEST_FILE);
