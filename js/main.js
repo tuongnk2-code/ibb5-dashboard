@@ -655,7 +655,8 @@ async function exportPNG(id, filename){
  const node=document.getElementById(id);if(!node)throw new Error('Không tìm thấy khu vực báo cáo');
  await document.fonts.ready;
  if(id==='qDocument')await Promise.all([...node.querySelectorAll('img')].map(image=>image.decode()));
- const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width,id==='dpTableCapture'?node.querySelector('table').scrollWidth+2:0)),h=Math.ceil(Math.max(node.scrollHeight,rect.height));
+ const perfShot=id==='perfTableCapture',perfTable=perfShot?node.querySelector('table'):null;
+ const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width,perfTable?.scrollWidth||0,id==='dpTableCapture'?node.querySelector('table').scrollWidth+2:0)),h=Math.ceil(Math.max(node.scrollHeight,rect.height,perfTable?(perfTable.scrollHeight+85):0));
  if(!w||!h||w>8000||h>12000)throw new Error('Kích thước khu vực không phù hợp để chụp');
  const clone=node.cloneNode(true);inlineCopy(node,clone);
  clone.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
@@ -666,11 +667,22 @@ async function exportPNG(id, filename){
   const scroll=clone.querySelector('.dp-scroll');scroll.style.setProperty('overflow','visible','important');scroll.style.setProperty('max-height','none','important');scroll.style.setProperty('width',(w-2)+'px','important');
   clone.querySelectorAll('th,td').forEach(cell=>{cell.style.setProperty('position','static','important');});
  }
+ if(perfShot){
+  clone.style.setProperty('max-height','none','important');
+  clone.style.setProperty('max-width','none','important');
+  const table=clone.querySelector('table');table.style.setProperty('width',w+'px','important');
+  clone.querySelectorAll('th,td').forEach(cell=>cell.style.setProperty('position','static','important'));
+  const heading=document.createElement('div');heading.style.cssText='padding:12px 14px;font:700 18px Segoe UI,sans-serif;color:#173b60;background:white;box-sizing:border-box;height:80px';
+  const team=document.getElementById('perfTeam'),search=document.getElementById('perfSearch').value;
+  heading.textContent='HIỆU SUẤT NHÂN SỰ';
+  const scope=document.createElement('div');scope.style.cssText='font-size:13px;font-weight:400;margin-top:7px';
+  scope.textContent=team.options[team.selectedIndex].text+' · Đến '+document.getElementById('to').value+(search?' · Tìm: '+search:'');heading.appendChild(scope);clone.prepend(heading);
+ }
  // Avoid duplicate generated/decorative pseudo-elements in SVG export.
  const xml=new XMLSerializer().serializeToString(clone);
  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%">'+xml+'</foreignObject></svg>';
  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
- const url=(id==='qDocument'||id==='dpTableCapture')?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):URL.createObjectURL(blob);
+ const url=(id==='qDocument'||id==='dpTableCapture'||perfShot)?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):URL.createObjectURL(blob);
  try{
   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Trình duyệt không hỗ trợ chụp PNG với nội dung hiện tại'));img.src=url;});
   const canvas=document.createElement('canvas');const scale=2;canvas.width=w*scale;canvas.height=h*scale;const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);

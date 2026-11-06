@@ -31,6 +31,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.match(imageFile.suggestedFilename(),/IBB5_Ban_Online_2026-11-06\.png$/);
     const png=fs.readFileSync(await imageFile.path());assert.equal(png.subarray(1,4).toString(),'PNG');assert.ok(png.readUInt32BE(20)>1000,'PNG includes all staff rows');
     if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)fs.writeFileSync(process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/daily-table-export.png',png);
+    const perfDownload=page.waitForEvent('download');await page.locator('#perfShot').click();const perfImage=await perfDownload;
+    assert.match(perfImage.suggestedFilename(),/IBB5_Hieu_Suat_Nhan_Su_.*\.png$/);
+    const perfPng=fs.readFileSync(await perfImage.path());assert.equal(perfPng.subarray(1,4).toString(),'PNG');assert.ok(perfPng.readUInt32BE(16)>2000);assert.ok(perfPng.readUInt32BE(20)>1000);
+    if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)fs.writeFileSync(process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/performance-table-export.png',perfPng);
     await page.locator('#dpTeam').selectOption('2');
    }
    const download=page.waitForEvent('download');await page.locator('#dpExport').click();const csv=fs.readFileSync(await (await download).path(),'utf8');assert.match(csv,/Mã HĐ đã lên/);assert.match(csv,/"A"/);assert.match(csv,/"E"/);if(role==='staff')assert.doesNotMatch(csv,/"B"|"C"/);

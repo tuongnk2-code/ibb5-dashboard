@@ -16,3 +16,5 @@ Báo cáo hiệu suất theo Ngày chọn hiển thị thêm hai danh sách HĐ 
 Chế độ ngày: máy tính hiển thị bảng nhân sự và hai danh sách HĐ thành ba phần cùng hàng; tablet đặt bảng tổng hợp phía trên hai danh sách, điện thoại xếp dọc. Mã HĐ và Acc gộp cùng ô để tiết kiệm chiều ngang.
 
 Nút Chụp ảnh bảng trong báo cáo Bán/Online xuất PNG của bảng nhân sự và chú giải theo bộ lọc; xuất đủ hàng/cột, không kèm hai danh sách hợp đồng. Tên file theo ngày/tháng đang chọn.
+
+Bảng Hiệu suất nhân sự có nút Chụp ảnh bảng, xuất đầy đủ cột/hàng và tổng theo bộ lọc. Ảnh có tiêu đề, Bầy và ngày theo dõi, giữ cỡ chữ hiện tại.
