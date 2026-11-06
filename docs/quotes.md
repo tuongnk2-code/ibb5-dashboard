@@ -23,3 +23,5 @@ Một gói giữ bố cục chi tiết. Hai gói dùng hai thẻ so sánh cạnh
 Với chính sách Trả sau, cước gói và dịch vụ thêm hằng tháng không thu trong thanh toán ban đầu. Tiền ban đầu = phí hòa mạng + thiết bị/dịch vụ thu một lần − giảm trừ, cộng VAT nếu giá chưa gồm VAT. Cước tháng vẫn hiện rõ để khách biết khoản trả sau; chu kỳ 1 tháng không phải một tháng trả trước. Trả trước giữ công thức hiện tại.
 
 Ô nhập Cước toàn bộ sau ưu đãi/tháng được ẩn. Cước định kỳ tự cập nhật khi đổi gói, sửa cước gói hoặc thêm/xóa dịch vụ theo tháng; mỗi phương án dùng cước riêng. Số tiền đã gồm VAT khi lựa chọn giá chưa VAT; không lấy giá trị nhập tay cũ làm nguồn tính. PNG/PDF và các phiên bản lưu dùng cùng công thức.
+
+Khối Cước toàn bộ sau ưu đãi được bỏ khỏi mẫu báo giá, bố cục so sánh và PNG/PDF. Giữ khối Thanh toán ban đầu và dòng đơn giá cước tháng/chu kỳ để thể hiện phương án; công thức tính tiền ban đầu không đổi.

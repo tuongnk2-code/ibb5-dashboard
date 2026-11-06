@@ -26,7 +26,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     for(const [name,value]of Object.entries({customer:'Nguyễn Văn A <Khách>',address:'123 Đường A',need:'Làm việc và giải trí',discount:'70000',contact:'0900000000',validUntil:'2099-11-12'}))await field(name).fill(value);
     await page.locator('#qPolicy').selectOption('1');assert.equal(await field('months').inputValue(),'6');assert.equal(await field('giftMonths').inputValue(),'1');await field('vat').selectOption('included');
     for(const item of [{name:'Camera ngoài trời',price:'500000',billing:'once'},{name:'Cloud',price:'50000',billing:'monthly'}]){await page.locator('#qAdd').click();const row=page.locator('.q-extra').last();await row.locator('[data-field="name"]').fill(item.name);await row.locator('[data-field="price"]').fill(item.price);await row.locator('[data-field="billing"]').selectOption(item.billing);}
-    assert.match(await page.locator('.q-doc-total').textContent(),/2\.200\.000/);assert.match(await page.locator('.q-doc-amounts').textContent(),/245\.000/);
+    assert.match(await page.locator('.q-doc-total').textContent(),/2\.200\.000/);assert.equal(await page.locator('.q-doc-amounts>div').count(),1);assert.doesNotMatch(await page.locator('#qDocument').textContent(),/CƯỚC TOÀN BỘ SAU ƯU ĐÃI/);
     await field('vat').selectOption('excluded');await field('vatRate').fill('10');assert.match(await page.locator('.q-doc-total').textContent(),/2\.420\.000/);
     await field('vat').selectOption('included');await field('confirmed').check();
     assert.equal(await page.locator('.q-doc-draft').count(),0);
@@ -63,7 +63,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.locator('[data-option="0"]').click();assert.match(await page.locator('#qFeeInfo').textContent(),/300\.000/);assert.equal(await page.locator('.q-extra').count(),2);
     await page.locator('#qAddOption').click();await page.locator('[data-quote="F1"]').click();await page.locator('#pricing.page-active').waitFor();await field('vat').selectOption('excluded');await field('vatRate').fill('10');
     assert.equal(await page.locator('.q-compare-table').count(),1);assert.equal(await page.locator('#qDocument').getAttribute('data-option-layout'),'table');
-    assert.deepEqual(await page.locator('.q-compare-total td').allTextContents(),['2.200.000 ₫','830.000 ₫','0 ₫']);assert.deepEqual(await page.locator('.q-compare-ongoing td').allTextContents(),['245.000 ₫/tháng','210.000 ₫/tháng','253.000 ₫/tháng']);
+    assert.deepEqual(await page.locator('.q-compare-total td').allTextContents(),['2.200.000 ₫','830.000 ₫','0 ₫']);assert.equal(await page.locator('.q-compare-ongoing').count(),0);
     assert.equal(await page.locator('.q-compare-table th,.q-compare-table td').evaluateAll(cells=>cells.every(cell=>{const range=document.createRange();range.selectNodeContents(cell);const text=range.getBoundingClientRect(),bounds=cell.getBoundingClientRect();return text.right<=bounds.right+1&&text.left>=bounds.left-1;})),true);
     await page.locator('#qAddOption').click();await page.locator('[data-quote="GIGA"]').click();await page.locator('#pricing.page-active').waitFor();await page.locator('#qPolicy').selectOption('2');await field('vat').selectOption('included');
     assert.equal(await page.locator('.q-compare-table').count(),2);assert.match(await page.locator('.q-compare-total td').last().textContent(),/2\.340\.000/);
