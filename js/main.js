@@ -227,6 +227,7 @@ a=a.filter(x=>{
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
  if(mode==='notonline')return true;
  if(mode==='due')return status(x)==='due';
+ if(mode==='overdue-active')return !!notes[x.id]?.expected&&notes[x.id].expected<asof&&!isCancellationResult(notes[x.id]?.result);
  if(mode==='missing')return status(x)==='missing';
  if(mode==='old')return x.created.slice(0,7)<asof.slice(0,7);
  if(mode==='aged')return (Date.parse(asof+'T12:00:00Z')-Date.parse(x.created+'T12:00:00Z'))/86400000>7;

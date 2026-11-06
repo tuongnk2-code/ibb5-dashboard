@@ -12,7 +12,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   Object.assign(notes.DONE,{timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'});notes.CANCEL.cancellationApproved=true;
   for(const role of ['manager','staff']){
    const context=await browser.newContext({viewport:{width:role==='manager'?1440:390,height:900}}),errors=[];
-   await context.addInitScript(({data,notes})=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES=notes;},{data,notes});
+   await context.addInitScript(({data,notes})=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES=notes;window.IBB5_SHARED_STATE={commitments:{},notes,revisions:{}};},{data,notes});
    await context.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:'export async function getSession(){return {access_token:"test"}};export async function signOut(){};export async function callAdminUsersApi(){return {profiles:[]}}'}));
    await context.route('**/js/api.js',r=>r.fulfill({contentType:'application/javascript',body:'import * as data from "/js/mockData.sample.js";export async function fetchDashboardData(){return data}'}));
    await context.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE={id:'filter-${role}',role:'${role}',acc:'DNG.ManLM3',team:3};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';await import('/js/main.js');`}));
@@ -25,6 +25,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    for(const [mode,expected]of Object.entries({all:['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE'],notonline:['DUE','LATE','WAIT','MISSING','OLD','OUTSIDE'],due:['DUE','LATE','OLD','OUTSIDE'],missing:['MISSING'],old:['OLD'],aged:['OLD']})){
     await page.locator('#pendStatus').selectOption(mode);assert.deepEqual(await ids(),allowed(expected),role+' '+mode);
    }
+   await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),['LATE']);
+   for(const result of ['Hủy',' Huỷ ']){
+    await page.evaluate(result=>{window.IBB5_PENDING_NOTES.LATE.result=result;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));},result);
+    assert.deepEqual(await ids(),[]);
+    await page.locator('#pendStatus').selectOption('due');assert.ok((await ids()).includes('LATE'));
+    await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),[]);
+   }
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.LATE.result='Dự Kiến Hủy';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));});assert.deepEqual(await ids(),['LATE']);
+   const overdueDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const overdueCsv=fs.readFileSync(await (await overdueDownload).path(),'utf8');assert.match(overdueCsv,/LATE/);assert.doesNotMatch(overdueCsv,/ONLINE|OUTSIDE|DUE|OLD/);
    await page.locator('#pendStatus').selectOption('due');
    await page.locator('.ph-filter[data-field="staff"]').selectOption('DNG.ManLM3');assert.deepEqual(await ids(),['DUE','LATE','OLD']);
    await page.locator('#pendCreatedMonth').selectOption('2026-11');assert.deepEqual(await ids(),['DUE','LATE']);
