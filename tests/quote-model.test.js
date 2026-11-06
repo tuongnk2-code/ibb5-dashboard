@@ -15,7 +15,7 @@ test('VAT excluded applies once after discount, included never adds tax again',(
   assert.equal(quoteTotals({...base(),vat:'included',vatRate:10}).total,2700000);
 });
 test('missing prices and unconfirmed policies cannot produce a customer quote',()=>{
-  for(const field of ['monthly','fee','futureMonthly'])assert.ok(quoteErrors({...base(),[field]:''}).length);
+  for(const field of ['monthly','fee'])assert.ok(quoteErrors({...base(),[field]:''}).length);
   assert.ok(quoteErrors({...base(),vat:''}).some(error=>error.includes('VAT')));
   assert.ok(quoteErrors({...base(),confirmed:false}).some(error=>error.includes('Xác nhận')));
   assert.ok(quoteErrors({...base(),discount:999999999}).some(error=>error.includes('Giảm trừ')));
@@ -31,4 +31,18 @@ test('multiple quote options retain independent charges and validate every optio
   assert.deepEqual(quoteErrors(quote),[]);second.fee='';assert.ok(quoteErrors(quote).some(error=>error.startsWith('Gói 2:')));
   assert.equal(first.fee,300000);assert.equal(quoteOptions(base()).length,1);
   assert.ok(quoteErrors({...quote,options:Array.from({length:10},()=>first)}).length);
+});
+
+
+test('ongoing monthly payment follows the package and recurring extras, never a stale typed value',()=>{
+ const quote={...base(),futureMonthly:5};
+ assert.equal(quoteTotals(quote).future,250000);assert.equal(quoteTotals(quote).ongoing,250000);
+ assert.equal(quoteTotals({...quote,futureMonthly:''}).ongoing,250000);
+ assert.equal(quoteTotals({...quote,monthly:300000}).ongoing,350000);
+ assert.equal(quoteTotals({...quote,extras:[]}).ongoing,200000);
+ assert.equal(quoteTotals({...quote,extras:[{name:'Thiết bị',qty:2,price:500000,billing:'once'}]}).ongoing,200000);
+ assert.equal(quoteTotals({...quote,extras:[{name:'Cloud',qty:2,price:50000,billing:'monthly'}]}).ongoing,300000);
+ assert.equal(quoteTotals({...quote,vat:'excluded',vatRate:10}).ongoing,275000);
+ assert.equal(quoteTotals({...quote,monthly:''}).ongoing,null);
+ assert.equal(quoteTotals({...quote,extras:[{name:'Cloud',qty:1,price:'',billing:'monthly'}]}).ongoing,null);
 });
