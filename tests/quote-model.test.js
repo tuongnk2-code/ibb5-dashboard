@@ -21,7 +21,8 @@ test('missing prices and unconfirmed policies cannot produce a customer quote',(
   assert.ok(quoteErrors({...base(),discount:999999999}).some(error=>error.includes('Giảm trừ')));
   assert.ok(quoteErrors({...base(),months:0}).length);
   assert.ok(quoteErrors({...base(),months:1.5}).length);
-  assert.ok(quoteErrors({...base(),validUntil:'2001-01-01'}).length);
+  assert.deepEqual(quoteErrors({...base(),validUntil:'2001-01-01'}),[]);
+  assert.ok(quoteErrors({...base(),date:''}).length);
   assert.ok(quoteErrors({...base(),extras:[{name:'Camera',qty:1,price:'',billing:'once'}]}).length);
 });
 test('multiple quote options retain independent charges and validate every option',()=>{
