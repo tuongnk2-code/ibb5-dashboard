@@ -38,8 +38,8 @@ export async function bootstrapDashboardSync(profile) {
   function apply() {
     window.IBB5_SHARED_STATE = state;
     window.IBB5_PENDING_NOTES = state.notes;
-    if (state.snapshot) { window.IBB5_IMPORTED_DATA = state.snapshot.data; window.IBB5_IMPORT_META = state.snapshot.meta; }
-    else { delete window.IBB5_IMPORTED_DATA; delete window.IBB5_IMPORT_META; }
+    if (state.snapshot) { window.IBB5_IMPORTED_DATA = state.snapshot.data; window.IBB5_IMPORT_META = state.snapshot.meta; window.IBB5_CANCELLED_NET = state.snapshot.cancelledNet || []; }
+    else { delete window.IBB5_IMPORTED_DATA; delete window.IBB5_IMPORT_META; delete window.IBB5_CANCELLED_NET; }
   }
   function merge(rows, removed = {}) {
     const result = mergeStateRows(state, rows, removed);

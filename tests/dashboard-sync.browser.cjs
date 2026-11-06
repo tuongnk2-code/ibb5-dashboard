@@ -291,6 +291,18 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.deepEqual(records.get('snapshot').data.meta,auditBeforeFailure);
     await desktop.page.locator('#ibbUploadCam').setInputFiles([]);
     for(const count of loads.values())assert.equal(count,0);
+    // Historical cancellation records survive narrower files and later source status changes.
+    assert.equal(records.get('snapshot').data.cancelledNet.length,2);
+    const narrower={data:[{id:'SYNC1',type:'Internet',created:date,date,staff:'DNG.ManLM3',status:'Bình thường'},{id:'NEWIMPORT',type:'Internet',created:date,date:'',staff:'DNG.ManLM3',status:'Đã chấm dứt hợp đồng'}],meta:structuredClone(records.get('snapshot').data.meta)};
+    for(let repeat=0;repeat<2;repeat++){
+      await desktop.page.evaluate(async snapshot=>{await window.IBB5_SYNC.snapshot(snapshot,['Internet']);},narrower);
+      assert.equal(records.get('snapshot').data.cancelledNet.length,3);
+      assert.equal(await desktop.page.locator('#ibbcCount').textContent(),'3');
+    }
+    assert.equal(records.get('snapshot').data.data.find(row=>row.id==='SYNC1').status,'Bình thường');
+    assert.ok(records.get('snapshot').data.cancelledNet.some(row=>row.id==='PRIVATE1'));
+    await mobile.page.waitForFunction(()=>window.IBB5_CANCELLED_NET.length===3,null,{timeout:15000});assert.equal(await mobile.page.locator('#ibbcCount').textContent(),'3');
+    await lead.page.reload();await lead.page.locator('#dashboardSyncBtn').waitFor();await lead.page.locator('#ibbcAllMonths').evaluate(el=>el.click());assert.equal(await lead.page.locator('#ibbcCount').textContent(),'3');
     if(process.env.NET_IMPORT_TEST_FILE){
       await desktop.page.evaluate(()=>{location.hash='datahub'});
       await desktop.page.locator('#ibbUploadNet').setInputFiles(process.env.NET_IMPORT_TEST_FILE);

@@ -41,3 +41,7 @@ Tab HĐ hủy có Tháng theo dõi (mặc định theo tháng của ngày Đến
 Tháng theo dõi hỗ trợ tích nhiều tháng trong menu. KPI tổng hợp các tháng được chọn; bảng/CSV hiển thị các tháng này theo thứ tự và Tổng các tháng chọn. Tỷ lệ tổng = tổng HĐ hủy / tổng HĐ tạo của những tháng chọn, không lấy trung bình tỷ lệ từng tháng. Cả năm chọn đủ 12 tháng; Tháng đang theo dõi trở về tháng trên Tổng quan. Luôn giữ ít nhất một tháng.
 
 Bộ lọc HĐ tồn: Chưa Online lấy HĐ chưa có Ngày Online thực tế trong nguồn NET, không dựa vào Kết quả nhân viên nhập. Đến hạn lấy Ngày Online dự kiến bằng ngày chốt dữ liệu; không gộp các ngày quá hạn. HĐ quá hạn không gồm Hủy vẫn lấy ngày dự kiến trước ngày chốt và loại Kết quả Hủy.
+
+## Lịch sử HĐ hủy lũy kế
+
+Snapshot dùng chung lưu thêm `cancelledNet`: các mã HĐ NET từng được ghi nhận Tình trạng Đã chấm dứt hợp đồng, kèm tháng tạo, Acc và phòng. Khi nhập file, API gộp lịch sử đã lưu với các HĐ hủy mới, chuẩn hóa mã và chỉ tính một lần. File chỉ có tháng 10–11 hoặc chỉ tháng 11 không xóa các tháng trước; trạng thái nguồn thay đổi cũng không tự xóa lịch sử hủy. Bảng HĐ hủy kết hợp nguồn hiện tại với lịch sử, giữ cách phân tháng tạo HĐ và mẫu số NET cùng kỳ. Dữ liệu hiện tại được khởi tạo bằng SQL backfill, không đổi bảng hay policy. Cập nhật tiếp tục dùng quyền Trưởng phòng/Trưởng Bầy và kiểm tra phiên bản để tránh ghi đè.

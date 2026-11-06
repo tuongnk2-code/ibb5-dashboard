@@ -127,6 +127,16 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:4,types:['Internet'],role:'manager'})).code,403);
     assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:4,types:['Internet']},false)).code,401);
     assert.equal(rows.get('snapshot').revision,4);
+    caller={id:'lead',role:'lead',acc:'DNG.HoaNTB6'};
+    const terminated=(id,month)=>({id,type:'Internet',created:'2026-'+month+'-01',staff:'DNG.ManLM3',status:'Đã chấm dứt hợp đồng'});
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[terminated('SEP','09'),terminated('OCT','10'),terminated('NOV','11')]},revision:4,types:['Internet']})).code,200);
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[{...terminated('OCT','10'),status:'Bình thường'},terminated('NOV','11')],cancelledNet:[]},revision:5,types:['Internet']})).code,200);
+    const narrowArchive=(await invoke('GET')).body.snapshot.cancelledNet;
+    assert.deepEqual(narrowArchive.map(row=>row.id),['SEP','OCT','NOV']);
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[terminated('NOV','11'),terminated('NEW','11')]},revision:6,types:['Internet']})).code,200);
+    assert.deepEqual((await invoke('GET')).body.snapshot.cancelledNet.map(row=>row.id),['SEP','OCT','NOV','NEW']);
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:{data:[terminated('NOV','11')]},revision:6,types:['Internet']})).code,409);
+
 
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });

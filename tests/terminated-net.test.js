@@ -14,6 +14,20 @@ test('NET imports retain source termination status and update matching IDs witho
  assert.equal(imported.data.filter(isTerminatedNetContract).length,2);
  const revised=mergeNetSnapshot(imported,{data:[{id:'MATCH',type:'Internet',status:'Bình thường'}]});
  assert.equal(revised.data.filter(isTerminatedNetContract).length,1);
+ assert.equal(revised.cancelledNet.length,2);
+});
+
+test('cancellation archive accumulates September/October/November across narrower and repeated uploads',()=>{
+ const cancelled=(id,month)=>({id,type:'Internet',created:'2026-'+month+'-01',staff:'DNG.ManLM3',status:'Đã chấm dứt hợp đồng'});
+ const first=mergeNetSnapshot(null,{data:[cancelled('SEP','09'),cancelled('OCT','10'),cancelled('NOV','11')]});
+ const narrow=mergeNetSnapshot(first,{data:[{...cancelled('OCT','10'),status:'Bình thường',staff:'DNG.Other'},cancelled('NOV','11')]});
+ assert.equal(narrow.data.find(row=>row.id==='OCT').status,'Bình thường');
+ assert.deepEqual(narrow.cancelledNet.map(row=>row.id),['SEP','OCT','NOV']);
+ assert.equal(narrow.cancelledNet.find(row=>row.id==='OCT').staff,'DNG.ManLM3');
+ const latest={data:[cancelled('NOV','11'),cancelled('NEW','11'),cancelled(' new ','11')]};
+ const third=mergeNetSnapshot(narrow,latest);
+ assert.deepEqual(third.cancelledNet.map(row=>row.id),['SEP','OCT','NOV','NEW']);
+ assert.deepEqual(mergeNetSnapshot(third,latest),third);
 });
 
 

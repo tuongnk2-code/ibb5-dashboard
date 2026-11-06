@@ -1,3 +1,4 @@
+import { mergeCancellationArchive } from './cancellationArchive.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -22,7 +23,7 @@ const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_L
 
 // ---- Original script 1  ----
 
-(function(){if(window.IBB5_SHARED_STATE)return;try{const s=localStorage.getItem('ibb5_three_source_snapshot_v1');if(s){const v=JSON.parse(s);if(Array.isArray(v.data)&&v.data.length)window.IBB5_IMPORTED_DATA=v.data;window.IBB5_IMPORT_META=v.meta||{};}}catch(e){console.warn('Không đọc được bản dữ liệu lưu cục bộ',e)}})();
+(function(){if(window.IBB5_SHARED_STATE)return;try{const s=localStorage.getItem('ibb5_three_source_snapshot_v1');if(s){const v=JSON.parse(s);if(Array.isArray(v.data)&&v.data.length)window.IBB5_IMPORTED_DATA=v.data;window.IBB5_IMPORT_META=v.meta||{};window.IBB5_CANCELLED_NET=v.cancelledNet||[];}}catch(e){console.warn('Không đọc được bản dữ liệu lưu cục bộ',e)}})();
 
 
 // ---- Original script 2  ----
@@ -45,7 +46,7 @@ const IBB_CALC={
  source:x=>IBB_CALC.notes()[x.id]?.source||x.sourceExcel||'',
  camOnline:(rows,asof)=>netWithOnlineCamera(rows,DATA,asof),
 };
-const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(DATA.map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=DATA.map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){DATA.splice(0,DATA.length,...snapshot.data);dates=DATA.map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...DATA.map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
+const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(DATA.map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=DATA.map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){window.IBB5_CANCELLED_NET=snapshot.cancelledNet||[];DATA.splice(0,DATA.length,...snapshot.data);dates=DATA.map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...DATA.map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
 function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
@@ -537,9 +538,9 @@ function updateAudit(){
 async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).files[0]})).filter(v=>v.file),msg=$('ibbImportMessage'),btn=$('ibbImportBtn');if(!canImportData(window.IBB5_CURRENT_PROFILE)){msg.textContent='Chỉ Trưởng phòng và Trưởng Bầy được cập nhật dữ liệu.';return;}if(!files.length){msg.textContent='Chọn ít nhất 1 file .xlsx trước khi cập nhật.';return;}btn.disabled=true;msg.textContent='Đang đọc và kiểm tra '+files.length+' file...';try{
  const parsed=[];for(const x of files){const rows=transform(await parseXlsx(x.file),x.type,x.file.name);parsed.push({...x,rows})}
  const previous=Array.isArray(window.IBB5_IMPORTED_DATA)?window.IBB5_IMPORTED_DATA:DATA;
- const replaced=new Set(parsed.map(x=>x.type));const combined=mergeNetSnapshot({data:previous},{data:[...previous.filter(x=>!replaced.has(x.type)),...parsed.flatMap(x=>x.rows)]}).data;
+ const replaced=new Set(parsed.map(x=>x.type));const merged=mergeNetSnapshot({data:previous,cancelledNet:window.IBB5_CANCELLED_NET||[]},{data:[...previous.filter(x=>!replaced.has(x.type)),...parsed.flatMap(x=>x.rows)]}),combined=merged.data;
  const prior=window.IBB5_IMPORT_META||{};const stamp=new Date().toISOString();const meta={files:{...(prior.files||{})},updated:stamp,audit:{acc:authenticatedUploadAccount()||'Chưa xác thực đăng nhập',identityVerified:!!authenticatedUploadAccount(),updated:stamp,sources:parsed.map(x=>x.type)}};for(const x of parsed)meta.files[x.type]={name:x.file.name,count:x.rows.length,updated:meta.updated,acc:meta.audit.acc};
- if(window.IBB5_SYNC)await window.IBB5_SYNC.snapshot({data:combined,meta},parsed.map(x=>x.type));else localStorage.setItem(STORAGE,JSON.stringify({data:combined,meta}));msg.textContent='Đã cập nhật '+parsed.map(x=>x.type+': '+x.rows.length+' HĐ').join(' · ')+(window.IBB5_SYNC?' lên hệ thống dùng chung.':'')+(window.IBB5_SYNC?' Dashboard đã được đồng bộ.':' Đang làm mới Dashboard...');
+ if(window.IBB5_SYNC)await window.IBB5_SYNC.snapshot({data:combined,meta,cancelledNet:merged.cancelledNet},parsed.map(x=>x.type));else localStorage.setItem(STORAGE,JSON.stringify({data:combined,meta,cancelledNet:merged.cancelledNet}));msg.textContent='Đã cập nhật '+parsed.map(x=>x.type+': '+x.rows.length+' HĐ').join(' · ')+(window.IBB5_SYNC?' lên hệ thống dùng chung.':'')+(window.IBB5_SYNC?' Dashboard đã được đồng bộ.':' Đang làm mới Dashboard...');
  if(!window.IBB5_SYNC)location.reload();
  }catch(e){msg.textContent='Không thể cập nhật: '+e.message+' (dữ liệu cũ vẫn giữ nguyên)';console.error(e);}finally{btn.disabled=false;}}
 const allowImport=canImportData(window.IBB5_CURRENT_PROFILE);for(const [id]of TYPES)$(id).disabled=!allowImport;$('ibbImportBtn').disabled=!allowImport;if(!allowImport)$('ibbImportMessage').textContent='Chỉ Trưởng phòng và Trưởng Bầy được cập nhật dữ liệu.';
@@ -770,7 +771,7 @@ const selectedMonths=()=>monthInputs.filter(input=>input.checked).map(input=>Num
 function selectMonths(months){monthInputs.forEach(input=>{input.checked=months.includes(Number(input.value));});}
 function monthSummary(){const months=selectedMonths();$('ibbcMonthSummary').textContent=months.length===12?'Cả năm':months.length<=3?'Tháng '+months.join(', '):'Đã chọn '+months.length+' tháng';$('ibbcMonthSummary').title='Tháng '+months.join(', ');monthInputs.forEach(input=>{input.disabled=months.length===1&&input.checked;});}
 
-function netRows(){const uniq=new Map();for(const r of DATA){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}return [...uniq.entries()].map(([id,r])=>({...r,id}));}
+function netRows(){const uniq=new Map();for(const r of DATA){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}for(const row of mergeCancellationArchive(window.IBB5_CANCELLED_NET,DATA))uniq.set(row.id,{...uniq.get(row.id),...row});return [...uniq.entries()].map(([id,r])=>({...r,id}));}
 function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
   const ta=Number(a.team)||99,tb=Number(b.team)||99;if(ta!==tb)return ta-tb;
   const ia=ORDER.indexOf(norm(a.acc)),ib=ORDER.indexOf(norm(b.acc));return (ia<0?999:ia)-(ib<0?999:ib);

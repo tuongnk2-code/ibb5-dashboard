@@ -1,3 +1,4 @@
+import { mergeCancellationArchive } from './cancellationArchive.js';
 import { validDay } from './dailyReportModel.js';
 export const LEGACY_KEYS = { snapshot: 'ibb5_three_source_snapshot_v1', commitments: 'fpt_ibb_monthly_commitments_v2', notes: 'ibb5_pending_followup_v1' };
 export const normAcc = v => String(v || '').trim().toLowerCase();
@@ -33,7 +34,8 @@ export function unpackState(rows) {
 export function validateSnapshot(snapshot) {
   if (!snapshot || !Array.isArray(snapshot.data) || !snapshot.data.length || snapshot.data.length > 20000 || JSON.stringify(snapshot).length > 3000000) throw new Error('Dữ liệu nhập không hợp lệ hoặc vượt quá giới hạn 3 MB.');
   const types = ['Internet', 'Camera', 'Truyền hình'];
-  const rows = snapshot.data.map(row => {
+  if(snapshot.cancelledNet!=null&&(!Array.isArray(snapshot.cancelledNet)||snapshot.cancelledNet.length>20000))throw new Error('Lịch sử HĐ hủy không hợp lệ.');
+  const cleanRows = source => source.map(row => {
     const id = typeof row.id === 'string' ? row.id.trim().toUpperCase() : '';
     if (!types.includes(row.type) || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(id)) throw new Error('Mã hoặc loại hợp đồng không hợp lệ.');
     const result = { type: row.type, id };
@@ -48,7 +50,8 @@ export function validateSnapshot(snapshot) {
     if (row.vvip != null) result.vvip = row.vvip === true;
     return result;
   });
-  return { data: [...new Map(rows.map(r => [r.type + ':' + r.id, r])).values()], meta: snapshot.meta || {} };
+  const rows=cleanRows(snapshot.data),archive=cleanRows(snapshot.cancelledNet||[]);
+  return { data: [...new Map(rows.map(r => [r.type + ':' + r.id, r])).values()], meta: snapshot.meta || {}, cancelledNet:mergeCancellationArchive(archive,rows) };
 }
 // NET files can cover a narrower period than the current tracking register.
 // Refresh matching source records and retain omitted NET IDs; notes stay in their own rows.
@@ -57,7 +60,8 @@ export function mergeNetSnapshot(previous, incoming) {
   const retained = (previous?.data || []).filter(row => row.type === 'Internet');
   const merged = new Map(retained.map(row => ['Internet:' + String(row.id).trim().toUpperCase(), row]));
   for (const row of next.data) merged.set(row.type + ':' + row.id, row);
-  return validateSnapshot({ data: [...merged.values()], meta: next.meta });
+  const cancelledNet=mergeCancellationArchive(previous?.cancelledNet,retained,next.data);
+  return validateSnapshot({ data: [...merged.values()], meta: next.meta, cancelledNet });
 }
 export const isCancellationResult = value => ['hủy', 'huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN'));
 export function validateNote(value) {

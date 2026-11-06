@@ -1,3 +1,4 @@
+import { isTerminatedNetContract } from './cancellationArchive.js';
 import { validDay } from './dailyReportModel.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 
@@ -43,6 +44,6 @@ export function monthlyStaffChannels(rows, notes, month, staff = '', roster = ST
 }
 
 // NET source status, independent of the pending-follow-up cancellation workflow.
-export const isTerminatedNetContract = row => row?.type === 'Internet' && String(row.status || '').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('vi-VN') === 'đã chấm dứt hợp đồng';
+export { isTerminatedNetContract } from './cancellationArchive.js';
 
 export const includeInOperationalReports = row => !(isTerminatedNetContract(row) && ['2026-09','2026-10'].includes(String(row.created || '').slice(0,7)));
