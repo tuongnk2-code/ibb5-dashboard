@@ -14,3 +14,5 @@ Kiểm thử giao diện: `node tests/responsive.browser.cjs` với Playwright c
 Báo cáo hiệu suất theo Ngày chọn hiển thị thêm hai danh sách HĐ đã lên (Ngày tạo NET) và HĐ đã Online (Ngày Online NET), cùng bộ lọc ngày/Bầy/nhân sự/phòng. Danh sách chi tiết tuân theo quyền xem HĐ của tài khoản; chỉ số tổng hợp giữ nguyên. Máy tính đặt danh sách cạnh bảng nhân sự, màn hình nhỏ xếp bên dưới; Cả tháng ẩn danh sách. CSV ngày bổ sung hai cột mã HĐ theo phạm vi được xem.
 
 Chế độ ngày: máy tính hiển thị bảng nhân sự và hai danh sách HĐ thành ba phần cùng hàng; tablet đặt bảng tổng hợp phía trên hai danh sách, điện thoại xếp dọc. Mã HĐ và Acc gộp cùng ô để tiết kiệm chiều ngang.
+
+Nút Chụp ảnh bảng trong báo cáo Bán/Online xuất PNG của bảng nhân sự và chú giải theo bộ lọc; xuất đủ hàng/cột, không kèm hai danh sách hợp đồng. Tên file theo ngày/tháng đang chọn.

@@ -655,23 +655,27 @@ async function exportPNG(id, filename){
  const node=document.getElementById(id);if(!node)throw new Error('Không tìm thấy khu vực báo cáo');
  await document.fonts.ready;
  if(id==='qDocument')await Promise.all([...node.querySelectorAll('img')].map(image=>image.decode()));
- const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width)),h=Math.ceil(Math.max(node.scrollHeight,rect.height));
+ const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width,id==='dpTableCapture'?node.querySelector('table').scrollWidth+2:0)),h=Math.ceil(Math.max(node.scrollHeight,rect.height));
  if(!w||!h||w>8000||h>12000)throw new Error('Kích thước khu vực không phù hợp để chụp');
  const clone=node.cloneNode(true);inlineCopy(node,clone);
  clone.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
  clone.style.setProperty('width',w+'px','important');clone.style.setProperty('min-height',h+'px','important');clone.style.setProperty('height','auto','important');
  clone.style.setProperty('margin','0','important');clone.style.setProperty('background-color','#ffffff','important');clone.style.setProperty('overflow','visible','important');
  if(id==='qDocument')clone.style.setProperty('zoom','1','important');
+ if(id==='dpTableCapture'){
+  const scroll=clone.querySelector('.dp-scroll');scroll.style.setProperty('overflow','visible','important');scroll.style.setProperty('max-height','none','important');scroll.style.setProperty('width',(w-2)+'px','important');
+  clone.querySelectorAll('th,td').forEach(cell=>{cell.style.setProperty('position','static','important');});
+ }
  // Avoid duplicate generated/decorative pseudo-elements in SVG export.
  const xml=new XMLSerializer().serializeToString(clone);
  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%">'+xml+'</foreignObject></svg>';
  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
- const url=id==='qDocument'?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):URL.createObjectURL(blob);
+ const url=(id==='qDocument'||id==='dpTableCapture')?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):URL.createObjectURL(blob);
  try{
   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Trình duyệt không hỗ trợ chụp PNG với nội dung hiện tại'));img.src=url;});
   const canvas=document.createElement('canvas');const scale=2;canvas.width=w*scale;canvas.height=h*scale;const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
   const png=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!png)throw new Error('Không thể xuất ảnh PNG');
-  const a=document.createElement('a');const out=URL.createObjectURL(png);a.href=out;a.download=filename+'_'+(id==='qDocument'?reportDay():new Date().toISOString().slice(0,10))+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(out),6000);
+  const a=document.createElement('a');const out=URL.createObjectURL(png);a.href=out;a.download=filename+'_'+(id==='dpTableCapture'?(document.getElementById('dpView').value==='day'?document.getElementById('dpDay').value:document.getElementById('dpMonth').value):id==='qDocument'?reportDay():new Date().toISOString().slice(0,10))+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(out),6000);
  }finally{URL.revokeObjectURL(url);}
 }
 document.addEventListener('click',async function(e){const btn=e.target.closest('[data-shot]');if(!btn)return;e.preventDefault();if(btn.disabled)return;const old=btn.textContent;btn.disabled=true;btn.textContent='Đang tạo PNG…';try{await exportPNG(btn.dataset.shot,btn.dataset.file);toast('Đã tạo ảnh PNG cho khu vực được chọn.');}catch(err){console.error('IBB5 screenshot error:',err);toast('Không chụp được PNG trong trình duyệt này: '+(err.message||err));}finally{btn.disabled=false;btn.textContent=old;}});

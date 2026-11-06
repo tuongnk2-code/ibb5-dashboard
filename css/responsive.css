@@ -499,7 +499,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 @media(max-width:650px){#pendingContracts .pending-header-filters{width:100%;grid-template-columns:minmax(0,1fr);gap:10px}}
 
 #performance .dp-day-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
-#performance .dp-day-layout>.dp-scroll{min-width:0;max-width:100%;margin:0}
+#performance .dp-day-layout #dpTableCapture .dp-scroll{min-width:0;max-width:100%;margin:0}
 #performance .dp-contract-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;min-width:0;align-items:start}
 #performance .dp-contract-details[hidden]{display:none!important}
 #performance .dp-contract-card{border:1px solid #d8e5f3;border-radius:10px;overflow:hidden;background:white;min-width:0}
@@ -516,6 +516,6 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .dp-contract-card td .dp-contract-acc{font-size:12px;color:#547393}
 #performance .dp-contract-card tbody tr:last-child td{border-bottom:0}
 #performance .dp-contract-empty{text-align:center!important;color:#7089a2;padding:18px!important}
-#performance .dp-day-layout .dp-grand .dp-staff{white-space:normal;line-height:1.35}
-@media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}#performance .dp-day-layout>.dp-scroll{width:100%}#performance .dp-day-layout #dpTable{width:100%!important;min-width:286px!important}}
+#performance .ibb-dailyperf .dp-grand .dp-staff{white-space:normal!important;line-height:1.35}
+@media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}#performance .dp-day-layout #dpTableCapture .dp-scroll{width:100%}#performance .dp-day-layout #dpTable{width:100%!important;min-width:286px!important}}
 @media(max-width:700px){#performance .dp-contract-details{grid-template-columns:minmax(0,1fr);gap:12px}}
