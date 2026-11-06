@@ -18,3 +18,5 @@ Chế độ ngày: máy tính hiển thị bảng nhân sự và hai danh sách 
 Nút Chụp ảnh bảng trong báo cáo Bán/Online xuất PNG của bảng nhân sự và chú giải theo bộ lọc; xuất đủ hàng/cột, không kèm hai danh sách hợp đồng. Tên file theo ngày/tháng đang chọn.
 
 Bảng Hiệu suất nhân sự có nút Chụp ảnh bảng, xuất đầy đủ cột/hàng và tổng theo bộ lọc. Ảnh có tiêu đề, Bầy và ngày theo dõi, giữ cỡ chữ hiện tại.
+
+Bảng HĐ Online dự kiến theo mốc hẹn có nút Chụp ảnh bảng; PNG giữ tiêu đề, thống kê ngày và toàn bộ bảng, tên file theo ngày đang xem.

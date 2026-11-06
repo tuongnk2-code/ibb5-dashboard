@@ -39,6 +39,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     const overviewDownload=page.waitForEvent('download');await page.locator('[data-shot="ibbCaptureOverview"]').click();const overviewImage=await overviewDownload;
     const overviewPng=fs.readFileSync(await overviewImage.path());assert.equal(overviewPng.subarray(1,4).toString(),'PNG');assert.ok(overviewPng.readUInt32BE(20)>1000);
     if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)fs.writeFileSync(process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/overview-export.png',overviewPng);
+    await page.evaluate(()=>{window.IBB5_PENDING_NOTES={A:{expected:'2026-11-06',timeSlot:'15h30 - 17h30'}};location.hash='pendingContracts';});
+    await page.locator('#psShot').waitFor({state:'visible'});await page.locator('#psDay').fill('2026-11-06');await page.locator('#psDay').dispatchEvent('change');
+    assert.match(await page.locator('#psRows').textContent(),/DNG.Hoantt/);
+    const scheduleDownload=page.waitForEvent('download');await page.locator('#psShot').click();const scheduleImage=await scheduleDownload;
+    assert.match(scheduleImage.suggestedFilename(),/IBB5_HD_Online_Du_Kien_2026-11-06\.png$/);
+    const schedulePng=fs.readFileSync(await scheduleImage.path());assert.equal(schedulePng.subarray(1,4).toString(),'PNG');
+    if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)fs.writeFileSync(process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/scheduled-online-export.png',schedulePng);
     await page.evaluate(()=>location.hash='performance');await page.locator('#dpShot').waitFor({state:'visible'});
     await page.locator('#dpTeam').selectOption('2');
    }
