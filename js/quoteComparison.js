@@ -11,7 +11,7 @@ export function quoteComparison(quote){
   const intro='<div class="q-compare-intro"><strong>'+options.length+' PHƯƠNG ÁN ĐỂ KHÁCH LỰA CHỌN</strong><p>Chi phí được tính riêng từng gói; không cộng tổng các phương án.</p></div>';
   if(options.length===2)return intro+'<div class="q-two-options">'+options.map((option,index)=>{
     const sum=totals[index];
-    return '<section class="q-option-card"><small>PHƯƠNG ÁN '+(index+1)+'</small><h2>'+esc(option.packageName||'Chưa chọn gói')+'</h2><p class="q-option-specs">'+text(option.specs)+'</p><div class="q-option-period">'+period(sum)+'</div><div class="q-option-upfront"><small>THANH TOÁN BAN ĐẦU · GỒM VAT</small><strong>'+total(sum)+'</strong></div><dl><dt>Đơn giá cước / tháng</dt><dd>'+money(sum.monthly)+'</dd><dt>Hòa mạng / triển khai</dt><dd>'+money(sum.fee)+'</dd><dt>Thiết bị / dịch vụ thêm</dt><dd>'+extras(option)+'</dd><dt>Ưu đãi / giảm trừ</dt><dd>'+money(sum.discount)+'</dd><dt>VAT</dt><dd>'+esc(vatLabel(option))+'</dd></dl><div class="q-option-conditions"><strong>Điều kiện & ưu đãi</strong><p>'+text(option.notes)+'</p></div><p class="q-option-source">'+source(option)+'</p></section>';
+    return '<section class="q-option-card"><small>PHƯƠNG ÁN '+(index+1)+'</small><h2>'+esc(option.packageName||'Chưa chọn gói')+'</h2><p class="q-option-specs">'+text(option.specs)+'</p><div class="q-option-period">'+period(sum)+'</div><div class="q-option-upfront"><small>THANH TOÁN BAN ĐẦU</small><strong>'+total(sum)+'</strong></div><dl><dt>Đơn giá cước / tháng</dt><dd>'+money(sum.monthly)+'</dd><dt>Hòa mạng / triển khai</dt><dd>'+money(sum.fee)+'</dd><dt>Thiết bị / dịch vụ thêm</dt><dd>'+extras(option)+'</dd><dt>Ưu đãi / giảm trừ</dt><dd>'+money(sum.discount)+'</dd><dt>VAT</dt><dd>'+esc(vatLabel(option))+'</dd></dl><div class="q-option-conditions"><strong>Điều kiện & ưu đãi</strong><p>'+text(option.notes)+'</p></div><p class="q-option-source">'+source(option)+'</p></section>';
   }).join('')+'</div>';
   let result=intro;
   for(let start=0;start<options.length;start+=3){
@@ -24,7 +24,7 @@ export function quoteComparison(quote){
       ['Thiết bị / dịch vụ thêm',extras],
       ['Ưu đãi / giảm trừ',(_,index)=>money(sums[index].discount)],
       ['VAT',option=>esc(vatLabel(option))],
-      ['Thanh toán ban đầu · gồm VAT',(_,index)=>total(sums[index]),'q-compare-total'],
+      ['Thanh toán ban đầu',(_,index)=>total(sums[index]),'q-compare-total'],
       ['Điều kiện & ưu đãi',option=>text(option.notes)],
       ['Nguồn gói',source],
     ];
