@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isTerminatedNetContract } from '../js/analyticsDetails.js';
+import { isTerminatedNetContract, includeInOperationalReports } from '../js/analyticsDetails.js';
 import { mergeNetSnapshot } from '../js/dashboardStateModel.js';
 
 test('cancellation statistics use the NET source status only',()=>{
@@ -14,4 +14,12 @@ test('NET imports retain source termination status and update matching IDs witho
  assert.equal(imported.data.filter(isTerminatedNetContract).length,2);
  const revised=mergeNetSnapshot(imported,{data:[{id:'MATCH',type:'Internet',status:'Bình thường'}]});
  assert.equal(revised.data.filter(isTerminatedNetContract).length,1);
+});
+
+
+test('operational views omit only terminated NET created in September/October 2026',()=>{
+ const row={type:'Internet',status:'Đã chấm dứt hợp đồng',created:'2026-09-01'};
+ assert.equal(includeInOperationalReports(row),false);
+ assert.equal(includeInOperationalReports({...row,created:'2026-10-31'}),false);
+ for(const change of [{created:'2026-11-01'},{created:'2025-09-01'},{created:'2026-08-31'},{status:'Bình thường'},{status:'Hủy'},{type:'Camera'}])assert.equal(includeInOperationalReports({...row,...change}),true);
 });

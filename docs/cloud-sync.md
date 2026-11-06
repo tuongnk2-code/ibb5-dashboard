@@ -31,3 +31,7 @@ Khi nhập NET mới, hệ thống gộp mã HĐ đã chuẩn hóa (bỏ khoản
 Khi chọn Kết quả **Hủy**, hiện ô **Lý do hủy** (bắt buộc, tối đa 1.000 ký tự) ở cột riêng ngay sau Kết quả và trong cửa sổ cập nhật trên điện thoại. Lý do lưu chung trong `cancelReason`, giữ khi nhập NET và có trong tìm kiếm/CSV hồ sơ tồn. Nút TP Duyệt hủy chỉ hiện cho kết quả Hủy; cần lưu lý do và các thay đổi trước khi duyệt. Dự Kiến Hủy và các kết quả khác không có nút duyệt. API cũng kiểm tra điều kiện này. HĐ Hủy cũ thiếu lý do cần bổ sung rồi lưu trước khi TP duyệt.
 
 Mục Thông tin đồng bộ mới nhất luôn hiển thị ba nguồn NET, Camera, Truyền hình với tên file, số HĐ trong file, Acc và thời gian nhập thành công gần nhất (giờ Việt Nam). Mỗi nguồn giữ lịch sử gần nhất riêng; nhập NET không đổi người/giờ của Camera hay Truyền hình. API ghi người từ hồ sơ đăng nhập và giờ máy chủ, bỏ thông tin người/giờ do client gửi. Nhập lỗi không cập nhật lịch sử; thông tin tự đồng bộ trên các thiết bị. Nguồn chưa nhập hiển thị Chưa nhập file / Chưa ghi nhận.
+
+## Lọc HĐ đã hủy trong báo cáo vận hành
+
+Tổng quan (gồm KPI, biểu đồ và bảng ngày), Hiệu suất nhân sự và HĐ tồn loại HĐ NET có Tình trạng “Đã chấm dứt hợp đồng” và Ngày tạo thuộc 09/2026 hoặc 10/2026. Các HĐ chưa hủy, HĐ ở tháng khác và nguồn Camera/Truyền hình giữ nguyên. Bộ lọc chỉ áp dụng khi tính/hiển thị, không xóa dữ liệu nguồn hay ghi chú; tab HĐ hủy vẫn đếm đầy đủ.

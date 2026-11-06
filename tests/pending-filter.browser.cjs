@@ -8,6 +8,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   const definitions=[['DUE','2026-11-05','', '2026-11-06'],['LATE','2026-11-01','','2026-11-05'],['WAIT','2026-11-01','','2026-11-07'],['MISSING','2026-11-01','',''],['OLD','2026-10-01','','2026-11-06'],['ONLINE','2026-11-01','2026-11-06','2026-11-05'],['DONE','2026-11-01','2026-11-06','2026-11-05'],['FUTURE','2026-11-07','','2026-11-06'],['CANCEL','2026-11-01','','2026-11-06'],['OUTSIDE','2026-11-01','','2026-11-06']];
   const data=definitions.map(([id,created,date])=>({id,created,date,type:'Internet',staff:id==='OUTSIDE'?'DNG.Vypv':'DNG.ManLM3',room:'IBB5',customer:'Khách '+id,package:'Giga'}));
+  data.push(...['SEPTCANCEL','OCTCANCEL'].map((id,index)=>({id,type:'Internet',staff:'DNG.ManLM3',room:'IBB5',created:index?'2026-10-01':'2026-09-01',date:index?'':'2026-11-06',status:'Đã chấm dứt hợp đồng'})));
   const notes=Object.fromEntries(definitions.map(([id,,,expected])=>[id,{expected}]));
   Object.assign(notes.DONE,{timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'});notes.CANCEL.cancellationApproved=true;
   for(const role of ['manager','staff']){
@@ -20,6 +21,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
    await page.goto('http://127.0.0.1:5179/#pendingContracts');await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
+   await page.evaluate(()=>{location.hash='overview'});await page.locator('#overview.page-active').waitFor();
+   await page.locator('#to').fill('2026-11-06');await page.locator('#to').dispatchEvent('change');
+   assert.equal(await page.locator('#online').textContent(),'2');
+   const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})});assert.equal(await person.locator('td').nth(4).textContent(),'2');
+   assert.equal(await page.locator('#ibbcCount').textContent(),'2');
+   assert.equal(await page.evaluate(()=>window.IBB5_IMPORTED_DATA.filter(row=>['SEPTCANCEL','OCTCANCEL'].includes(row.id)).length),2);
+   await page.evaluate(()=>{location.hash='pendingContracts'});await page.locator('#pendingContracts.page-active').waitFor();
+   await page.locator('#pendQuery').fill('OCTCANCEL');assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);await page.locator('#pendQuery').fill('');
    const ids=async()=>await page.locator('#pendRows tr[data-id]').evaluateAll(rows=>rows.map(row=>row.dataset.id).sort());
    const allowed=values=>values.filter(id=>role==='manager'||id!=='OUTSIDE').sort();
    for(const [mode,expected]of Object.entries({all:['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE'],notonline:['DUE','LATE','WAIT','MISSING','OLD','OUTSIDE'],due:['DUE','LATE','OLD','OUTSIDE'],missing:['MISSING'],old:['OLD'],aged:['OLD']})){

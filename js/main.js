@@ -13,7 +13,7 @@ import { periodGrowth } from './periodGrowth.js';
 import { reportDay } from './dailyReportModel.js';
 import { onlineCameraContracts, netWithOnlineCamera } from './cameraKpi.js';
 import { prepaidShare } from './prepaidKpi.js';
-import { overdueContracts, monthlyStaffChannels, isTerminatedNetContract } from './analyticsDetails.js';
+import { overdueContracts, monthlyStaffChannels, isTerminatedNetContract, includeInOperationalReports } from './analyticsDetails.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 
@@ -27,6 +27,8 @@ const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_L
 
 // ---- Original script 2  ----
 const DATA=window.IBB5_IMPORTED_DATA||mockDATA;
+// Operational tabs omit terminated September/October 2026 NET contracts; raw data stays intact.
+const operationalData=()=>DATA.filter(includeInOperationalReports);
 const IBB_NET_META=mockIBB_NET_META;
 const IBB_CAM_META=mockIBB_CAM_META;
 const IBB_TV_META=mockIBB_TV_META;
@@ -44,10 +46,10 @@ const IBB_CALC={
  camOnline:(rows,asof)=>netWithOnlineCamera(rows,DATA,asof),
 };
 const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(DATA.map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=DATA.map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){DATA.splice(0,DATA.length,...snapshot.data);dates=DATA.map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...DATA.map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
-function base(){return DATA.filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
+function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
- const netRows=DATA.filter(x=>x.type==='Internet'&&(!room||x.room===room));const onlineRows=netRows.filter(x=>x.id&&/^[A-Z0-9]+$/.test(x.id)&&typeof x.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date>=start&&x.date<=asOf);
+ const netRows=operationalData().filter(x=>x.type==='Internet'&&(!room||x.room===room));const onlineRows=netRows.filter(x=>x.id&&/^[A-Z0-9]+$/.test(x.id)&&typeof x.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date>=start&&x.date<=asOf);
  const totalOnline=IBB_CALC.unique(onlineRows),target=getCommit(month,room||'__ALL__').manager;
  const staffCount=new Set(PERSONNEL.filter(person=>!room||person.room===room).map(person=>person.acc.trim().toLowerCase())).size;
  $('staffProductivity').textContent=staffCount?fmt(totalOnline/staffCount):'—';$('staffProductivity').setAttribute('aria-label',$('staffProductivity').textContent+' HĐ/NS');
@@ -142,7 +144,7 @@ function perfRender(){
  const team=$('perfTeam').value,q=$('perfSearch').value.toLowerCase(),room=$('room').value;
  const ORDER=['DNG.Vypv','DNG.OanhLTH3','DNG.ChuongHM','DNG.NguyenTP10','DNG.TriNP','DNG.DatHX4','DNG.Hoantt','DNG.Nhannt137','DNG.Namnh170','DNG.HoaNTB6','DNG.ManLM3','DNG.Tienna2','DNG.HanNVN','DNG.BachND7','DNG.DoanLT4','DNG.LanMH2','DNG.DatBTH'];
  const list=PERSONNEL.filter(p=>(!team||p.team===team)&&(!q||(p.name+' '+p.acc).toLowerCase().includes(q))).sort((a,b)=>ORDER.findIndex(x=>x.toLowerCase()===a.acc.toLowerCase())-ORDER.findIndex(x=>x.toLowerCase()===b.acc.toLowerCase()));
- const all=DATA.filter(x=>x.type==='Internet'&&(!room||x.room===room)),cm=getCommit(month,room||'__ALL__').staff,prevCut=IBB_CALC.prior(month,+asof.slice(-2)),pm=prevCut.slice(0,7),havePrev=IBB_CALC.validPrev(all,pm);
+ const all=operationalData().filter(x=>x.type==='Internet'&&(!room||x.room===room)),cm=getCommit(month,room||'__ALL__').staff,prevCut=IBB_CALC.prior(month,+asof.slice(-2)),pm=prevCut.slice(0,7),havePrev=IBB_CALC.validPrev(all,pm);
  document.querySelectorAll('#perfPrevOnlineTitle').forEach(title=>{title.textContent='Online Tháng '+Number(pm.slice(5));title.title='Online từ '+pm+'-01 đến '+prevCut;});
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
  const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
@@ -201,7 +203,7 @@ const teamMap={'DNG.Vypv':'1','DNG.OanhLTH3':'1','DNG.ChuongHM':'1','DNG.NguyenT
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
 const isManager=()=>window.IBB5_CURRENT_PROFILE?.role==='manager';
-const buildDistinct=()=>[...new Map(DATA.filter(x=>x.type==='Internet'&&x.id).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
+const buildDistinct=()=>[...new Map(operationalData().filter(x=>x.type==='Internet'&&x.id).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
 const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-slot',action:'.p-note',result:'.p-result',source:'.p-source',cancelReason:'.p-cancel-reason'};
 
 function isFilled(id){const n=notes[id]||{};return ['expected','timeSlot','action','result','source'].every(k=>String(n[k]||'').trim())&&(!isCancellationResult(n.result)||!!n.cancelReason?.trim())}
@@ -310,7 +312,7 @@ header.addEventListener('change',e=>{if(e.target.id==='pendCreatedMonth'){render
 // ---- Original script 9 id="ibb5-analytics-js" ----
 (function(){
 const $=id=>document.getElementById(id),fmt=n=>Number(n||0).toLocaleString('vi-VN');
-const data=()=>typeof DATA==='undefined'?[]:DATA.filter(x=>x.type==='Internet');
+const data=()=>typeof DATA==='undefined'?[]:operationalData().filter(x=>x.type==='Internet');
 const notes=()=>{if(window.IBB5_PENDING_NOTES)return window.IBB5_PENDING_NOTES;try{return JSON.parse(localStorage.getItem('ibb5_pending_followup_v1')||'{}')}catch(e){return {}}};
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const unique=a=>[...new Map(a.filter(x=>x.id).map(x=>[x.id,x])).values()];
@@ -412,7 +414,7 @@ function render(){
 const day=$('psDay')?.value;if(!day)return;
 const cutoff=$('pendAsOf')?.value||day;
 const ns=readNotes();
-const net=typeof DATA==='undefined'?[]:DATA.filter(x=>x.type==='Internet'&&x.id);
+const net=typeof DATA==='undefined'?[]:operationalData().filter(x=>x.type==='Internet'&&x.id);
 const distinct=[...new Map(net.map(x=>[x.id,x])).values()];
 const rows=distinct.filter(x=>!ns[x.id]?.cancellationApproved&&x.created&&x.created<=cutoff&&(!x.date||x.date>cutoff)&&ns[x.id]?.expected===day);
 const counts=Array(5).fill(0);const grouped=new Map();
@@ -678,7 +680,7 @@ const order=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trin
 const root=el('ibbDayPerf');if(!root)return;
 let current={};
 function fromReportDate(){const base=el('to')?.value||reportDay(),m=base.slice(0,7),end=monthEnd(m);el('dpMonth').value=m;el('dpDay').min=m+'-01';el('dpDay').max=end;el('dpDay').value=base.startsWith(m)?base:end;}
-function distinctNet(){const acc=new Map();for(const r of DATA){if(r.type!=='Internet'||!r.id)continue;const key=String(r.id).trim().toUpperCase(),old=acc.get(key);if(!old||(!old.date&&r.date))acc.set(key,r);}return [...acc.values()];}
+function distinctNet(){const acc=new Map();for(const r of operationalData()){if(r.type!=='Internet'||!r.id)continue;const key=String(r.id).trim().toUpperCase(),old=acc.get(key);if(!old||(!old.date&&r.date))acc.set(key,r);}return [...acc.values()];}
 function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('dpView').value,team=el('dpTeam')?.value||'',search=norm(el('dpSearch')?.value||''),room=el('room')?.value||'';
  const max=+monthEnd(m).slice(-2),days=Array.from({length:max},(_,i)=>i+1),people=PERSONNEL.filter(p=>(!team||String(p.team)===team)&&(!search||norm(p.name+' '+p.acc).includes(search))).sort((a,b)=>{if(+a.team!==+b.team)return +a.team-+b.team;const x=order.indexOf(norm(a.acc)),y=order.indexOf(norm(b.acc));return (x<0?999:x)-(y<0?999:y)});
  const persons=new Map(people.map(p=>[norm(p.acc),{...p,team:String(p.team),sold:Array(max).fill(0),online:Array(max).fill(0)}]));
