@@ -35,3 +35,5 @@ Mục Thông tin đồng bộ mới nhất luôn hiển thị ba nguồn NET, Ca
 ## Lọc HĐ đã hủy trong báo cáo vận hành
 
 Tổng quan (gồm KPI, biểu đồ và bảng ngày), Hiệu suất nhân sự và HĐ tồn loại HĐ NET có Tình trạng “Đã chấm dứt hợp đồng” và Ngày tạo thuộc 09/2026 hoặc 10/2026. Các HĐ chưa hủy, HĐ ở tháng khác và nguồn Camera/Truyền hình giữ nguyên. Bộ lọc chỉ áp dụng khi tính/hiển thị, không xóa dữ liệu nguồn hay ghi chú; tab HĐ hủy vẫn đếm đầy đủ.
+
+Tab HĐ hủy có Tháng theo dõi (mặc định theo tháng của ngày Đến trên Tổng quan). Các KPI, hai bảng và CSV cùng lọc theo tháng tạo HĐ và năm/Bầy đang chọn. Chọn Cả năm để xem lại 12 tháng và tổng năm. Đổi ngày Đến sẽ cập nhật tháng theo dõi; đồng bộ file mới giữ tháng đã chọn.

@@ -25,7 +25,16 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#to').fill('2026-11-06');await page.locator('#to').dispatchEvent('change');
    assert.equal(await page.locator('#online').textContent(),'2');
    const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})});assert.equal(await person.locator('td').nth(4).textContent(),'2');
-   assert.equal(await page.locator('#ibbcCount').textContent(),'2');
+   assert.equal(await page.locator('#ibbcMonth').inputValue(),'11');assert.equal(await page.locator('#ibbcCount').textContent(),'0');
+   await page.evaluate(()=>{location.hash='cancelled'});await page.locator('#cancelled.page-active').waitFor();
+   await page.locator('#ibbcMonth').selectOption('9');assert.equal(await page.locator('#ibbcCount').textContent(),'1');assert.equal(await page.locator('#ibbcCountHead .ibbc-month').count(),1);assert.match(await page.locator('#ibbcCountLabel').textContent(),/9\/2026/);
+   const monthlyDownload=page.waitForEvent('download');await page.locator('[data-ibbc-export="count"]').click();const monthlyCsv=fs.readFileSync(await (await monthlyDownload).path(),'utf8');assert.match(monthlyCsv,/Tháng 9/);assert.doesNotMatch(monthlyCsv,/Tháng 10|Tổng năm/);
+   await page.locator('#ibbcMonth').selectOption('10');assert.equal(await page.locator('#ibbcCount').textContent(),'1');
+   await page.locator('#ibbcTeam').selectOption('1');assert.equal(await page.locator('#ibbcCount').textContent(),'0');await page.locator('#ibbcTeam').selectOption('');
+   await page.locator('#to').evaluate(el=>{el.value='2026-10-06';el.dispatchEvent(new Event('change',{bubbles:true}));});assert.equal(await page.locator('#ibbcMonth').inputValue(),'10');assert.equal(await page.locator('#ibbcCount').textContent(),'1');
+   await page.locator('#to').evaluate(el=>{el.value='2026-11-06';el.dispatchEvent(new Event('change',{bubbles:true}));});assert.equal(await page.locator('#ibbcMonth').inputValue(),'11');assert.equal(await page.locator('#ibbcCount').textContent(),'0');
+   await page.locator('#ibbcMonth').selectOption('');assert.equal(await page.locator('#ibbcCount').textContent(),'2');assert.equal(await page.locator('#ibbcCountHead .ibbc-month').count(),12);
+
    assert.equal(await page.evaluate(()=>window.IBB5_IMPORTED_DATA.filter(row=>['SEPTCANCEL','OCTCANCEL'].includes(row.id)).length),2);
    await page.evaluate(()=>{location.hash='pendingContracts'});await page.locator('#pendingContracts.page-active').waitFor();
    await page.locator('#pendQuery').fill('OCTCANCEL');assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);await page.locator('#pendQuery').fill('');

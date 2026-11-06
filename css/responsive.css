@@ -477,3 +477,5 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
   #pendingContracts .pending-metrics .pending-forward-breakdown b { font-size: 24px!important; }
   #pendingContracts .pending-metrics .pending-forward-breakdown small { font-size: 12px!important; }
 }
+
+#cancelled.ibbc-month-view .ibbc-table{width:100%;min-width:290px;table-layout:auto}

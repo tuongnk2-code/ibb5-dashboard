@@ -767,7 +767,7 @@ function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
 });}
 function getYears(){const years=new Set([new Date().getFullYear(),Number(($('to')?.value||reportDay().slice(0,7)).slice(0,4))]);for(const x of netRows()){const y=Number((x.created||'').slice(0,4));if(y>=2020&&y<=2100)years.add(y)}return [...years].sort((a,b)=>b-a)}
 function refreshYears(){const e=$('ibbcYear'),old=e.value,ys=getYears();e.innerHTML=ys.map(y=>`<option value="${y}">${y}</option>`).join('');const follow=Number(($('to')?.value||'').slice(0,4));e.value=ys.includes(Number(old))?old:ys.includes(follow)?String(follow):String(ys[0]);}
-function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
+function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,month=Number($('ibbcMonth').value)||null,all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
  const visible=people.filter(p=>!team||String(p.team)===team);
  const rows=new Map(visible.map(p=>[norm(p.acc),{acc:p.acc,team:String(p.team),sold:Array(12).fill(0),cancel:Array(12).fill(0)}]));
  const notMapped={acc:'KHÔNG KHỚP MÃ ACC',team:'?',sold:Array(12).fill(0),cancel:Array(12).fill(0)};
@@ -775,14 +775,14 @@ function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value
  for(const r of all){const cancelled=isTerminatedNetContract(r),acc=norm(r.staff),p=allMap.get(acc);
   if(!datestr(r.created)){if(cancelled)invalidMonth++;continue;}
   if(Number(r.created.slice(0,4))!==year)continue;
-  const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12)continue;
+  const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12||(month&&ix!==month-1))continue;
   if(team && String(p?.team)!==team)continue;
   const entry=rows.get(acc)||(!team?notMapped:null);if(!entry)continue;
   if(!p)unmatched++;
   entry.sold[ix]++;
   if(cancelled){entry.cancel[ix]++;yearCancellations++;}
  }
- return {year,team,rows,visible,notMapped,unmatched,invalidMonth,yearCancellations};
+ return {year,team,month,columns:month?[month-1]:Array.from({length:12},(_,i)=>i),rows,visible,notMapped,unmatched,invalidMonth,yearCancellations};
 }
 function aggregated(rs){return {sold:Array.from({length:12},(_,i)=>rs.reduce((s,x)=>s+x.sold[i],0)),cancel:Array.from({length:12},(_,i)=>rs.reduce((s,x)=>s+x.cancel[i],0))};}
 const nsum=arr=>arr.reduce((s,x)=>s+x,0);
@@ -791,10 +791,11 @@ const fmtValue=(r,i,kind)=>kind==='count'?whole(r.cancel[i]):rate(r.cancel[i],r.
 const fmtTotal=(r,kind)=>kind==='count'?whole(nsum(r.cancel)):rate(nsum(r.cancel),nsum(r.sold));
 function renderOne(kind,v){
   const head=$(kind==='count'?'ibbcCountHead':'ibbcRateHead'),body=$(kind==='count'?'ibbcCountBody':'ibbcRateBody');
-  head.innerHTML='<tr><th class="ibbc-team-head" rowspan="2">Bầy</th><th class="ibbc-acc-head" rowspan="2">Mã Acc</th><th class="ibbc-superhead" colspan="12">'+(kind==='count'?'Số lượng HĐ Hủy':'Tỷ lệ HĐ Hủy')+' · '+v.year+'</th><th rowspan="2" class="ibbc-total">Tổng năm</th></tr><tr>'+Array.from({length:12},(_,i)=>`<th class="ibbc-month">Tháng ${i+1}</th>`).join('')+'</tr>';
+  root.classList.toggle('ibbc-month-view',!!v.month);
+  head.innerHTML='<tr><th class="ibbc-team-head" rowspan="2">Bầy</th><th class="ibbc-acc-head" rowspan="2">Mã Acc</th><th class="ibbc-superhead" colspan="'+v.columns.length+'">'+(kind==='count'?'Số lượng HĐ Hủy':'Tỷ lệ HĐ Hủy')+' · '+(v.month?'Tháng '+v.month+'/':'')+v.year+'</th>'+(!v.month?'<th rowspan="2" class="ibbc-total">Tổng năm</th>':'')+'</tr><tr>'+v.columns.map(i=>`<th class="ibbc-month">Tháng ${i+1}</th>`).join('')+'</tr>';
   const groupNums=v.team?[v.team]:['1','2','3'];let html='',exportRows=[];
-  const vrow=(r)=>r.cancel.map((_,i)=>`<td class="ibbc-month ${kind==='count'&&r.cancel[i]?'ibbc-cancel-val':''}">${fmtValue(r,i,kind)}</td>`).join('')+`<td class="ibbc-total">${fmtTotal(r,kind)}</td>`;
-  const exportRow=(t,acc,r)=>{exportRows.push([t,acc,...r.cancel.map((_,i)=>fmtValue(r,i,kind)),fmtTotal(r,kind)]);};
+  const vrow=(r)=>v.columns.map(i=>`<td class="ibbc-month ${kind==='count'&&r.cancel[i]?'ibbc-cancel-val':''}">${fmtValue(r,i,kind)}</td>`).join('')+(!v.month?`<td class="ibbc-total">${fmtTotal(r,kind)}</td>`:'');
+  const exportRow=(t,acc,r)=>{exportRows.push([t,acc,...v.columns.map(i=>fmtValue(r,i,kind)),...(!v.month?[fmtTotal(r,kind)]:[])]);};
   for(const t of groupNums){const people=v.visible.filter(p=>String(p.team)===t),rr=people.map(p=>v.rows.get(norm(p.acc))).filter(Boolean),sum=aggregated(rr);
     people.forEach((p,i)=>{const r=v.rows.get(norm(p.acc));html+=`<tr>${i===0?`<td class="ibbc-team" rowspan="${people.length}">Bầy ${safe(t)}</td>`:''}<td class="ibbc-acc">${safe(p.acc)}</td>${vrow(r)}</tr>`;exportRow('Bầy '+t,p.acc,r)});
     html+=`<tr class="ibbc-subtotal"><td class="ibbc-merged" colspan="2">TỔNG BẦY ${safe(t)}</td>${vrow(sum)}</tr>`;exportRow('Bầy '+t,'TỔNG BẦY '+t,sum);
@@ -808,6 +809,8 @@ function renderOne(kind,v){
 }
 function render(){if(!$('ibbcYear')?.value)return;const v=build();
   const count=renderOne('count',v),rateTab=renderOne('rate',v),total=count.totals;
+  const period=v.month?'tháng '+v.month+'/'+v.year:'năm '+v.year;
+  $('ibbcCountLabel').textContent='HĐ hủy trong '+period;$('ibbcNetLabel').textContent='Tổng HĐ NET tạo trong '+period;$('ibbcRateNote').textContent='HĐ hủy / HĐ NET tạo trong '+period;
   $('ibbcCount').textContent=whole(nsum(total.cancel));$('ibbcNet').textContent=whole(nsum(total.sold));$('ibbcRate').textContent=rate(nsum(total.cancel),nsum(total.sold));
   $('ibbcStaff').textContent=whole([...v.rows.values()].filter(x=>nsum(x.cancel)>0).length);
   let warning=[];if(v.invalidMonth)warning.push(whole(v.invalidMonth)+' HĐ có tình trạng Đã chấm dứt hợp đồng nhưng thiếu Ngày tạo hợp lệ nên chưa thể phân tháng');
@@ -815,12 +818,13 @@ function render(){if(!$('ibbcYear')?.value)return;const v=build();
   $('ibbcMissing').hidden=!warning.length;$('ibbcMissing').textContent=warning.join(' · ');
   current={...v,countRows:count.exportRows,rateRows:rateTab.exportRows};
 }
-function exportFile(kind){if(!current)return;const rows=kind==='count'?current.countRows:current.rateRows,heading=['Bầy','Mã Acc',...Array.from({length:12},(_,i)=>'Tháng '+(i+1)),'Tổng năm'];
+function exportFile(kind){if(!current)return;const rows=kind==='count'?current.countRows:current.rateRows,heading=['Bầy','Mã Acc',...current.columns.map(i=>'Tháng '+(i+1)),...(!current.month?['Tổng năm']:[])];
 const csv='\ufeff'+[heading,...rows].map(arr=>arr.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
-const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='IBB5_HD_Huy_'+(kind==='count'?'So_Luong_':'Ty_Le_')+current.year+(current.team?'_Bay_'+current.team:'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='IBB5_HD_Huy_'+(kind==='count'?'So_Luong_':'Ty_Le_')+current.year+(current.month?'_Thang_'+current.month:'')+(current.team?'_Bay_'+current.team:'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
-refreshYears();render();
-['ibbcYear','ibbcTeam'].forEach(id=>$(id).addEventListener('change',render));
+function followMonth(){const value=$('to').value||reportDay();refreshYears();$('ibbcYear').value=value.slice(0,4);$('ibbcMonth').value=String(Number(value.slice(5,7)));render();}
+followMonth();$('to').addEventListener('change',followMonth);
+['ibbcYear','ibbcMonth','ibbcTeam'].forEach(id=>$(id).addEventListener('change',render));
 $('ibbcRefresh').addEventListener('click',render);
 root.querySelectorAll('[data-ibbc-export]').forEach(b=>b.addEventListener('click',()=>exportFile(b.dataset.ibbcExport)));
 // Same-page save in HD Ton updates localStorage before this document-level click listener runs.
