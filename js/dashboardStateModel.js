@@ -1,6 +1,7 @@
 import { validDay } from './dailyReportModel.js';
 export const LEGACY_KEYS = { snapshot: 'ibb5_three_source_snapshot_v1', commitments: 'fpt_ibb_monthly_commitments_v2', notes: 'ibb5_pending_followup_v1' };
 export const normAcc = v => String(v || '').trim().toLowerCase();
+export const canImportData = profile => ['manager', 'lead'].includes(profile?.role);
 export const monthKey = (month, room = '__ALL__') => {
   if (!validDay(month + '-01') || typeof room !== 'string' || room.length > 100) throw new Error('Tháng / phòng cam kết không hợp lệ.');
   return 'commit:' + month + ':' + room;

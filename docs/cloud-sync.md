@@ -2,7 +2,7 @@
 
 Sau đăng nhập, toàn bộ bộ lọc ngày mặc định là hôm nay theo Asia/Ho_Chi_Minh, tháng bắt đầu từ ngày 1. Ngày mặc định không phụ thuộc ngày mới nhất trong dữ liệu.
 
-Dữ liệu nhập Excel, cam kết tháng và cập nhật HĐ tồn được lưu tại Supabase `dashboard_shared_state`. Bảng bật RLS và không cấp quyền trực tiếp cho anon/authenticated. API `/api/dashboard-sync` xác thực phiên đăng nhập và hồ sơ: chỉ Trưởng phòng nhập Excel, ký/duyệt cam kết; nhân viên gửi cam kết của mình và cập nhật HĐ của mình; Trưởng Bầy cập nhật HĐ trong Bầy. Các bảng nguồn giữ policy SELECT authenticated hiện tại.
+Dữ liệu nhập Excel, cam kết tháng và cập nhật HĐ tồn được lưu tại Supabase `dashboard_shared_state`. Bảng bật RLS và không cấp quyền trực tiếp cho anon/authenticated. API `/api/dashboard-sync` xác thực phiên đăng nhập và hồ sơ: Trưởng phòng và Trưởng Bầy được nhập Excel NET/Camera/Truyền hình cho dữ liệu chung toàn phòng; chỉ Trưởng phòng ký/duyệt cam kết; nhân viên gửi cam kết của mình và cập nhật HĐ của mình; Trưởng Bầy cập nhật HĐ trong Bầy. Các bảng nguồn giữ policy SELECT authenticated hiện tại.
 
 ## Chuyển dữ liệu cũ
 

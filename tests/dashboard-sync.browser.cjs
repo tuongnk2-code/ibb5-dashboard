@@ -39,7 +39,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if(body.kind==='cancelPending'&&role!=='manager')return route.fulfill({status:403,json:{error:'Chỉ Trưởng phòng được duyệt hủy hợp đồng.'}});
       if(body.kind==='cancelPending'&&failCancellation){failCancellation=false;return route.fulfill({status:500,json:{error:'Không lưu được dữ liệu thử nghiệm'}});}
       if(body.kind==='migrate') { records.set('snapshot',{key:'snapshot',revision:1,data:body.snapshot});for(const [m,rooms]of Object.entries(body.commitments))for(const [room,data]of Object.entries(rooms))records.set('commit:'+m+':'+room,{key:'commit:'+m+':'+room,revision:1,data});for(const [id,data]of Object.entries(body.notes))records.set('pending:'+id,{key:'pending:'+id,revision:1,data});return route.fulfill({json:{ok:true}}); }
-      if(body.kind==='snapshot'){const previous=records.get('snapshot')?.data,row={key:'snapshot',revision:body.revision+1,data:mergeNetSnapshot(previous,body.snapshot)};row.data.meta=importAudit(previous?.meta,row.data.meta,body.types||[],{id:role,acc:'DNG.ManLM3'},new Date().toISOString(),row.data.data);records.set('snapshot',row);return route.fulfill({json:{row}});}
+      if(body.kind==='snapshot'&&!['manager','lead'].includes(role))return route.fulfill({status:403,json:{error:'Không có quyền nhập dữ liệu'}});
+      if(body.kind==='snapshot'&&(records.get('snapshot')?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi'}});
+      if(body.kind==='snapshot'){const previous=records.get('snapshot')?.data,row={key:'snapshot',revision:body.revision+1,data:mergeNetSnapshot(previous,body.snapshot)};row.data.meta=importAudit(previous?.meta,row.data.meta,body.types||[],{id:role,acc:profiles.find(p=>p.id===role).acc},new Date().toISOString(),row.data.data);records.set('snapshot',row);return route.fulfill({json:{row}});}
       const key=body.kind==='commit'?'commit:'+body.month+':'+(body.room||'__ALL__'):'pending:'+body.id;
       if((records.get(key)?.revision||0)!==body.revision)return route.fulfill({status:409,json:{error:'Dữ liệu đã thay đổi trên thiết bị khác. Nội dung đang nhập được giữ lại; bấm Bỏ sửa để lấy bản mới.'}});
       let data=body.value;
@@ -243,9 +245,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       return await new JSZip().file('xl/worksheets/sheet1.xml',xml).generateAsync({type:'base64'});
     },date);
     await desktop.page.evaluate(()=>{location.hash='datahub'});
+    for(const device of [desktop,lead,mobile]){await device.page.evaluate(()=>{location.hash='datahub'});assert.equal(await device.page.locator('#ibbImportBtn').isDisabled(),device===mobile);assert.equal(await device.page.locator('#ibbUploadNet').isDisabled(),device===mobile);}
     for(let upload=0;upload<2;upload++){
-      await desktop.page.locator('#ibbUploadNet').setInputFiles({name:'net-latest.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});
-      await desktop.page.locator('#ibbImportBtn').click();await desktop.page.waitForFunction(()=>document.getElementById('ibbImportMessage').textContent.includes('Dashboard đã được đồng bộ.'));
+      const uploader=upload===0?desktop:lead;
+      await uploader.page.waitForFunction(revision=>window.IBB5_SHARED_STATE.revisions.snapshot===revision,records.get('snapshot').revision,{timeout:15000});
+      await uploader.page.locator('#ibbUploadNet').setInputFiles({name:'net-latest.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});
+      await uploader.page.locator('#ibbImportBtn').click();await uploader.page.waitForFunction(()=>document.getElementById('ibbImportMessage').textContent.includes('Dashboard đã được đồng bộ.'));
       const net=records.get('snapshot').data.data.filter(row=>row.type==='Internet');
       assert.equal(net.length,7);assert.equal(net.filter(row=>row.id==='NEWIMPORT').length,1);assert.equal(net.find(row=>row.id==='PRIVATE1').date,date);
       assert.ok(net.some(row=>row.id==='OVERDUE1'));assert.ok(net.some(row=>row.id==='SYNC1'));
@@ -255,11 +260,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"]').count(),1);
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="OVERDUE1"]').count(),0);
     assert.equal(await mobile.page.locator('#pendRows tr[data-id="NEWIMPORT"] .p-note').inputValue(),'');
+    await desktop.page.waitForFunction(()=>window.IBB5_IMPORT_META.files.Internet.acc==='DNG.HoaNTB6',null,{timeout:15000});
     const netFile=structuredClone(records.get('snapshot').data.meta.files.Internet),tvFile=structuredClone(records.get('snapshot').data.meta.files['Truyền hình']);
     const netAudit=desktop.page.locator('#ibbAuditRows [data-source="Internet"]');
     assert.equal(await desktop.page.locator('#ibbAuditRows .ibb-sync-file').count(),3);
     assert.equal(await netAudit.locator('.ibb-sync-file-name').textContent(),'net-latest.xlsx');
-    assert.equal(await netAudit.locator('.ibb-sync-file-account').textContent(),'DNG.ManLM3');
+    assert.equal(await netAudit.locator('.ibb-sync-file-account').textContent(),'DNG.HoaNTB6');
     const netTime=await netAudit.locator('.ibb-sync-file-time').textContent();
     assert.match(netTime,/\d{2}:\d{2}:\d{2}/);
     await desktop.page.locator('#ibbUploadNet').setInputFiles([]);

@@ -5,7 +5,7 @@ import { fetchDashboardData } from './api.js';
 import './responsive.js';
 import './performanceView.js';
 import { rememberFocus } from './liveEdits.js';
-import { mergeNetSnapshot, isCancellationResult } from './dashboardStateModel.js';
+import { mergeNetSnapshot, isCancellationResult, canImportData } from './dashboardStateModel.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { managedShare } from './managedKpi.js';
 import { dailyPace } from './dailyPace.js';
@@ -525,7 +525,7 @@ function updateAudit(){
  $('ibbAuditBadge').textContent=count?'Đã ghi nhận '+count+' nguồn':'Chưa có lịch sử cập nhật';
 }
 
-async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).files[0]})).filter(v=>v.file),msg=$('ibbImportMessage'),btn=$('ibbImportBtn');if(!files.length){msg.textContent='Chọn ít nhất 1 file .xlsx trước khi cập nhật.';return;}btn.disabled=true;msg.textContent='Đang đọc và kiểm tra '+files.length+' file...';try{
+async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).files[0]})).filter(v=>v.file),msg=$('ibbImportMessage'),btn=$('ibbImportBtn');if(!canImportData(window.IBB5_CURRENT_PROFILE)){msg.textContent='Chỉ Trưởng phòng và Trưởng Bầy được cập nhật dữ liệu.';return;}if(!files.length){msg.textContent='Chọn ít nhất 1 file .xlsx trước khi cập nhật.';return;}btn.disabled=true;msg.textContent='Đang đọc và kiểm tra '+files.length+' file...';try{
  const parsed=[];for(const x of files){const rows=transform(await parseXlsx(x.file),x.type,x.file.name);parsed.push({...x,rows})}
  const previous=Array.isArray(window.IBB5_IMPORTED_DATA)?window.IBB5_IMPORTED_DATA:DATA;
  const replaced=new Set(parsed.map(x=>x.type));const combined=mergeNetSnapshot({data:previous},{data:[...previous.filter(x=>!replaced.has(x.type)),...parsed.flatMap(x=>x.rows)]}).data;
@@ -533,6 +533,7 @@ async function run(){const files=TYPES.map(([input,type])=>({type,file:$(input).
  if(window.IBB5_SYNC)await window.IBB5_SYNC.snapshot({data:combined,meta},parsed.map(x=>x.type));else localStorage.setItem(STORAGE,JSON.stringify({data:combined,meta}));msg.textContent='Đã cập nhật '+parsed.map(x=>x.type+': '+x.rows.length+' HĐ').join(' · ')+(window.IBB5_SYNC?' lên hệ thống dùng chung.':'')+(window.IBB5_SYNC?' Dashboard đã được đồng bộ.':' Đang làm mới Dashboard...');
  if(!window.IBB5_SYNC)location.reload();
  }catch(e){msg.textContent='Không thể cập nhật: '+e.message+' (dữ liệu cũ vẫn giữ nguyên)';console.error(e);}finally{btn.disabled=false;}}
+const allowImport=canImportData(window.IBB5_CURRENT_PROFILE);for(const [id]of TYPES)$(id).disabled=!allowImport;$('ibbImportBtn').disabled=!allowImport;if(!allowImport)$('ibbImportMessage').textContent='Chỉ Trưởng phòng và Trưởng Bầy được cập nhật dữ liệu.';
 $('ibbImportBtn')?.addEventListener('click',run);document.addEventListener('ibb5-snapshot-updated',()=>{updateStatus();updateAudit();});updateStatus();updateAudit();
 // Date controls are initialized together using the Vietnamese calendar.
 

@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc } from '../js/dashboardStateModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay } from '../js/dailyReportModel.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     }
     let key, data;
     if (body.kind === 'snapshot') {
-      if (caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được nhập dữ liệu hợp đồng.');
+      if (!canImportData(caller)) return bad(res, 403, 'Chỉ Trưởng phòng và Trưởng Bầy được nhập dữ liệu hợp đồng.');
       key = 'snapshot';
       const previous = await sharedRow(admin, key);
       data = mergeNetSnapshot(previous?.data, body.snapshot);

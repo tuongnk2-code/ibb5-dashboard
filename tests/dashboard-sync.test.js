@@ -112,6 +112,22 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     const repeated=(await invoke('GET')).body;
     assert.equal(repeated.snapshot.data.length,2);assert.equal(repeated.snapshot.data[0].date,'2026-11-06');
     assert.deepEqual(repeated.notes,approved.notes);
+    caller={id:'lead',role:'lead',acc:'DNG.HoaNTB6'};
+    const leadImport={data:[{id:'LEADNET',type:'Internet',staff:'DNG.Vypv',created:'2026-11-06'}],meta:{files:{Internet:{name:'lead-net.xlsx',acc:'forged'}}}};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:3,types:['Internet']})).code,200);
+    const leadState=(await invoke('GET')).body;
+    assert.ok(leadState.snapshot.data.some(row=>row.id==='LEADNET'));
+    assert.deepEqual(leadState.notes,approved.notes);
+    assert.equal(leadState.snapshot.meta.files.Internet.acc,'DNG.HoaNTB6');
+    assert.equal(rows.get('snapshot').updated_by,'lead');
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:3,types:['Internet']})).code,409);
+    assert.equal((await invoke('POST',{kind:'migrate',snapshot:leadImport})).code,403);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'NET1',revision:5})).code,403);
+    caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:4,types:['Internet'],role:'manager'})).code,403);
+    assert.equal((await invoke('POST',{kind:'snapshot',snapshot:leadImport,revision:4,types:['Internet']},false)).code,401);
+    assert.equal(rows.get('snapshot').revision,4);
+
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 
