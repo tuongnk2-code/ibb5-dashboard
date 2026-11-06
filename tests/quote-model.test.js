@@ -47,3 +47,10 @@ test('ongoing monthly payment follows the package and recurring extras, never a 
  assert.equal(quoteTotals({...quote,monthly:''}).ongoing,null);
  assert.equal(quoteTotals({...quote,extras:[{name:'Cloud',qty:1,price:'',billing:'monthly'}]}).ongoing,null);
 });
+
+test('customer name, street address and advisor contact are optional for export',()=>{
+  const quote={...base(),customer:'',address:'',contact:''};
+  assert.deepEqual(quoteErrors(quote),[]);
+  assert.equal(quoteTotals(quote).total,quoteTotals(base()).total);
+  assert.deepEqual(quoteErrors({...quote,options:[quotePlan(quote),quotePlan(quote)]}),[]);
+});

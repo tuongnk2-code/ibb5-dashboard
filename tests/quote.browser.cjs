@@ -24,6 +24,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.equal(await field('futureMonthly').count(),0);await field('vat').selectOption('included');assert.match(await page.locator('.q-doc-total').textContent(),/300\.000/);assert.match(await page.locator('.q-doc-period').textContent(),/Trả sau/);await field('vat').selectOption('');
     assert.equal(await field('fee').count(),0);assert.match(await page.locator('#qFeeInfo').textContent(),/300\.000/);await page.locator('#qPolicy').selectOption('3');assert.match(await page.locator('#qFeeInfo').textContent(),/Chưa có phí/);
     await page.locator('#qPng').click();assert.match(await page.locator('#qMessage').textContent(),/phí hòa mạng/);
+    await page.locator('#qPolicy').selectOption('0');await field('vat').selectOption('included');await field('confirmed').check();
+    for(const name of ['customer','address','contact'])assert.equal(await field(name).inputValue(),'');
+    assert.equal(await page.locator('.q-doc-draft').count(),0);assert.match(await page.locator('.q-doc-customer').textContent(),/Quý khách/);
+    const blankExport=page.waitForEvent('download');await page.locator('#qPng').click();assert.ok((await blankExport).suggestedFilename().endsWith('.png'));
     for(const [name,value]of Object.entries({customer:'Nguyễn Văn A <Khách>',address:'123 Đường A',need:'Làm việc và giải trí',discount:'70000',contact:'0900000000'}))await field(name).fill(value);
     await page.locator('#qPolicy').selectOption('1');assert.equal(await field('months').inputValue(),'6');assert.equal(await field('giftMonths').inputValue(),'1');await field('vat').selectOption('included');
     for(const item of [{name:'Camera ngoài trời',price:'500000',billing:'once'},{name:'Cloud',price:'50000',billing:'monthly'}]){await page.locator('#qAdd').click();const row=page.locator('.q-extra').last();await row.locator('[data-field="name"]').fill(item.name);await row.locator('[data-field="price"]').fill(item.price);await row.locator('[data-field="billing"]').selectOption(item.billing);}

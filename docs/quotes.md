@@ -29,3 +29,5 @@ Khối Cước toàn bộ sau ưu đãi được bỏ khỏi mẫu báo giá, b�
 Bỏ trường Hiệu lực đến ở phần nhập và bản gửi khách; các phiên bản cũ có ngày hết hạn không bị chặn xuất vì trường này. Giữ kiểm tra ngày lập hợp lệ. Cỡ chữ mẫu báo giá thống nhất: nội dung khoảng 13–14.5px, nhãn 12px, tiêu đề 23–28px, tổng tiền 34px; bản in giữ cỡ chữ rõ ràng, bảng nhiều gói tự ngắt dòng.
 
 Các ô cước gói/tháng, số tháng thu tiền (chu kỳ trả sau), số tháng tặng được ẩn khỏi form; giữ giá trị liên kết từ gói/chính sách cho tính toán và phiên bản lưu.
+
+Tên khách hàng, địa chỉ lắp đặt chi tiết và số liên hệ nhân viên là tùy chọn khi lưu/xuất báo giá. VAT, xác nhận chi phí và điều kiện tài chính vẫn được kiểm tra.

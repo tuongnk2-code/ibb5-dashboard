@@ -44,7 +44,7 @@ export function quoteErrors(quote) {
     return quoteOptions(quote).flatMap((option,index)=>quoteErrors(option).map(error=>(quote.options.length>1?'Gói '+(index+1)+': ':'')+error));
   }
   const errors=[...quoteTotals(quote).errors];
-  for(const [field,label]of Object.entries({customer:'Tên khách hàng',address:'Địa chỉ lắp đặt',province:'Tỉnh/thành',ward:'Phường/xã',packageName:'Tên gói/phương án',advisor:'Nhân viên tư vấn',contact:'Số liên hệ nhân viên'}))if(!quote[field]?.trim())errors.push('Cần nhập '+label+'.');
+  for(const [field,label]of Object.entries({province:'Tỉnh/thành',ward:'Phường/xã',packageName:'Tên gói/phương án',advisor:'Nhân viên tư vấn'}))if(!quote[field]?.trim())errors.push('Cần nhập '+label+'.');
   if(!validDay(quote.date))errors.push('Chọn ngày lập báo giá hợp lệ.');
   if(!quote.confirmed)errors.push('Xác nhận giá, VAT, phí và ưu đãi trước khi xuất.');
   return errors;
