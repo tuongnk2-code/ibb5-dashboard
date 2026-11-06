@@ -39,3 +39,5 @@ Tổng quan (gồm KPI, biểu đồ và bảng ngày), Hiệu suất nhân sự
 Tab HĐ hủy có Tháng theo dõi (mặc định theo tháng của ngày Đến trên Tổng quan). Các KPI, hai bảng và CSV cùng lọc theo tháng tạo HĐ và năm/Bầy đang chọn. Chọn Cả năm để xem lại 12 tháng và tổng năm. Đổi ngày Đến sẽ cập nhật tháng theo dõi; đồng bộ file mới giữ tháng đã chọn.
 
 Tháng theo dõi hỗ trợ tích nhiều tháng trong menu. KPI tổng hợp các tháng được chọn; bảng/CSV hiển thị các tháng này theo thứ tự và Tổng các tháng chọn. Tỷ lệ tổng = tổng HĐ hủy / tổng HĐ tạo của những tháng chọn, không lấy trung bình tỷ lệ từng tháng. Cả năm chọn đủ 12 tháng; Tháng đang theo dõi trở về tháng trên Tổng quan. Luôn giữ ít nhất một tháng.
+
+Bộ lọc HĐ tồn: Chưa Online lấy HĐ chưa có Ngày Online thực tế trong nguồn NET, không dựa vào Kết quả nhân viên nhập. Đến hạn lấy Ngày Online dự kiến bằng ngày chốt dữ liệu; không gộp các ngày quá hạn. HĐ quá hạn không gồm Hủy vẫn lấy ngày dự kiến trước ngày chốt và loại Kết quả Hủy.

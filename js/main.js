@@ -209,7 +209,7 @@ const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-
 function isFilled(id){const n=notes[id]||{};return ['expected','timeSlot','action','result','source'].every(k=>String(n[k]||'').trim())&&(!isCancellationResult(n.result)||!!n.cancelReason?.trim())}
 function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&(!x.date||x.date>asof))}
 function pending(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&((!x.date||x.date>asof)||!isFilled(x.id)||isCancellationResult(notes[x.id]?.result)))}
-function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d<=asof?'due':'waiting'}
+function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d===asof?'due':d<asof?'overdue':'waiting'}
 const RESULTS=['Chưa Online','Đã Online','Dự Kiến Hủy','Hủy'];
 const REASONS=['chưa thống nhất với người nhà','Nhà KH đang xây dựng chưa xong','Kh muốn hẹn ngày đó','Đang còn cước đối thủ','Kh chưa chuyển vào ở','Không có lịch tích hẹn sớm hơn','Not hạ tầng','Chờ đầu tư hạ tầng','KH chưa đồng ý PHM','KH chưa đồng ý cước','Khác'];
 const TIME_SLOTS=['8h - 10h','10h - 12h','13h30 - 15h30','15h30 - 17h30'];
@@ -221,7 +221,7 @@ const header=el('pendRows').closest('table').querySelector('thead');
 header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+escapeHTML(v)+'</div>'+(fields[i]==='created'?'<select class="ph-created-month" id="pendCreatedMonth" aria-label="Lọc tháng tạo HĐ"><option value="">Tất cả tháng</option></select>':'')+'<select class="ph-filter" data-field="'+fields[i]+'" aria-label="Lọc '+escapeHTML(v)+'"><option value="">Tất cả</option></select></th>').join('')+'<th>Cập nhật</th><th>TP Duyệt hủy</th></tr>';
 const opts=(arr,selected)=>'<option value="">Chọn...</option>'+[...new Set([...arr,...(selected?[selected]:[])])].map(v=>'<option value="'+escapeHTML(v)+'"'+(selected===v?' selected':'')+'>'+escapeHTML(v)+'</option>').join('');
 const customer=x=>x.customer||x.customerName||x.customer_name||x.tenKhachHang||x.ten_khach_hang||'';
-function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
+function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn':status(x)==='overdue'?'Quá hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
 function filtered(){let q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),a=(q?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>!isCancelled(x.id)&&(window.IBB5_ROLE?.canView(x)??true)),mode=el('pendStatus').value,asof=el('pendAsOf').value;
 a=a.filter(x=>{
  if(mode==='all')return true;
@@ -229,8 +229,8 @@ a=a.filter(x=>{
  if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
- if(mode==='notonline')return true;
- if(mode==='due')return status(x)==='due';
+ if(mode==='notonline')return !String(x.date||'').trim();
+ if(mode==='due')return !!asof&&notes[x.id]?.expected===asof;
  if(mode==='overdue-active')return !!notes[x.id]?.expected&&notes[x.id].expected<asof&&!isCancellationResult(notes[x.id]?.result);
  if(mode==='missing')return status(x)==='missing';
  if(mode==='old')return x.created.slice(0,7)<asof.slice(0,7);

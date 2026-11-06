@@ -49,9 +49,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.deepEqual(await ids(),allowed(['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE']));
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.WAIT.result='Chưa Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:WAIT']}}));});
    assert.deepEqual(await ids(),allowed(['DUE','LATE','MISSING','OLD','ONLINE','OUTSIDE']));
-   for(const [mode,expected]of Object.entries({all:['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE'],notonline:['DUE','LATE','WAIT','MISSING','OLD','OUTSIDE'],due:['DUE','LATE','OLD','OUTSIDE'],missing:['MISSING'],old:['OLD'],aged:['OLD']})){
+   for(const [mode,expected]of Object.entries({all:['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE'],notonline:['DUE','LATE','WAIT','MISSING','OLD','OUTSIDE'],due:['DUE','OLD','OUTSIDE'],missing:['MISSING'],old:['OLD'],aged:['OLD']})){
     await page.locator('#pendStatus').selectOption(mode);assert.deepEqual(await ids(),allowed(expected),role+' '+mode);
    }
+   await page.locator('#pendStatus').selectOption('notonline');
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.MISSING.result='Đã Online';window.IBB5_PENDING_NOTES.ONLINE.result='Chưa Online';window.IBB5_SHARED_STATE.snapshot={data:window.IBB5_IMPORTED_DATA.map(row=>row.id==='WAIT'?{...row,date:'2026-11-07'}:{...row})};document.dispatchEvent(new CustomEvent('ibb5-snapshot-updated'));document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['snapshot','pending:MISSING','pending:ONLINE']}}));});
+   assert.deepEqual(await ids(),allowed(['DUE','LATE','MISSING','OLD','OUTSIDE']));
+   await page.evaluate(()=>{delete window.IBB5_PENDING_NOTES.MISSING.result;delete window.IBB5_PENDING_NOTES.ONLINE.result;window.IBB5_SHARED_STATE.snapshot={data:window.IBB5_IMPORTED_DATA.map(row=>row.id==='WAIT'?{...row,date:''}:{...row})};document.dispatchEvent(new CustomEvent('ibb5-snapshot-updated'));document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['snapshot','pending:MISSING','pending:ONLINE']}}));});
    await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),['LATE']);
    for(const result of ['Hủy',' Huỷ ']){
     await page.evaluate(result=>{window.IBB5_PENDING_NOTES.LATE.result=result;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));},result);
@@ -59,7 +63,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.locator('#pendStatus').selectOption('awaiting-cancellation');assert.deepEqual(await ids(),['LATE']);
     assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),role==='manager'?1:0);
     const approvalDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const approvalCsv=fs.readFileSync(await (await approvalDownload).path(),'utf8');assert.match(approvalCsv,/LATE/);assert.doesNotMatch(approvalCsv,/CANCEL|ONLINE|OUTSIDE/);
-    await page.locator('#pendStatus').selectOption('due');assert.ok((await ids()).includes('LATE'));
+    await page.locator('#pendStatus').selectOption('due');assert.ok(!(await ids()).includes('LATE'));
     await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),[]);
    }
    await page.locator('#pendStatus').selectOption('awaiting-cancellation');
@@ -70,10 +74,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.LATE.result='Dự Kiến Hủy';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));});assert.deepEqual(await ids(),['LATE']);
    const overdueDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const overdueCsv=fs.readFileSync(await (await overdueDownload).path(),'utf8');assert.match(overdueCsv,/LATE/);assert.doesNotMatch(overdueCsv,/ONLINE|OUTSIDE|DUE|OLD/);
    await page.locator('#pendStatus').selectOption('due');
-   await page.locator('.ph-filter[data-field="staff"]').selectOption('DNG.ManLM3');assert.deepEqual(await ids(),['DUE','LATE','OLD']);
-   await page.locator('#pendCreatedMonth').selectOption('2026-11');assert.deepEqual(await ids(),['DUE','LATE']);
-   await page.locator('#pendQuery').fill('Khách LATE');assert.deepEqual(await ids(),['LATE']);
-   const downloaded=page.waitForEvent('download');await page.locator('#pendExport').click();const csv=fs.readFileSync(await (await downloaded).path(),'utf8');assert.match(csv,/LATE/);assert.doesNotMatch(csv,/ONLINE|OUTSIDE|DUE/);
+   await page.locator('.ph-filter[data-field="staff"]').selectOption('DNG.ManLM3');assert.deepEqual(await ids(),['DUE','OLD']);
+   await page.locator('#pendCreatedMonth').selectOption('2026-11');assert.deepEqual(await ids(),['DUE']);
+   await page.locator('#pendQuery').fill('Khách DUE');assert.deepEqual(await ids(),['DUE']);
+   const downloaded=page.waitForEvent('download');await page.locator('#pendExport').click();const csv=fs.readFileSync(await (await downloaded).path(),'utf8');assert.match(csv,/DUE/);assert.doesNotMatch(csv,/ONLINE|OUTSIDE|LATE/);
    await page.locator('#pendQuery').fill('Khách ONLINE');assert.deepEqual(await ids(),[]);
    await page.locator('#pendStatus').selectOption('all');assert.deepEqual(await ids(),['ONLINE']);
    await page.locator('#pendQuery').fill('Khách DONE');assert.deepEqual(await ids(),['DONE']);
