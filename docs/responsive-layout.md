@@ -12,3 +12,5 @@
 Kiểm thử giao diện: `node tests/responsive.browser.cjs` với Playwright có sẵn trong môi trường. Có thể đặt `PLAYWRIGHT_MODULE` thành đường dẫn module Playwright và `RESPONSIVE_SCREENSHOT_DIR` để lưu ảnh. Bộ kiểm thử dùng dữ liệu giả lập, chạy 12 tab ở độ rộng 360, 390, 768, 1024 và 1440px.
 
 Báo cáo hiệu suất theo Ngày chọn hiển thị thêm hai danh sách HĐ đã lên (Ngày tạo NET) và HĐ đã Online (Ngày Online NET), cùng bộ lọc ngày/Bầy/nhân sự/phòng. Danh sách chi tiết tuân theo quyền xem HĐ của tài khoản; chỉ số tổng hợp giữ nguyên. Máy tính đặt danh sách cạnh bảng nhân sự, màn hình nhỏ xếp bên dưới; Cả tháng ẩn danh sách. CSV ngày bổ sung hai cột mã HĐ theo phạm vi được xem.
+
+Chế độ ngày: máy tính hiển thị bảng nhân sự và hai danh sách HĐ thành ba phần cùng hàng; tablet đặt bảng tổng hợp phía trên hai danh sách, điện thoại xếp dọc. Mã HĐ và Acc gộp cùng ô để tiết kiệm chiều ngang.
