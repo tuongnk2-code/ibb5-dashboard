@@ -681,7 +681,7 @@ document.addEventListener('click',async function(e){const btn=e.target.closest('
 // ---- Original script 16 id="daily-perf-script" ----
 /* IBB5: Daily and monthly employee sales/online matrix; existing KPIs untouched. */
 (()=>{'use strict';
-const el=id=>document.getElementById(id), norm=s=>String(s||'').trim().toLowerCase(), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]||'&quot;')),fmt=n=>Number(n||0).toLocaleString('vi-VN');
+const el=id=>document.getElementById(id), norm=s=>String(s||'').trim().toLowerCase(), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||'&quot;')),fmt=n=>Number(n||0).toLocaleString('vi-VN');
 const monthEnd=m=>m+'-'+String(new Date(+m.slice(0,4),+m.slice(5),0).getDate()).padStart(2,'0');
 const order=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trinp','dng.dathx4','dng.hoantt','dng.nhannt137','dng.namnh170','dng.hoantb6','dng.manlm3','dng.tienna2','dng.hannvn','dng.bachnd7','dng.doanlt4','dng.lanmh2','dng.datbth'];
 const root=el('ibbDayPerf');if(!root)return;
@@ -692,14 +692,15 @@ function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('
  const max=+monthEnd(m).slice(-2),days=Array.from({length:max},(_,i)=>i+1),people=PERSONNEL.filter(p=>(!team||String(p.team)===team)&&(!search||norm(p.name+' '+p.acc).includes(search))).sort((a,b)=>{if(+a.team!==+b.team)return +a.team-+b.team;const x=order.indexOf(norm(a.acc)),y=order.indexOf(norm(b.acc));return (x<0?999:x)-(y<0?999:y)});
  const persons=new Map(people.map(p=>[norm(p.acc),{...p,team:String(p.team),sold:Array(max).fill(0),online:Array(max).fill(0)}]));
  // Use precisely the same personnel roster and team membership as the main Hiệu suất nhân sự table.
- for(const x of distinctNet()){
+ const contracts=distinctNet().filter(x=>(!room||x.room===room)&&persons.has(norm(x.staff)));
+ for(const x of contracts){
   if(room&&x.room!==room)continue;
   const acc=norm(x.staff);if(!acc)continue;const p=persons.get(acc);
   if(!p)continue;
   if(x.created?.slice(0,7)===m&&+x.created.slice(-2)>=1&&+x.created.slice(-2)<=max)p.sold[+x.created.slice(-2)-1]++;
   if(x.date?.slice(0,7)===m&&+x.date.slice(-2)>=1&&+x.date.slice(-2)<=max)p.online[+x.date.slice(-2)-1]++;
  }
- return {m,day,mode,team,search,days,rows:[...persons.values()]};
+ return {m,day,mode,team,search,days,contracts,rows:[...persons.values()]};
 }
 const total=(arr,days)=>({sold:days.map((_,i)=>arr.reduce((s,p)=>s+(p.sold[i]||0),0)),online:days.map((_,i)=>arr.reduce((s,p)=>s+(p.online[i]||0),0))});
 function rowHtml(p,mode,idx,days){
@@ -708,6 +709,16 @@ function rowHtml(p,mode,idx,days){
  return days.map((day,i)=>{const warn=!!p.acc&&(current.m+'-'+String(day).padStart(2,'0')<=reportDay());return cell('sold',p.sold[i]||0,warn)+cell('online',p.online[i]||0,warn)}).join('');
 }
 function kpi(title,val,cl=''){return `<div class="dp-kpi ${cl}"><small>${esc(title)}</small><strong>${esc(val)}</strong></div>`}
+function visibleContracts(records){return records.filter(row=>window.IBB5_ROLE?.canView(row)??false);}
+function renderContracts(v){
+ const container=el('dpContractDetails');el('dpReportContent').classList.toggle('dp-day-layout',v.mode==='day');container.hidden=v.mode!=='day';
+ if(v.mode!=='day'){container.innerHTML='';return;}
+ const date=value=>value?value.split('-').reverse().join('/'):'—';
+ const lists=[{key:'sold',title:'HĐ đã lên',rows:v.contracts.filter(row=>row.created===v.day)},{key:'online',title:'HĐ đã Online',rows:v.contracts.filter(row=>row.date===v.day)}];
+ container.innerHTML=lists.map(list=>{const visible=visibleContracts(list.rows).sort((a,b)=>norm(a.staff).localeCompare(norm(b.staff))||String(a.id).localeCompare(String(b.id)));
+ return '<section class="dp-contract-card dp-contract-'+list.key+'"><div class="dp-contract-head"><h4>'+list.title+' <span>'+visible.length+' HĐ</span></h4><small>'+esc(date(v.day))+(visible.length!==list.rows.length?' · Hiển thị '+visible.length+'/'+list.rows.length+' HĐ theo quyền tài khoản':'')+'</small></div><table><thead><tr><th>Mã HĐ</th><th>Mã Acc</th><th>Khách hàng / Thông tin</th></tr></thead><tbody>'+visible.map(row=>'<tr data-contract-id="'+esc(String(row.id).trim().toUpperCase())+'"><td><b>'+esc(String(row.id).trim().toUpperCase())+'</b></td><td>'+esc(row.staff||'—')+'</td><td>'+esc(row.customer||row.customerName||row.customer_name||'—')+'<small>Ngày tạo: '+esc(date(row.created))+' · Online: '+esc(row.date?date(row.date):'Chưa Online')+'</small></td></tr>').join('')+(visible.length?'':'<tr><td colspan="3" class="dp-contract-empty">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>')+'</tbody></table></section>';
+ }).join('');
+}
 function render(){
  const v=calculate();current=v;const {m,day,mode,team,search,days,rows}=v;
  el('dpDateWrap').style.display=mode==='day'?'':'none';
@@ -728,7 +739,7 @@ function render(){
   body+=`<tr class="dp-subtotal"><td class="dp-staff">TỔNG BẦY ${t}</td>`+rowHtml(total(members,days),mode,idx,days)+'</tr>';
  }
  body+=`<tr class="dp-grand"><td class="dp-staff">${team?'TỔNG BẦY '+team:'TỔNG PHÒNG'} (${rows.length} NS)</td>`+rowHtml(total(rows,days),mode,idx,days)+'</tr>';
- el('dpTableBody').innerHTML=body;
+ el('dpTableBody').innerHTML=body;renderContracts(v);
  // VISUAL ONLY: explicit column grid prevents browser/zoom from stretching the pinned Mã Acc column.
  const baseDay=mode==='day'?70:50,cols=mode==='day'?2:days.length*2,tableW=146+cols*baseDay;
  el('dpColGroup').innerHTML='<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
@@ -736,8 +747,8 @@ function render(){
  el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
 }
 function exportCSV(){const v=current;const {m,day,mode,team,days,rows}=v;if(!rows)return;
- const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày','Bán mới','Online']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>[d+' Bán',d+' Online'])]];
- function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,r.sold[idx]||0,r.online[idx]||0]:[team,name,acc,...days.flatMap((_,i)=>[r.sold[i]||0,r.online[i]||0])]);}
+ const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày','Bán mới','Online','Mã HĐ đã lên','Mã HĐ đã Online']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>[d+' Bán',d+' Online'])]];
+ function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,r.sold[idx]||0,r.online[idx]||0,...['created','date'].map(field=>acc?visibleContracts(v.contracts).filter(row=>norm(row.staff)===norm(acc)&&row[field]===day).map(row=>String(row.id).trim().toUpperCase()).join(' | '):'')]:[team,name,acc,...days.flatMap((_,i)=>[r.sold[i]||0,r.online[i]||0])]);}
  for(const t of team?[team]:['1','2','3']){const people=rows.filter(p=>p.team===t);people.forEach(p=>push('Bầy '+t,p.name,p.acc,p));push('Bầy '+t,'TỔNG BẦY '+t,'',total(people,days));}
  push('Tổng',team?'TỔNG BẦY '+team:'TỔNG PHÒNG','',total(rows,days));
  const csv='\ufeff'+table.map(row=>row.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');

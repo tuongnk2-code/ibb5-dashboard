@@ -497,3 +497,23 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts .pending-header-filters select{width:100%;min-width:0;height:42px;box-sizing:border-box;padding:8px 12px;font-size:14px}
 #pendingContracts .pending-header-filters label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#58799b}
 @media(max-width:650px){#pendingContracts .pending-header-filters{width:100%;grid-template-columns:minmax(0,1fr);gap:10px}}
+
+#performance .dp-day-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+#performance .dp-day-layout>.dp-scroll{min-width:0;max-width:100%;margin:0}
+#performance .dp-contract-details{display:grid;gap:12px;min-width:0}
+#performance .dp-contract-details[hidden]{display:none!important}
+#performance .dp-contract-card{border:1px solid #d8e5f3;border-radius:10px;overflow:hidden;background:white;min-width:0}
+#performance .dp-contract-head{padding:12px 14px;background:#f5f9ff;border-bottom:1px solid #dce7f3}
+#performance .dp-contract-head h4{font-size:15px;color:#173b60;margin:0 0 4px}
+#performance .dp-contract-head h4 span{font-size:12px;font-weight:750;padding:3px 7px;border-radius:12px;background:#e7f2ff;color:#1177c7;margin-left:6px}
+#performance .dp-contract-sold .dp-contract-head h4 span{color:#bd5a12;background:#fff0df}
+#performance .dp-contract-head>small{font-size:11px;color:#66829e;line-height:1.4}
+#performance .dp-contract-card table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:12px}
+#performance .dp-contract-card th,#performance .dp-contract-card td{padding:9px 10px;border-bottom:1px solid #e5edf6;text-align:left;vertical-align:top;overflow-wrap:anywhere;white-space:normal}
+#performance .dp-contract-card th{font-size:11px;background:#f8fbff;color:#5d7c99}
+#performance .dp-contract-card th:nth-child(1){width:25%}
+#performance .dp-contract-card th:nth-child(2){width:29%}
+#performance .dp-contract-card td small{display:block;margin-top:4px;font-size:10px;color:#7089a2;line-height:1.5}
+#performance .dp-contract-card tbody tr:last-child td{border-bottom:0}
+#performance .dp-contract-empty{text-align:center!important;color:#7089a2;padding:18px!important}
+@media(max-width:900px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}}

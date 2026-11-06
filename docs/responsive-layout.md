@@ -10,3 +10,5 @@
 `css/responsive.css` nạp sau các stylesheet hiện có. `js/responsive.js` quản lý menu, bàn phím và các bảng chưa có vùng cuộn riêng.
 
 Kiểm thử giao diện: `node tests/responsive.browser.cjs` với Playwright có sẵn trong môi trường. Có thể đặt `PLAYWRIGHT_MODULE` thành đường dẫn module Playwright và `RESPONSIVE_SCREENSHOT_DIR` để lưu ảnh. Bộ kiểm thử dùng dữ liệu giả lập, chạy 12 tab ở độ rộng 360, 390, 768, 1024 và 1440px.
+
+Báo cáo hiệu suất theo Ngày chọn hiển thị thêm hai danh sách HĐ đã lên (Ngày tạo NET) và HĐ đã Online (Ngày Online NET), cùng bộ lọc ngày/Bầy/nhân sự/phòng. Danh sách chi tiết tuân theo quyền xem HĐ của tài khoản; chỉ số tổng hợp giữ nguyên. Máy tính đặt danh sách cạnh bảng nhân sự, màn hình nhỏ xếp bên dưới; Cả tháng ẩn danh sách. CSV ngày bổ sung hai cột mã HĐ theo phạm vi được xem.
