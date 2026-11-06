@@ -479,3 +479,15 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 }
 
 #cancelled.ibbc-month-view .ibbc-table{width:100%;min-width:290px;table-layout:auto}
+
+#cancelled .ibbc-month-picker{position:relative;min-width:160px;display:grid;gap:5px;color:#64809d;font-size:12px;font-weight:700}
+#cancelled #ibbcMonth summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;min-height:40px;padding:0 12px;box-sizing:border-box;border:1px solid #d5e4f2;border-radius:9px;background:white;color:#173b5c;font-size:13px}
+#cancelled #ibbcMonth summary::-webkit-details-marker{display:none}
+#cancelled #ibbcMonth summary::after{content:'⌄'}
+#cancelled .ibbc-month-options{position:absolute;top:100%;right:0;z-index:20;width:280px;max-width:85vw;padding:12px;border:1px solid #d5e4f2;border-radius:10px;background:white;box-shadow:0 8px 24px #153b6226;box-sizing:border-box}
+#cancelled .ibbc-month-actions{display:flex;gap:6px;margin-bottom:8px}
+#cancelled .ibbc-month-actions button{min-width:0;height:auto;padding:7px 8px;font-size:11px}
+#cancelled .ibbc-month-checks{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+#cancelled .ibbc-month-checks label{display:flex;flex-direction:row;align-items:center;gap:9px;padding:8px;border-radius:6px;color:#173b5c;cursor:pointer;font-size:13px}
+#cancelled .ibbc-month-checks label:hover{background:#eef6ff}
+#cancelled .ibbc-month-checks input{width:17px;height:17px;min-width:17px;margin:0;accent-color:#1684e6}

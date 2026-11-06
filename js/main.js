@@ -759,6 +759,10 @@ const whole=n=>Number(n||0).toLocaleString('vi-VN');
 const datestr=s=>typeof s==='string'&&/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(s);
 const ORDER=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trinp','dng.dathx4','dng.hoantt','dng.nhannt137','dng.namnh170','dng.hoantb6','dng.manlm3','dng.tienna2','dng.hannvn','dng.bachnd7','dng.doanlt4','dng.lanmh2','dng.datbth'];
 let current=null;
+const monthInputs=[...root.querySelectorAll('#ibbcMonth input[type="checkbox"]')];
+const selectedMonths=()=>monthInputs.filter(input=>input.checked).map(input=>Number(input.value));
+function selectMonths(months){monthInputs.forEach(input=>{input.checked=months.includes(Number(input.value));});}
+function monthSummary(){const months=selectedMonths();$('ibbcMonthSummary').textContent=months.length===12?'Cả năm':months.length<=3?'Tháng '+months.join(', '):'Đã chọn '+months.length+' tháng';$('ibbcMonthSummary').title='Tháng '+months.join(', ');monthInputs.forEach(input=>{input.disabled=months.length===1&&input.checked;});}
 
 function netRows(){const uniq=new Map();for(const r of DATA){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}return [...uniq.entries()].map(([id,r])=>({...r,id}));}
 function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
@@ -767,7 +771,7 @@ function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
 });}
 function getYears(){const years=new Set([new Date().getFullYear(),Number(($('to')?.value||reportDay().slice(0,7)).slice(0,4))]);for(const x of netRows()){const y=Number((x.created||'').slice(0,4));if(y>=2020&&y<=2100)years.add(y)}return [...years].sort((a,b)=>b-a)}
 function refreshYears(){const e=$('ibbcYear'),old=e.value,ys=getYears();e.innerHTML=ys.map(y=>`<option value="${y}">${y}</option>`).join('');const follow=Number(($('to')?.value||'').slice(0,4));e.value=ys.includes(Number(old))?old:ys.includes(follow)?String(follow):String(ys[0]);}
-function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,month=Number($('ibbcMonth').value)||null,all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
+function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value,months=selectedMonths(),month=months.length===1?months[0]:null,all=netRows(),people=roster(),allMap=new Map(people.map(p=>[norm(p.acc),p]));
  const visible=people.filter(p=>!team||String(p.team)===team);
  const rows=new Map(visible.map(p=>[norm(p.acc),{acc:p.acc,team:String(p.team),sold:Array(12).fill(0),cancel:Array(12).fill(0)}]));
  const notMapped={acc:'KHÔNG KHỚP MÃ ACC',team:'?',sold:Array(12).fill(0),cancel:Array(12).fill(0)};
@@ -775,14 +779,14 @@ function build(){const year=Number($('ibbcYear').value),team=$('ibbcTeam').value
  for(const r of all){const cancelled=isTerminatedNetContract(r),acc=norm(r.staff),p=allMap.get(acc);
   if(!datestr(r.created)){if(cancelled)invalidMonth++;continue;}
   if(Number(r.created.slice(0,4))!==year)continue;
-  const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12||(month&&ix!==month-1))continue;
+  const ix=Number(r.created.slice(5,7))-1;if(ix<0||ix>=12||!months.includes(ix+1))continue;
   if(team && String(p?.team)!==team)continue;
   const entry=rows.get(acc)||(!team?notMapped:null);if(!entry)continue;
   if(!p)unmatched++;
   entry.sold[ix]++;
   if(cancelled){entry.cancel[ix]++;yearCancellations++;}
  }
- return {year,team,month,columns:month?[month-1]:Array.from({length:12},(_,i)=>i),rows,visible,notMapped,unmatched,invalidMonth,yearCancellations};
+ return {year,team,month,months,annual:months.length===12,totalLabel:months.length===12?'Tổng năm':'Tổng các tháng chọn',columns:months.map(month=>month-1),rows,visible,notMapped,unmatched,invalidMonth,yearCancellations};
 }
 function aggregated(rs){return {sold:Array.from({length:12},(_,i)=>rs.reduce((s,x)=>s+x.sold[i],0)),cancel:Array.from({length:12},(_,i)=>rs.reduce((s,x)=>s+x.cancel[i],0))};}
 const nsum=arr=>arr.reduce((s,x)=>s+x,0);
@@ -791,11 +795,11 @@ const fmtValue=(r,i,kind)=>kind==='count'?whole(r.cancel[i]):rate(r.cancel[i],r.
 const fmtTotal=(r,kind)=>kind==='count'?whole(nsum(r.cancel)):rate(nsum(r.cancel),nsum(r.sold));
 function renderOne(kind,v){
   const head=$(kind==='count'?'ibbcCountHead':'ibbcRateHead'),body=$(kind==='count'?'ibbcCountBody':'ibbcRateBody');
-  root.classList.toggle('ibbc-month-view',!!v.month);
-  head.innerHTML='<tr><th class="ibbc-team-head" rowspan="2">Bầy</th><th class="ibbc-acc-head" rowspan="2">Mã Acc</th><th class="ibbc-superhead" colspan="'+v.columns.length+'">'+(kind==='count'?'Số lượng HĐ Hủy':'Tỷ lệ HĐ Hủy')+' · '+(v.month?'Tháng '+v.month+'/':'')+v.year+'</th>'+(!v.month?'<th rowspan="2" class="ibbc-total">Tổng năm</th>':'')+'</tr><tr>'+v.columns.map(i=>`<th class="ibbc-month">Tháng ${i+1}</th>`).join('')+'</tr>';
+  root.classList.toggle('ibbc-month-view',v.months.length<=3);root.style.setProperty('--ibbc-month-columns',v.columns.length);
+  head.innerHTML='<tr><th class="ibbc-team-head" rowspan="2">Bầy</th><th class="ibbc-acc-head" rowspan="2">Mã Acc</th><th class="ibbc-superhead" colspan="'+v.columns.length+'">'+(kind==='count'?'Số lượng HĐ Hủy':'Tỷ lệ HĐ Hủy')+' · '+(!v.annual?'Tháng '+v.months.join(', ')+'/':'')+v.year+'</th>'+(v.columns.length>1?'<th rowspan="2" class="ibbc-total">'+v.totalLabel+'</th>':'')+'</tr><tr>'+v.columns.map(i=>`<th class="ibbc-month">Tháng ${i+1}</th>`).join('')+'</tr>';
   const groupNums=v.team?[v.team]:['1','2','3'];let html='',exportRows=[];
-  const vrow=(r)=>v.columns.map(i=>`<td class="ibbc-month ${kind==='count'&&r.cancel[i]?'ibbc-cancel-val':''}">${fmtValue(r,i,kind)}</td>`).join('')+(!v.month?`<td class="ibbc-total">${fmtTotal(r,kind)}</td>`:'');
-  const exportRow=(t,acc,r)=>{exportRows.push([t,acc,...v.columns.map(i=>fmtValue(r,i,kind)),...(!v.month?[fmtTotal(r,kind)]:[])]);};
+  const vrow=(r)=>v.columns.map(i=>`<td class="ibbc-month ${kind==='count'&&r.cancel[i]?'ibbc-cancel-val':''}">${fmtValue(r,i,kind)}</td>`).join('')+(v.columns.length>1?`<td class="ibbc-total">${fmtTotal(r,kind)}</td>`:'');
+  const exportRow=(t,acc,r)=>{exportRows.push([t,acc,...v.columns.map(i=>fmtValue(r,i,kind)),...(v.columns.length>1?[fmtTotal(r,kind)]:[])]);};
   for(const t of groupNums){const people=v.visible.filter(p=>String(p.team)===t),rr=people.map(p=>v.rows.get(norm(p.acc))).filter(Boolean),sum=aggregated(rr);
     people.forEach((p,i)=>{const r=v.rows.get(norm(p.acc));html+=`<tr>${i===0?`<td class="ibbc-team" rowspan="${people.length}">Bầy ${safe(t)}</td>`:''}<td class="ibbc-acc">${safe(p.acc)}</td>${vrow(r)}</tr>`;exportRow('Bầy '+t,p.acc,r)});
     html+=`<tr class="ibbc-subtotal"><td class="ibbc-merged" colspan="2">TỔNG BẦY ${safe(t)}</td>${vrow(sum)}</tr>`;exportRow('Bầy '+t,'TỔNG BẦY '+t,sum);
@@ -809,7 +813,7 @@ function renderOne(kind,v){
 }
 function render(){if(!$('ibbcYear')?.value)return;const v=build();
   const count=renderOne('count',v),rateTab=renderOne('rate',v),total=count.totals;
-  const period=v.month?'tháng '+v.month+'/'+v.year:'năm '+v.year;
+  monthSummary();const period=v.annual?'năm '+v.year:'tháng '+v.months.join(', ')+'/'+v.year;
   $('ibbcCountLabel').textContent='HĐ hủy trong '+period;$('ibbcNetLabel').textContent='Tổng HĐ NET tạo trong '+period;$('ibbcRateNote').textContent='HĐ hủy / HĐ NET tạo trong '+period;
   $('ibbcCount').textContent=whole(nsum(total.cancel));$('ibbcNet').textContent=whole(nsum(total.sold));$('ibbcRate').textContent=rate(nsum(total.cancel),nsum(total.sold));
   $('ibbcStaff').textContent=whole([...v.rows.values()].filter(x=>nsum(x.cancel)>0).length);
@@ -818,13 +822,16 @@ function render(){if(!$('ibbcYear')?.value)return;const v=build();
   $('ibbcMissing').hidden=!warning.length;$('ibbcMissing').textContent=warning.join(' · ');
   current={...v,countRows:count.exportRows,rateRows:rateTab.exportRows};
 }
-function exportFile(kind){if(!current)return;const rows=kind==='count'?current.countRows:current.rateRows,heading=['Bầy','Mã Acc',...current.columns.map(i=>'Tháng '+(i+1)),...(!current.month?['Tổng năm']:[])];
+function exportFile(kind){if(!current)return;const rows=kind==='count'?current.countRows:current.rateRows,heading=['Bầy','Mã Acc',...current.columns.map(i=>'Tháng '+(i+1)),...(current.columns.length>1?[current.totalLabel]:[])];
 const csv='\ufeff'+[heading,...rows].map(arr=>arr.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
-const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='IBB5_HD_Huy_'+(kind==='count'?'So_Luong_':'Ty_Le_')+current.year+(current.month?'_Thang_'+current.month:'')+(current.team?'_Bay_'+current.team:'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='IBB5_HD_Huy_'+(kind==='count'?'So_Luong_':'Ty_Le_')+current.year+(!current.annual?'_Thang_'+current.months.join('-'):'')+(current.team?'_Bay_'+current.team:'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
-function followMonth(){const value=$('to').value||reportDay();refreshYears();$('ibbcYear').value=value.slice(0,4);$('ibbcMonth').value=String(Number(value.slice(5,7)));render();}
+function followMonth(){const value=$('to').value||reportDay();refreshYears();$('ibbcYear').value=value.slice(0,4);selectMonths([Number(value.slice(5,7))]);render();}
 followMonth();$('to').addEventListener('change',followMonth);
-['ibbcYear','ibbcMonth','ibbcTeam'].forEach(id=>$(id).addEventListener('change',render));
+$('ibbcMonth').addEventListener('toggle',()=>{if(!$('ibbcMonth').open)return;const menu=root.querySelector('.ibbc-month-options');menu.style.transform='';const bounds=menu.getBoundingClientRect(),shift=bounds.left<8?8-bounds.left:bounds.right>innerWidth-8?innerWidth-8-bounds.right:0;menu.style.transform='translateX('+shift+'px)';});
+$('ibbcMonth').addEventListener('change',render);$('ibbcAllMonths').onclick=()=>{selectMonths(Array.from({length:12},(_,i)=>i+1));render();};$('ibbcTrackingMonth').onclick=followMonth;
+document.addEventListener('click',event=>{if(!$('ibbcMonth').contains(event.target))$('ibbcMonth').open=false;});$('ibbcMonth').addEventListener('keydown',event=>{if(event.key==='Escape'){$('ibbcMonth').open=false;$('ibbcMonth').querySelector('summary').focus();}});
+['ibbcYear','ibbcTeam'].forEach(id=>$(id).addEventListener('change',render));
 $('ibbcRefresh').addEventListener('click',render);
 root.querySelectorAll('[data-ibbc-export]').forEach(b=>b.addEventListener('click',()=>exportFile(b.dataset.ibbcExport)));
 // Same-page save in HD Ton updates localStorage before this document-level click listener runs.

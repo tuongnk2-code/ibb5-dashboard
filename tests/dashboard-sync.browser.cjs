@@ -68,7 +68,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     const desktop=await device(true),mobile=await device(false),lead=await device(false,'lead');
     const loads=new Map([desktop,mobile,lead].map(device=>[device.page,0]));for(const {page}of[desktop,mobile,lead])page.on('load',()=>loads.set(page,loads.get(page)+1));
     for(const {page} of [desktop,mobile,lead]) {
-      await page.locator('#ibbcMonth').evaluate(el=>{el.value='';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await page.locator('#ibbcAllMonths').evaluate(el=>el.click());
       assert.equal(await page.locator('#to').inputValue(),date);
       assert.equal(await page.evaluate(()=>window.IBB5_IMPORTED_DATA[0].id),'SYNC1');
       assert.equal(await page.evaluate(d=>window.IBB5_MONTHLY_TARGET(d.slice(0,7),'DNG.ManLM3'),date),40);
@@ -184,7 +184,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await desktop.page.waitForFunction(()=>[...document.querySelectorAll('#drRows tr')].some(row=>row.textContent.includes('DNG.ManLM3')&&row.textContent.includes('5/1')),null,{timeout:15000});
     assert.equal(await desktop.page.locator('.dr-own').isVisible(),false);
     await desktop.page.locator('[data-dr-view="staff"]').click();assert.match(await desktop.page.locator('#drDetailText').textContent(),/DNG.ManLM3/);await desktop.page.locator('#drClose').click();
-    for(const device of [desktop,mobile,lead])await device.page.locator('#ibbcMonth').evaluate(el=>{el.value='';el.dispatchEvent(new Event('change',{bubbles:true}));});
+    for(const device of [desktop,mobile,lead])await device.page.locator('#ibbcAllMonths').evaluate(el=>el.click());
     // Only the manager can approve; failures leave the row visible, successful approval syncs to all roles.
     for(const {page}of[desktop,mobile,lead])await page.evaluate(()=>{location.hash='pendingContracts'});
     assert.equal(await desktop.page.locator('.pending-table thead th').last().textContent(),'TP Duyệt hủy');
