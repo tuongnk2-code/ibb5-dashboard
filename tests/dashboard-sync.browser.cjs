@@ -140,6 +140,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await mobile.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.SYNC1?.action==='Đã gọi',null,{timeout:15000});
     await lead.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.action==='Khách đổi lịch',null,{timeout:15000});
     assert.equal(await mobile.page.evaluate(()=>window.IBB5_PENDING_NOTES.SYNC1.action),'Đã gọi');
+    await mobile.page.waitForFunction(()=>document.getElementById('anaOldRows').textContent.includes('Khách đổi lịch'),null,{timeout:15000});
     assert.match(await mobile.page.locator('#anaOldRows').textContent(),/Khách đổi lịch.*Đã xác nhận/s);
     // An active desktop edit survives a remote save and retains its original revision.
     await desktop.page.evaluate(()=>{location.hash='pendingContracts'});
@@ -164,8 +165,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await mobile.page.waitForFunction(()=>window.IBB5_IMPORTED_DATA.some(row=>row.id==='NEWLIVE'),null,{timeout:15000});
     assert.equal(await mobile.page.locator('#online').textContent(),'2');
     // Submitted reports appear on both supervisor boards without replacing their drafts.
-    for(const {page}of[desktop,mobile,lead]){await page.evaluate(()=>{location.hash='dailyReports'});await page.waitForFunction(()=>!document.getElementById('drFields').disabled);}
-    await desktop.page.locator('[name="actual"]').fill('9');
+    for(const {page}of[desktop,mobile,lead]){await page.evaluate(()=>{location.hash='dailyReports'});await page.waitForFunction(()=>document.getElementById('drRows').querySelector('[data-dr-view]'));}
+    for(const device of [desktop,mobile,lead]){assert.equal(await device.page.locator('.dr-own').isVisible(),device!==desktop);assert.equal(await device.page.locator('.dr-history').isVisible(),device!==desktop);}
+    assert.equal(await desktop.page.locator('#drFields').evaluate(el=>el.disabled),true);
+    const monitorBounds=await desktop.page.locator('.dr-monitor').boundingBox(),layoutBounds=await desktop.page.locator('.dr-layout').boundingBox();assert.ok(monitorBounds.width>=layoutBounds.width-2);
     await lead.page.locator('[name="difficulty"]').fill('Nội dung đang nhập');
     assert.match(await desktop.page.locator('#drRows').textContent(),/DNG.Vypv/);
     assert.doesNotMatch(await lead.page.locator('#drRows').textContent(),/DNG.Vypv/);
@@ -173,11 +176,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await mobile.page.locator('[name="actual"]').fill('4');await mobile.page.locator('[name="commitment"]').fill('1');
     await mobile.page.locator('#drSubmit').click();await mobile.page.waitForFunction(()=>document.getElementById('drMessage').textContent==='Đã gửi báo cáo.');
     for(const {page}of[desktop,lead])await page.waitForFunction(()=>[...document.querySelectorAll('#drRows tr')].some(row=>row.textContent.includes('DNG.ManLM3')&&row.textContent.includes('4/1')) ,null,{timeout:15000});
-    assert.equal(await desktop.page.locator('[name="actual"]').inputValue(),'9');assert.equal(await lead.page.locator('[name="difficulty"]').inputValue(),'Nội dung đang nhập');
-    // A second submission also refreshes the board while the manager keeps editing.
+    assert.equal(await desktop.page.locator('.dr-own').isVisible(),false);assert.equal(await lead.page.locator('[name="difficulty"]').inputValue(),'Nội dung đang nhập');
+    // A second submission refreshes the manager board while the lead keeps editing.
     await mobile.page.locator('[name="actual"]').fill('5');await mobile.page.locator('#drSubmit').click();
     await desktop.page.waitForFunction(()=>[...document.querySelectorAll('#drRows tr')].some(row=>row.textContent.includes('DNG.ManLM3')&&row.textContent.includes('5/1')),null,{timeout:15000});
-    assert.equal(await desktop.page.locator('[name="actual"]').inputValue(),'9');
+    assert.equal(await desktop.page.locator('.dr-own').isVisible(),false);
+    await desktop.page.locator('[data-dr-view="staff"]').click();assert.match(await desktop.page.locator('#drDetailText').textContent(),/DNG.ManLM3/);await desktop.page.locator('#drClose').click();
     // Only the manager can approve; failures leave the row visible, successful approval syncs to all roles.
     for(const {page}of[desktop,mobile,lead])await page.evaluate(()=>{location.hash='pendingContracts'});
     assert.equal(await desktop.page.locator('.pending-table thead th').last().textContent(),'TP Duyệt hủy');

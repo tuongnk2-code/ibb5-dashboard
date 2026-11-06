@@ -5,6 +5,7 @@
 - Nhân sự hiển thị bằng **mã Acc**. Sau khi gửi có nút **Xem báo cáo đã gửi ngày này**. Mục **Báo cáo đã gửi của tôi** bên dưới cho phép lọc tháng và xem lại các ngày đã gửi của chính tài khoản đang đăng nhập, không làm mất form đang nhập.
 - Hạn gửi là **22:00 giờ Việt Nam**. Trước hạn: chưa gửi màu vàng. Từ 22:00: chưa gửi màu đỏ. Báo cáo gửi sau hạn mang trạng thái “Đã gửi muộn”.
 - Cảnh báo nằm trong tab và tự làm mới mỗi 5 giây khi tab đang mở, giữ nguyên báo cáo đang nhập dở. Không gửi tin nhắn Zalo, email hay thông báo ngoài ứng dụng.
+- Tài khoản Trưởng phòng chỉ hiển thị phần theo dõi và cảnh báo toàn phòng; ẩn biểu mẫu nhập/gửi và lịch sử báo cáo cá nhân. Trưởng Bầy và nhân viên vẫn giữ nguyên biểu mẫu và lịch sử.
 - Trưởng Bầy xem Bầy mình; Trưởng phòng xem toàn phòng. Nhân viên chỉ xem và ghi báo cáo của mình. Danh sách theo tài khoản đã cấp, không tính tài khoản quản lý vào số người phải nộp.
 - Quản lý có thể đánh dấu **Ngày nghỉ**, kèm lý do, để miễn cảnh báo. Có thể bỏ đánh dấu nếu cần nộp lại. Không miễn báo cáo đã gửi.
 - HĐ Online ngày và lũy kế tháng lấy từ Supabase, đếm mã HĐ NET duy nhất theo Acc. Cam kết tháng lấy từ dữ liệu cam kết đã duyệt trên hệ thống chung; nếu chưa có hiển thị “—”. Cam kết ngày lấy từ báo cáo đã gửi của ngày hôm trước.

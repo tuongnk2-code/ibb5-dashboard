@@ -9,11 +9,12 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
   let date = reportDay(), snapshot = null, dirty = false, busy = false, filter = 'all', generation = 0, serverOffset = 0, initialized = false;
   let history = [], historyGeneration = 0;
   const $ = sel => root.querySelector(sel);
+  const manager = me.role === 'manager';
   const supervisor = ['manager', 'lead'].includes(me.role);
   root.innerHTML = `<div class="dr-toolbar"><div><h2>Báo cáo ngày</h2><p>Kết quả hôm nay · Cam kết ngày mai <span class="dr-deadline">Chốt 22:00 · Giờ Việt Nam</span></p></div><div class="dr-controls"><label>Ngày báo cáo<input id="drDate" type="date" value="${date}" max="${date}"></label><button type="button" id="drReload">↻ Tải lại</button></div></div>
     <div id="drMessage" role="status" hidden></div>
     <div class="dr-summary" id="drSummary"></div><div id="drAlerts" class="dr-alerts" hidden></div>
-    <div class="dr-layout"><article class="dr-card"><div class="dr-card-head"><div><h3>Báo cáo của tôi</h3><p>${esc(reportIdentity(me))}</p></div><span id="drOwnStatus" class="dr-badge"></span></div>
+    <div class="dr-layout${manager ? ' dr-manager-layout' : ''}"><article class="dr-card dr-own" ${manager ? 'hidden' : ''}><div class="dr-card-head"><div><h3>Báo cáo của tôi</h3><p>${esc(reportIdentity(me))}</p></div><span id="drOwnStatus" class="dr-badge"></span></div>
     <button type="button" id="drViewOwn" hidden>Xem báo cáo đã gửi ngày này</button>
     <form id="drForm"><fieldset id="drFields" disabled>
       <div class="dr-section-label">01 · KẾT QUẢ HÔM NAY</div><div class="dr-two"><label>PTTB thực hiện<input name="actual" type="number" min="0" max="100000" step="1" required></label><label>PTTB cam kết hôm nay<input name="commitment" type="number" min="0" max="100000" step="1" required></label></div>
@@ -28,7 +29,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     <article class="dr-card dr-monitor"><div class="dr-card-head"><div><h3>${supervisor ? 'Theo dõi báo cáo' : 'Trạng thái báo cáo'}</h3><p>${me.role === 'manager' ? 'Toàn phòng' : me.role === 'lead' ? 'Nhân sự trong Bầy' : 'Báo cáo của bạn'}</p></div></div>
       <div class="dr-monitor-filters"><label>Trạng thái<select id="drFilter"><option value="all">Tất cả</option><option value="pending">Chưa gửi / Quá hạn</option><option value="sent">Đã gửi</option><option value="support">Cần hỗ trợ</option><option value="exempt">Nghỉ / Miễn báo cáo</option></select></label></div>
       <div class="dr-table-scroll"><table class="dr-table"><thead><tr><th>Nhân sự</th><th>PTTB<br>TH/CK</th><th>KHTN / Chốt</th><th>Online</th><th>Cam kết mai<br>PTTB / Online</th><th>Trạng thái</th><th>Giờ gửi</th><th></th></tr></thead><tbody id="drRows"><tr><td colspan="8">Đang tải…</td></tr></tbody></table></div><p class="dr-hint">Theo tài khoản đã được cấp quyền. Người lưu nháp vẫn thuộc danh sách chưa gửi; người được quản lý đánh dấu nghỉ không nhận cảnh báo.</p>
-    </article></div><article class="dr-card dr-history"><div class="dr-card-head"><div><h3>Báo cáo đã gửi của tôi</h3><p>${esc(reportIdentity(me))} · Chọn ngày để xem lại nội dung đã gửi</p></div><label>Tháng báo cáo<input type="month" id="drHistoryMonth" value="${date.slice(0, 7)}"><button type="button" id="drHistoryReload">Tải lại danh sách</button></label></div><div class="dr-table-scroll"><table class="dr-table"><thead><tr><th>Ngày báo cáo</th><th>PTTB · TH/CK</th><th>HĐ Online</th><th>Giờ gửi</th><th></th></tr></thead><tbody id="drHistoryRows"><tr><td colspan="5">Đang tải…</td></tr></tbody></table></div></article>
+    </article></div><article class="dr-card dr-history" ${manager ? 'hidden' : ''}><div class="dr-card-head"><div><h3>Báo cáo đã gửi của tôi</h3><p>${esc(reportIdentity(me))} · Chọn ngày để xem lại nội dung đã gửi</p></div><label>Tháng báo cáo<input type="month" id="drHistoryMonth" value="${date.slice(0, 7)}"><button type="button" id="drHistoryReload">Tải lại danh sách</button></label></div><div class="dr-table-scroll"><table class="dr-table"><thead><tr><th>Ngày báo cáo</th><th>PTTB · TH/CK</th><th>HĐ Online</th><th>Giờ gửi</th><th></th></tr></thead><tbody id="drHistoryRows"><tr><td colspan="5">Đang tải…</td></tr></tbody></table></div></article>
     <dialog id="drDetail" class="dr-dialog"><div class="dr-card-head"><h3>Chi tiết báo cáo</h3><button type="button" id="drClose">Đóng</button></div><pre id="drDetailText"></pre><p id="drDetailAudit" class="dr-hint"></p></dialog>`;
 
   const message = (text, error = false) => { const el = $('#drMessage'); el.hidden = false; el.className = 'dr-message' + (error ? ' dr-error' : ''); el.textContent = text; };
@@ -53,6 +54,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     $('#drDetail').showModal();
   }
   async function loadHistory() {
+    if (manager) return;
     const version = ++historyGeneration;
     $('#drHistoryRows').innerHTML = '<tr><td colspan="5">Đang tải…</td></tr>';
     history = [];
@@ -73,6 +75,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     $('#drLeadTotal').textContent = number(leads) + ' KHTN · ' + number(closed) + ' chốt';
   }
   function fillForm() {
+    if (manager) { $('#drFields').disabled = true; return; }
     const report = own(), d = report?.data || {}, prior = snapshot.previous;
     for (const name of ['actual', 'commitment', 'tomorrowPttb', 'tomorrowOnline', 'focus', 'difficulty', 'support']) {
       const defaultValue = name === 'commitment' ? prior?.tomorrowPttb ?? 0 : ['focus', 'difficulty', 'support'].includes(name) ? '' : 0;
@@ -132,7 +135,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     return validateReport(d);
   }
   async function save(action) {
-    if (busy || !$('#drForm').reportValidity()) return;
+    if (manager || busy || !$('#drForm').reportValidity()) return;
     try {
       const data = formData(); busy = true; $('#drFields').disabled = true;
       const saved = await api('POST', { date, action, revision: own()?.revision || 0, data });
@@ -143,7 +146,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       if (saved.report.status === 'submitted') { $('#drHistoryMonth').value = date.slice(0, 7); await loadHistory(); }
       message(action === 'draft' ? 'Đã lưu nháp trên hệ thống.' : 'Đã gửi báo cáo.');
     } catch (err) { message(err.message, true); }
-    finally { busy = false; if (snapshot && own()?.status !== 'exempt') $('#drFields').disabled = false; }
+    finally { busy = false; if (!manager && snapshot && own()?.status !== 'exempt') $('#drFields').disabled = false; }
   }
   $('#drForm').addEventListener('submit', e => { e.preventDefault(); save('submit'); });
   $('#drDraft').onclick = () => save('draft');
