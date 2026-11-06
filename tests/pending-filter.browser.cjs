@@ -29,9 +29,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    for(const result of ['Hủy',' Huỷ ']){
     await page.evaluate(result=>{window.IBB5_PENDING_NOTES.LATE.result=result;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));},result);
     assert.deepEqual(await ids(),[]);
+    await page.locator('#pendStatus').selectOption('awaiting-cancellation');assert.deepEqual(await ids(),['LATE']);
+    assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),role==='manager'?1:0);
+    const approvalDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const approvalCsv=fs.readFileSync(await (await approvalDownload).path(),'utf8');assert.match(approvalCsv,/LATE/);assert.doesNotMatch(approvalCsv,/CANCEL|ONLINE|OUTSIDE/);
     await page.locator('#pendStatus').selectOption('due');assert.ok((await ids()).includes('LATE'));
     await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),[]);
    }
+   await page.locator('#pendStatus').selectOption('awaiting-cancellation');
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.DONE.result='Hủy';window.IBB5_PENDING_NOTES.DONE.cancelReason='Khách yêu cầu';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DONE']}}));});assert.deepEqual(await ids(),['DONE','LATE']);
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.LATE.cancellationApproved=true;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));});assert.deepEqual(await ids(),['DONE']);
+   await page.evaluate(()=>{delete window.IBB5_PENDING_NOTES.LATE.cancellationApproved;window.IBB5_PENDING_NOTES.DONE.result='Đã Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DONE','pending:LATE']}}));});
+   await page.locator('#pendStatus').selectOption('overdue-active');
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.LATE.result='Dự Kiến Hủy';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));});assert.deepEqual(await ids(),['LATE']);
    const overdueDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const overdueCsv=fs.readFileSync(await (await overdueDownload).path(),'utf8');assert.match(overdueCsv,/LATE/);assert.doesNotMatch(overdueCsv,/ONLINE|OUTSIDE|DUE|OLD/);
    await page.locator('#pendStatus').selectOption('due');

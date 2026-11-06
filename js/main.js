@@ -206,7 +206,7 @@ const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-
 
 function isFilled(id){const n=notes[id]||{};return ['expected','timeSlot','action','result','source'].every(k=>String(n[k]||'').trim())&&(!isCancellationResult(n.result)||!!n.cancelReason?.trim())}
 function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&(!x.date||x.date>asof))}
-function pending(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&((!x.date||x.date>asof)||!isFilled(x.id)))}
+function pending(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&((!x.date||x.date>asof)||!isFilled(x.id)||isCancellationResult(notes[x.id]?.result)))}
 function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d<=asof?'due':'waiting'}
 const RESULTS=['Chưa Online','Đã Online','Dự Kiến Hủy','Hủy'];
 const REASONS=['chưa thống nhất với người nhà','Nhà KH đang xây dựng chưa xong','Kh muốn hẹn ngày đó','Đang còn cước đối thủ','Kh chưa chuyển vào ở','Không có lịch tích hẹn sớm hơn','Not hạ tầng','Chờ đầu tư hạ tầng','KH chưa đồng ý PHM','KH chưa đồng ý cước','Khác'];
@@ -223,6 +223,7 @@ function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x
 function filtered(){let q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),a=(q?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>!isCancelled(x.id)&&(window.IBB5_ROLE?.canView(x)??true)),mode=el('pendStatus').value,asof=el('pendAsOf').value;
 a=a.filter(x=>{
  if(mode==='all')return true;
+ if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
  if(mode==='notonline')return true;
