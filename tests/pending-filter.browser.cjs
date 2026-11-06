@@ -44,6 +44,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#pendQuery').fill('OCTCANCEL');assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);await page.locator('#pendQuery').fill('');
    const ids=async()=>await page.locator('#pendRows tr[data-id]').evaluateAll(rows=>rows.map(row=>row.dataset.id).sort());
    const allowed=values=>values.filter(id=>role==='manager'||id!=='OUTSIDE').sort();
+   assert.equal(await page.locator('#pendStatus option[value="due"]').textContent(),'Đến hạn');
+   await page.locator('#pendStatus').selectOption('unupdated');
+   assert.deepEqual(await ids(),allowed(['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE']));
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.WAIT.result='Chưa Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:WAIT']}}));});
+   assert.deepEqual(await ids(),allowed(['DUE','LATE','MISSING','OLD','ONLINE','OUTSIDE']));
    for(const [mode,expected]of Object.entries({all:['DUE','LATE','WAIT','MISSING','OLD','ONLINE','OUTSIDE'],notonline:['DUE','LATE','WAIT','MISSING','OLD','OUTSIDE'],due:['DUE','LATE','OLD','OUTSIDE'],missing:['MISSING'],old:['OLD'],aged:['OLD']})){
     await page.locator('#pendStatus').selectOption(mode);assert.deepEqual(await ids(),allowed(expected),role+' '+mode);
    }

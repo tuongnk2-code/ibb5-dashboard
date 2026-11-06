@@ -221,10 +221,11 @@ const header=el('pendRows').closest('table').querySelector('thead');
 header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+escapeHTML(v)+'</div>'+(fields[i]==='created'?'<select class="ph-created-month" id="pendCreatedMonth" aria-label="Lọc tháng tạo HĐ"><option value="">Tất cả tháng</option></select>':'')+'<select class="ph-filter" data-field="'+fields[i]+'" aria-label="Lọc '+escapeHTML(v)+'"><option value="">Tất cả</option></select></th>').join('')+'<th>Cập nhật</th><th>TP Duyệt hủy</th></tr>';
 const opts=(arr,selected)=>'<option value="">Chọn...</option>'+[...new Set([...arr,...(selected?[selected]:[])])].map(v=>'<option value="'+escapeHTML(v)+'"'+(selected===v?' selected':'')+'>'+escapeHTML(v)+'</option>').join('');
 const customer=x=>x.customer||x.customerName||x.customer_name||x.tenKhachHang||x.ten_khach_hang||'';
-function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn / quá hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
+function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
 function filtered(){let q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),a=(q?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>!isCancelled(x.id)&&(window.IBB5_ROLE?.canView(x)??true)),mode=el('pendStatus').value,asof=el('pendAsOf').value;
 a=a.filter(x=>{
  if(mode==='all')return true;
+ if(mode==='unupdated')return !!x.created&&x.created<=asof&&!String(notes[x.id]?.result||'').trim();
  if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
