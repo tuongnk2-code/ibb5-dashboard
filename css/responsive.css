@@ -492,7 +492,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #cancelled .ibbc-month-checks label:hover{background:#eef6ff}
 #cancelled .ibbc-month-checks input{width:17px;height:17px;min-width:17px;margin:0;accent-color:#1684e6}
 
-#pendingContracts .pending-header-filters{display:grid;gap:10px;min-width:240px;align-self:start}
-#pendingContracts .pending-header-filters select{width:100%;min-width:0;box-sizing:border-box}
-#pendingContracts .pending-created-month-label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#58799b}
-@media(max-width:650px){#pendingContracts .pending-header-filters{width:100%;min-width:0}}
+#pendingContracts .pending-head{align-items:flex-end;flex-wrap:wrap;gap:16px}
+#pendingContracts .pending-header-filters{display:grid;grid-template-columns:minmax(200px,1.25fr) minmax(150px,1fr);gap:12px;width:460px;max-width:100%;min-width:0;margin-left:auto;align-self:end}
+#pendingContracts .pending-header-filters select{width:100%;min-width:0;height:42px;box-sizing:border-box;padding:8px 12px;font-size:14px}
+#pendingContracts .pending-header-filters label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#58799b}
+@media(max-width:650px){#pendingContracts .pending-header-filters{width:100%;grid-template-columns:minmax(0,1fr);gap:10px}}
