@@ -212,7 +212,7 @@ function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>
 function pending(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&((!x.date||x.date>asof)||!isFilled(x.id)||isCancellationResult(notes[x.id]?.result)))}
 function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d===asof?'due':d<asof?'overdue':'waiting'}
 const RESULTS=['Chưa Online','Đã Online','Dự Kiến Hủy','Hủy'];
-const REASONS=['chưa thống nhất với người nhà','Nhà KH đang xây dựng chưa xong','Kh muốn hẹn ngày đó','Đang còn cước đối thủ','Kh chưa chuyển vào ở','Không có lịch tích hẹn sớm hơn','Not hạ tầng','Chờ đầu tư hạ tầng','KH chưa đồng ý PHM','KH chưa đồng ý cước','Khác'];
+const REASONS=['chưa thống nhất với người nhà','Nhà KH đang xây dựng chưa xong','Kh muốn hẹn ngày đó','Đang còn cước đối thủ','Kh chưa chuyển vào ở','Không có lịch tích hẹn sớm hơn','Not hạ tầng','Chờ đầu tư hạ tầng','KH chưa đồng ý PHM','KH chưa đồng ý cước','Hủy lên lại','Khác'];
 const TIME_SLOTS=['8h - 10h','10h - 12h','13h30 - 15h30','15h30 - 17h30'];
 const SOURCES=['FaceBook ADS','FaceBook Free','Web','Thị Trường','Tờ Dán','KH Cũ','Đại Lý','Telesale','Top ZaLo','SMS','Khác'];
 const fields=['id','staff','customer','created','expected','timeSlot','action','result','cancelReason','source'];
