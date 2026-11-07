@@ -1,5 +1,6 @@
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
+import { scheduledOnlineContracts } from './pendingScheduleModel.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -263,7 +264,7 @@ function cancellationApproval(id,result){
 }
 function updateSaveButton(row){const button=row.querySelector('.p-save');if(isCancelled(row.dataset.id)){button.textContent='Đã ẩn';button.disabled=true;return;}const saved=!!notes[row.dataset.id]?.updated&&!pendingDrafts.has(row.dataset.id);button.textContent=saved?'Đã lưu':'Lưu';button.classList.toggle('is-saved',saved);button.disabled=saved;}
 function updateCancellationRow(row){const result=row.querySelector('.p-result').value,cancelled=isCancellationResult(result),reason=row.querySelector('.p-cancel-reason');for(const selector of ['.p-date','.p-time-slot']){const input=row.querySelector(selector);input.required=!skipsOnlineAppointment(result);input.hidden=!input.required;let placeholder=input.parentElement.querySelector('.p-appointment-na');if(!placeholder){placeholder=document.createElement('span');placeholder.className='p-appointment-na';placeholder.textContent='—';input.after(placeholder);}placeholder.hidden=input.required;if(!input.required){input.classList.remove('pending-required-error');input.removeAttribute('aria-invalid');}}reason.closest('label').hidden=!cancelled;reason.required=cancelled;row.querySelector('.p-cancel-cell').innerHTML=cancellationApproval(row.dataset.id,row.querySelector('.p-result').value);if(isCancelled(row.dataset.id)){row.querySelectorAll('input,select,textarea').forEach(input=>input.disabled=true);row.querySelector('.p-mobile-edit').textContent='Xem';}}
-function render(){const restoreFocus=rememberFocus(el('pendRows'));const all=pending(),realPending=unresolved(),asof=el('pendAsOf').value;el('pendTotal').textContent=realPending.length;const selectedDay=el('pendDailyDate').value;el('pendDue').textContent=selectedDay?realPending.filter(x=>(notes[x.id]||{}).expected===selectedDay).length:'—';el('pendDailyDescription').textContent=selectedDay?'Số HĐ tồn dự kiến Online ngày '+selectedDay.split('-').reverse().join('/'):'Vui lòng chọn ngày để thống kê';el('pendMissing').textContent=realPending.filter(x=>status(x)==='missing').length;el('pendOld').textContent=realPending.filter(x=>x.created.slice(0,7)<asof.slice(0,7)).length;
+function render(){const restoreFocus=rememberFocus(el('pendRows'));const all=pending(),realPending=unresolved(),asof=el('pendAsOf').value;el('pendTotal').textContent=realPending.length;const selectedDay=el('pendDailyDate').value;el('pendDue').textContent=selectedDay?scheduledOnlineContracts(distinct,notes,asof,selectedDay).length:'—';el('pendDailyDescription').textContent=selectedDay?'Số HĐ tồn dự kiến Online ngày '+selectedDay.split('-').reverse().join('/'):'Vui lòng chọn ngày để thống kê';el('pendMissing').textContent=realPending.filter(x=>status(x)==='missing').length;el('pendOld').textContent=realPending.filter(x=>x.created.slice(0,7)<asof.slice(0,7)).length;
 // Month offsets use the tracking month, including year rollover.
 const baseMonth=new Date(Number(asof.slice(0,4)),Number(asof.slice(5,7))-1,1);
 // Age of pending contracts is based on creation month, not expected online date.
@@ -432,7 +433,7 @@ const cutoff=$('pendAsOf')?.value||day;
 const ns=readNotes();
 const net=typeof DATA==='undefined'?[]:operationalData().filter(x=>x.type==='Internet'&&x.id);
 const distinct=[...new Map(net.map(x=>[x.id,x])).values()];
-const rows=distinct.filter(x=>!ns[x.id]?.cancellationApproved&&!skipsOnlineAppointment(ns[x.id]?.result)&&x.created&&x.created<=cutoff&&(!x.date||x.date>cutoff)&&ns[x.id]?.expected===day);
+const rows=scheduledOnlineContracts(distinct,ns,cutoff,day);
 const counts=Array(5).fill(0);const grouped=new Map();
 for(const x of rows){const person=people[canonical(x.staff)]||{team:0,name:x.staff||'Chưa xác định',acc:x.staff||'—'};const key=canonical(x.staff)||'unknown';if(!grouped.has(key))grouped.set(key,{...person,values:Array.from({length:5},()=>[])});let idx=slots.indexOf(ns[x.id]?.timeSlot);if(idx<0)idx=4;grouped.get(key).values[idx].push(x.id);counts[idx]++;}
 $('psSummary').textContent='Ngày '+day.split('-').reverse().join('/')+' · '+rows.length+' HĐ dự kiến Online · '+counts[4]+' HĐ chưa có mốc hẹn';
