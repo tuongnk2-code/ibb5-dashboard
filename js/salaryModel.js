@@ -30,7 +30,11 @@ export function salaryCounts(data, { month, asOf, roster }) {
   }
   for (const row of distinct.values()) {
     const date = row.date, person = people.get(norm(row.staff));
-    if (!person || !validDay(row.created) || row.created.slice(0, 7) !== month || !validDay(date) || date < period.start || date > period.asOf) continue;
+    if (!person || !validDay(row.created) || !validDay(date) || date < period.start || date > period.asOf) continue;
+    const createdMonth = row.created.slice(0, 7);
+    // Old contracts Online on days 1–4 belong to the preceding payroll period.
+    // Current-month creations retain the full day-1 through next-month-day-4 window.
+    if (createdMonth > month || (createdMonth < month && date < month + '-05')) continue;
     if (row.type === 'Internet') person.net++;
     else if (row.vvip === true) person.vvip++;
   }

@@ -26,8 +26,8 @@ test('LCB window includes the first four days of T+1, across December and leap y
   const data=['2026-09-30','2026-10-01','2026-10-31','2026-11-01','2026-11-04','2026-11-05'].map((date,i)=>({type:'Internet',id:'ID'+i,date,created:date==='2026-09-30'?'2026-09-30':'2026-10-01',staff:'DNG.HoaNTB6'}));
   data.push({type:'Internet',id:'PREVIOUS_COHORT',created:'2026-09-30',date:'2026-10-05',staff:'DNG.HoaNTB6'},{type:'Internet',id:'NEXT_COHORT',created:'2026-11-01',date:'2026-11-02',staff:'DNG.HoaNTB6'});
   const roster=[{acc:'DNG.HoaNTB6'}];
-  assert.equal(salaryCounts(data,{month:'2026-10',asOf:'2026-11-10',roster})[0].net,4);
-  assert.equal(salaryCounts(data,{month:'2026-10',asOf:'2026-10-15',roster})[0].net,1);
+  assert.equal(salaryCounts(data,{month:'2026-10',asOf:'2026-11-10',roster})[0].net,5);
+  assert.equal(salaryCounts(data,{month:'2026-10',asOf:'2026-10-15',roster})[0].net,2);
 });
 
 test('approved weights have no bonus and round halves up before LCB lookup', () => {
@@ -48,5 +48,24 @@ test('October creation cohort is 45 NET and 30 V.VIP, including late Online thro
   }
   const row=salaryCounts(data,{month:'2026-10',asOf:'2026-11-07',roster})[0];
   assert.equal(row.net,45);assert.equal(row.vvip,30);assert.equal(calculateSalary(row.net,row.vvip).total,87);assert.equal(calculateSalary(row.net,row.vvip).salary,14800000);
-  const november=salaryCounts(data,{month:'2026-11',asOf:'2026-11-07',roster})[0];assert.equal(november.net,1);assert.equal(november.vvip,1);
+  const november=salaryCounts(data,{month:'2026-11',asOf:'2026-11-07',roster})[0];assert.equal(november.net,2);assert.equal(november.vvip,2);
+});
+
+test('carryover boundaries assign days 1–4 to the preceding period without double counting',()=>{
+  const acc='TEST.Carry',roster=[{acc}];
+  const data=['2026-10-01','2026-10-04','2026-10-05','2026-11-04','2026-11-05'].map((date,i)=>({type:'Internet',id:'OLD'+i,created:'2026-08-20',date,staff:acc}));
+  for(const [month,count] of [['2026-09',2],['2026-10',2],['2026-11',1]])assert.equal(salaryCounts(data,{month,asOf:'2026-11-07',roster})[0].net,count);
+  assert.equal(salaryCounts(data,{month:'2026-10',asOf:'2026-10-04',roster})[0].net,0);
+});
+
+test('carryover NET and V.VIP reproduce the three reported salary discrepancies',()=>{
+  for(const [acc,net,vvip,extraVip,expected] of [['DNG.ManLM3',17,12,true,6200000],['DNG.LanMH2',18,12,true,6200000],['DNG.Tienna2',39,26,false,13000000]]){
+    const data=[];
+    for(const [type,count] of [['Internet',net],['Truyền hình',vvip]])for(let i=0;i<count;i++)data.push({type,id:type+i,staff:acc,created:'2026-10-01',date:'2026-10-20',vvip:true});
+    const carry={type:'Internet',id:'CARRY',staff:acc,created:'2026-08-20',date:'2026-10-25'};
+    data.push(carry,{...carry,id:' carry '});
+    if(extraVip)data.push({...carry,type:'Truyền hình',vvip:true});
+    const row=salaryCounts(data,{month:'2026-10',asOf:'2026-11-07',roster:[{acc}]})[0];
+    assert.equal(row.net,net+1);assert.equal(row.vvip,vvip+Number(extraVip));assert.equal(calculateSalary(row.net,row.vvip).salary,expected);
+  }
 });
