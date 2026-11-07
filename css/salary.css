@@ -19,6 +19,7 @@
 #lcb th,#lcb td{padding:9px 10px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
 #lcb th{background:#e8f1fa;font-weight:800}#lcb tbody tr:nth-child(even)>*{background:#f1f7ff}
 #lcb tbody th,#lcb thead th:first-child{position:sticky;left:0;z-index:1;text-align:left;min-width:140px;background:#e8f1fa}
+#salTable tr>:first-child{width:1%;min-width:0;white-space:nowrap}
 #lcb td small{display:block;color:#7890a8;font-size:11px;margin-top:2px}
 #lcb .sal-amount{font-size:19px;font-weight:850;color:#076ac0}
 #lcb .sal-team>*{background:#fff0df!important;color:#ad510c;font-weight:800}

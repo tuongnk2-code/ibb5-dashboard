@@ -34,6 +34,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#salMonth').fill('2026-10');await page.locator('#salMonth').dispatchEvent('change');await page.locator('#salScope').filter({hasText:'01/10/2026–04/11/2026'}).waitFor();
    assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),role==='manager'?17:role==='staff'?1:8);
    const hoa=page.locator('[data-salary-acc="DNG.HoaNTB6"]');
+   assert.ok((await hoa.locator('th').boundingBox()).width<=220,'Acc column should fit its labels without a wide empty area');
    assert.deepEqual((await hoa.locator('td').allTextContents()).slice(0,3),role==='lead'?['52','6','51,8']:['46','6','47']);assert.equal(await hoa.locator('.sal-amount').textContent(),role==='lead'?'8.600.000':'7.800.000');
    assert.equal(await page.locator('[data-sal-probation]').count(),role==='manager'?17:0);
    if(role==='manager'){
