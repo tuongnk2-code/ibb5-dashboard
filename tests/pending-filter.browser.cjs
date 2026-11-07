@@ -83,6 +83,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#pendQuery').fill('Khách DONE');assert.deepEqual(await ids(),['DONE']);
    await page.locator('#pendQuery').fill('');await page.locator('#pendCreatedMonth').selectOption('');await page.locator('.ph-filter[data-field="staff"]').selectOption('');
    await page.locator('#pendStatus').selectOption('due');await page.locator('#pendAsOf').fill('2026-11-05');await page.locator('#pendAsOf').dispatchEvent('change');assert.deepEqual(await ids(),['DONE','LATE','ONLINE']);
+   await page.locator('#pendStatus').selectOption('hidden');assert.deepEqual(await ids(),['CANCEL']);
+   assert.equal(await page.locator('#pendRows .p-result').isDisabled(),true);assert.equal(await page.locator('#pendRows .p-save').isDisabled(),true);assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),0);
+   assert.match(await page.locator('#pendCount').textContent(),/HĐ đã ẩn: 1 \/ 1/);
+   await page.locator('#pendQuery').fill('Khách CANCEL');assert.deepEqual(await ids(),['CANCEL']);
+   const hiddenDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const hiddenCsv=fs.readFileSync(await (await hiddenDownload).path(),'utf8');assert.match(hiddenCsv,/CANCEL/);assert.doesNotMatch(hiddenCsv,/OUTSIDE|DUE|DONE/);
+   await page.locator('#pendCreatedMonth').selectOption('2026-11');assert.deepEqual(await ids(),['CANCEL']);await page.locator('#pendQuery').fill('');
+   if(role==='staff'){await page.locator('#pendRows .p-mobile-edit').click();await page.locator('#pendingMobileEditor').waitFor();assert.equal(await page.locator('#pendingMobileForm [type="submit"]').isDisabled(),true);await page.locator('#pendingMobileEditor .pm-close').first().click();}
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.SEPTCANCEL={cancellationApproved:true,result:'Hủy',cancelReason:'Lịch sử'};window.IBB5_PENDING_NOTES.OUTSIDE.cancellationApproved=true;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:SEPTCANCEL','pending:OUTSIDE']}}));});
+   await page.locator('#pendCreatedMonth').selectOption('2026-09');assert.deepEqual(await ids(),['SEPTCANCEL']);
+   await page.locator('#pendCreatedMonth').selectOption('');assert.deepEqual(await ids(),role==='manager'?['CANCEL','OUTSIDE','SEPTCANCEL']:['CANCEL','SEPTCANCEL']);
+   await page.locator('#pendStatus').selectOption('all');assert.ok(!(await ids()).some(id=>['CANCEL','OUTSIDE','SEPTCANCEL'].includes(id)));
    assert.deepEqual(errors,[]);await context.close();
   }
   console.log('PASS: pending dropdown modes, exact due date, actual Online cutoff, date changes, search/column intersections, role scope, desktop/mobile and CSV');
