@@ -36,6 +36,11 @@ async function showApp(profile) {
     const { renderMarketReports } = await import('./marketReports.js');
     renderMarketReports(marketRoot, profile);
   }
+  const salaryRoot = document.getElementById('salaryRoot');
+  if (salaryRoot) {
+    const { renderSalary } = await import('./salary.js');
+    renderSalary(salaryRoot, profile);
+  }
   const root = document.getElementById('accountPanelRoot');
   if (root) {
     const { renderPermissions } = await import('./permissions.js');

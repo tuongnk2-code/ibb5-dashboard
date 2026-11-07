@@ -1,0 +1,29 @@
+#lcb [hidden]{display:none!important}
+#lcb{color:#173b60}
+.sal-head,.sal-controls{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.sal-head{margin-bottom:16px}.sal-head small{font-weight:800;color:#f47b20;letter-spacing:.04em}
+.sal-head h2{margin:6px 0;font-size:27px}.sal-head h3{margin:0;font-size:19px}
+#lcb p{font-size:13px;line-height:1.5;color:#6c86a1;margin:6px 0 12px}
+.sal-controls{justify-content:flex-start}
+#lcb label{display:grid;gap:6px;font-size:12px;color:#557696;font-weight:700}
+#lcb input,#lcb select{min-width:0;max-width:100%;box-sizing:border-box;border:1px solid #d0e1f2;border-radius:8px;padding:10px;color:#173b60;background:white;font:inherit;min-height:40px}
+#lcb button{border:1px solid #d0e1f2;border-radius:8px;background:#f5faff;color:#173b60;padding:10px 12px;cursor:pointer;font-size:13px}
+.sal-card{padding:18px;border:1px solid #d7e5f2;border-radius:14px;margin:18px 0;background:white;min-width:0}
+.sal-card summary{cursor:pointer;font-weight:800;padding:6px}
+.sal-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.sal-summary>div{background:#f1f7ff;border:1px solid #d6e5f4;border-radius:12px;padding:16px;min-width:0}
+.sal-summary span{display:block;font-size:12px;color:#6986a2}.sal-summary strong{display:block;margin-top:7px;font-size:26px;overflow-wrap:anywhere}
+.sal-summary>div:last-child{background:#173e64;color:white}.sal-summary>div:last-child span{color:#cbdff5}
+.sal-scroll{max-width:100%;overflow:auto;border:1px solid #d0e1f2;border-radius:10px;margin-top:12px}
+#lcb table{width:100%;min-width:880px;border-collapse:collapse;font-size:15px}
+#lcb th,#lcb td{padding:13px 12px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
+#lcb th{background:#e8f1fa;font-weight:800}#lcb tbody tr:nth-child(even)>*{background:#f1f7ff}
+#lcb tbody th,#lcb thead th:first-child{position:sticky;left:0;z-index:1;text-align:left;min-width:140px;background:#e8f1fa}
+#lcb td small{display:block;color:#7890a8;font-size:11px;margin-top:4px}
+#lcb .sal-amount{font-size:19px;font-weight:850;color:#076ac0}
+#lcb .sal-team>*{background:#fff0df!important;color:#ad510c;font-weight:800}
+#lcb .sal-total>*{background:#173e64!important;color:white;font-weight:800}
+#lcb label.sal-probation{display:flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
+#lcb input[type=checkbox]{width:18px;min-height:18px;height:18px;accent-color:#1684e6}
+.sal-error,.sal-success{padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.5}.sal-error{color:#bc2735;background:#ffeded}.sal-success{color:#167758;background:#e7f7ef}
+@media(max-width:700px){.sal-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.sal-summary strong{font-size:22px}.sal-head h2{font-size:23px}.sal-card{padding:12px}.sal-controls{width:100%}.sal-controls label{flex:1;min-width:120px}#lcb input,#lcb select{font-size:16px}#lcb th,#lcb td{padding:11px 9px}}
