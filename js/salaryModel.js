@@ -4,6 +4,8 @@ import { lookupSalary } from './salaryBands.js';
 const norm = value => String(value || '').trim().toLowerCase();
 const contractId = value => String(value || '').trim().toUpperCase();
 
+export const salaryChange = (current, previous) => Number.isFinite(current) && Number.isFinite(previous) ? current - previous : null;
+
 export function previousSalaryMonth(month) {
   if (!validDay(month + '-01')) throw new Error('Tháng LCB không hợp lệ.');
   const date = new Date(month + '-01T12:00:00Z');

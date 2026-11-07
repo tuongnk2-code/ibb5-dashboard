@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { salaryCounts, salaryPeriod, calculateSalary, previousSalaryMonth } from '../js/salaryModel.js';
+import { salaryCounts, salaryPeriod, calculateSalary, previousSalaryMonth, salaryChange } from '../js/salaryModel.js';
+
+test('salary change preserves increases, decreases, zero and missing prior data',()=>{
+  assert.equal(salaryChange(7800000,6200000),1600000);
+  assert.equal(salaryChange(4700000,6200000),-1500000);
+  assert.equal(salaryChange(6200000,6200000),0);
+  assert.equal(salaryChange(6200000,null),null);
+  assert.equal(salaryChange(null,6200000),null);
+});
 
 test('previous salary month crosses year boundaries',()=>{
   assert.equal(previousSalaryMonth('2027-01'),'2026-12');
