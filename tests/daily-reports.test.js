@@ -46,7 +46,7 @@ test('report API restricts access, enforces revisions and never trusts client on
     const json = data => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
     if (url.pathname === '/auth/v1/user') return json({ id: caller.id });
     if (url.pathname === '/rest/v1/profiles') return json(url.searchParams.has('id') ? caller : people);
-    if (url.pathname === '/rest/v1/contracts') return json([{ id: 'NET1', staff: caller.acc, date }]);
+    if (url.pathname === '/rest/v1/contracts') return json([{ id: 'NET1', staff: caller.acc, date }, { id: 'PAYROLL_ONLY', staff: caller.acc, date, created: '2026-08-20' }]);
     if (url.pathname === '/rest/v1/dashboard_shared_state') return json(cloudSnapshot);
     if (url.pathname === '/rest/v1/daily_reports') {
       if (method === 'GET') {
@@ -74,7 +74,9 @@ test('report API restricts access, enforces revisions and never trusts client on
     const list = await invoke('GET', {});
     assert.equal(list.code, 200); assert.deepEqual(list.body.profiles.map(p => p.id), ['a']);
     cloudSnapshot = { data: { data: [{ id: 'SHARED1', type: 'Internet', staff: caller.acc, date }, { id: 'SHARED2', type: 'Internet', staff: caller.acc, date }] } };
+    cloudSnapshot.data.data.push({id:'PAYROLL_ONLY',type:'Internet',staff:caller.acc,created:'2026-08-20',date});
     assert.equal((await invoke('GET', {})).body.metrics.a.online, 2);
+    assert.equal((await invoke('GET', {})).body.metrics.a.monthlyOnline, 2);
     cloudSnapshot = null;
     assert.equal((await invoke('POST', { action: 'exempt', user_id: 'b', revision: 0 })).code, 403);
     const saved = await invoke('POST', { action: 'submit', revision: 0, data: { ...payload(), online: 999 } });

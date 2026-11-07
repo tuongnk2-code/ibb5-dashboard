@@ -1,5 +1,7 @@
 # LCB
 
+Dữ liệu có Ngày tạo thuộc tháng 08/2026 được giữ nguyên trong nguồn chung và chỉ dùng ở tab LCB, gồm HĐ tồn Online các tháng sau. Tất cả báo cáo dashboard khác (kể cả HĐ hủy, HĐ đã ẩn và số Online tự lấy trong báo cáo ngày) loại nhóm này; không xóa nguồn hoặc ghi chú. Khi thiếu Ngày tạo, dùng tháng Online để loại bản ghi tháng 08/2026. Quy tắc này không loại tháng 8 của các năm sau.
+
 Nguồn bảng mốc: ảnh người dùng cung cấp. Công thức đã chốt: Tổng DV = NET × 0,8 + V.VIP × 1,7; không cộng thêm 0,5. Tính bằng phần mười nguyên để tránh sai số dấu phẩy động. Tổng DV gốc hiển thị tối đa 1 chữ số thập phân; DV đối chiếu làm tròn toán học, phần lẻ ≥ 0,5 lên và < 0,5 xuống. Ví dụ 46 NET + 6 V.VIP = 47 DV → mốc 46–50 → 7.800.000 đồng. 25,4 → 25 → 4.700.000; 25,5 hoặc 25,8 → 26 → 5.200.000.
 
 Kỳ tháng T: từ ngày 1 tháng T đến hết ngày 4 tháng T+1, cả hai đầu đều được tính. HĐ tạo trong tháng T được tính nếu Online thực tế trong kỳ. HĐ tạo trước tháng T được bổ sung nếu Online từ 05/T đến hết 04/T+1; Online ngày 01–04/T thuộc kỳ trước, không tính trùng. Không lấy HĐ tạo sau tháng T; không dùng ngày hẹn. Kỳ đang chạy chỉ tính tới hôm nay giờ Việt Nam và ghi Tạm tính. Ngày 1–4 tháng T+1 bổ sung cho kỳ T nếu HĐ được tạo không muộn hơn tháng T; HĐ tạo trong tháng T+1 thuộc kỳ T+1, không cộng ngược về T. NET và Truyền hình được khử trùng theo loại dịch vụ + mã HĐ, Acc không phân biệt hoa thường. Chỉ V.VIP=true từ nguồn Truyền hình mới tính vào V.VIP; không lấy toàn bộ Pay hay Camera. Nguồn là snapshot chung hiện có, giữ các tháng cũ khi nhập file mới.

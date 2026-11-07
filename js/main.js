@@ -1,4 +1,5 @@
 import { mergeCancellationArchive } from './cancellationArchive.js';
+import { includeInDashboardReports } from './reportScope.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -28,8 +29,9 @@ const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_L
 
 // ---- Original script 2  ----
 const DATA=window.IBB5_IMPORTED_DATA||mockDATA;
-// Operational tabs omit terminated September/October 2026 NET contracts; raw data stays intact.
-const operationalData=()=>DATA.filter(includeInOperationalReports);
+// Payroll-only August data remains in raw storage and in the LCB API.
+const dashboardData=()=>DATA.filter(includeInDashboardReports);
+const operationalData=()=>dashboardData().filter(includeInOperationalReports);
 const IBB_NET_META=mockIBB_NET_META;
 const IBB_CAM_META=mockIBB_CAM_META;
 const IBB_TV_META=mockIBB_TV_META;
@@ -44,9 +46,9 @@ const IBB_CALC={
  validPrev:(rows,pm)=>rows.some(x=>x.date&&x.date.slice(0,7)===pm),
  notes:()=>{if(window.IBB5_PENDING_NOTES)return window.IBB5_PENDING_NOTES;try{return JSON.parse(localStorage.getItem('ibb5_pending_followup_v1')||'{}')}catch(e){return {}}},
  source:x=>IBB_CALC.notes()[x.id]?.source||x.sourceExcel||'',
- camOnline:(rows,asof)=>netWithOnlineCamera(rows,DATA,asof),
+ camOnline:(rows,asof)=>netWithOnlineCamera(rows,dashboardData(),asof),
 };
-const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(DATA.map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=DATA.map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){window.IBB5_CANCELLED_NET=snapshot.cancelledNet||[];DATA.splice(0,DATA.length,...snapshot.data);dates=DATA.map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...DATA.map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
+const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(dashboardData().map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=dashboardData().map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){window.IBB5_CANCELLED_NET=snapshot.cancelledNet||[];DATA.splice(0,DATA.length,...snapshot.data);dates=dashboardData().map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...dashboardData().map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
 function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
@@ -70,14 +72,14 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('forecastRatio').textContent=target===null?'Tỷ lệ dự phóng: chưa ký cam kết':target===0?'Cam kết tháng bằng 0 — không tính tỷ lệ':forecast===null?'—':('Dự phóng đạt '+formatPercent(forecast/target*100)+' / '+fmt(target)+' HĐ cam kết');
  $('forecastPace7').textContent='Pace 7 ngày ('+windowStart.split('-').reverse().join('/')+' – '+asOf.split('-').reverse().join('/')+'): '+fmt(online7)+' HĐ / '+calendarDays7+' ngày lịch = '+show(pace7)+' HĐ/ngày · còn '+remaining+' ngày';
  const pend=netRows.filter(x=>IBB_CALC.pending(x,asOf));$('pending').textContent=fmt(IBB_CALC.unique(pend));$('aged').textContent=fmt(IBB_CALC.unique(pend.filter(x=>(Date.parse(asOf+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7)));
- const tvOnline=DATA.filter(x=>x.type==='Truyền hình'&&(!room||x.room===room)&&x.id&&/^[A-Z0-9]+$/.test(x.id)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')&&x.date>=start&&x.date<=asOf);
+ const tvOnline=dashboardData().filter(x=>x.type==='Truyền hình'&&(!room||x.room===room)&&x.id&&/^[A-Z0-9]+$/.test(x.id)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')&&x.date>=start&&x.date<=asOf);
  const tvVvipOnline=tvOnline.filter(x=>x.vvip===true||(x.vvip==null&&IBB_TV_META[x.id]?.vvip===true));
  const vvipCount=IBB_CALC.unique(tvVvipOnline);
  const payCount=IBB_CALC.unique(tvOnline);
  $('vvip').textContent=fmt(vvipCount);$('vvip').title='V.VIP: '+vvipCount+' mã HĐ duy nhất; gói ở cột H, Ngày Online ở cột P của nguồn Truyền hình mới nhất.';
  const prepaid=prepaidShare(onlineRows),p=prepaid.count;
  const cameraOnline=IBB_CALC.camOnline(onlineRows,asOf);
- $('cameraKpi').textContent=fmt(onlineCameraContracts(DATA,start,asOf,room).length);$('cameraKpi').title='Mã HĐ Camera duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn Camera mới nhất, không yêu cầu NET Online cùng tháng.';
+ $('cameraKpi').textContent=fmt(onlineCameraContracts(dashboardData(),start,asOf,room).length);$('cameraKpi').title='Mã HĐ Camera duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn Camera mới nhất, không yêu cầu NET Online cùng tháng.';
  $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(formatPercent(payCount/totalOnline*100)):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';
  const managed=managedShare(onlineRows);$('managed').textContent=managed.percent===null?'—':formatPercent(managed.percent);$('managed').title=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01 hoặc DNG_02 · từ '+start+' đến '+asOf;
  $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';
@@ -205,7 +207,7 @@ const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
 const isManager=()=>window.IBB5_CURRENT_PROFILE?.role==='manager';
 const buildDistinct=()=>[...new Map(operationalData().filter(x=>x.type==='Internet'&&x.id).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
-const hiddenContracts=()=>[...new Map(DATA.filter(x=>x.type==='Internet'&&x.id&&isCancelled(x.id)).map(x=>[x.id,x])).values()];
+const hiddenContracts=()=>[...new Map(dashboardData().filter(x=>x.type==='Internet'&&x.id&&isCancelled(x.id)).map(x=>[x.id,x])).values()];
 const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-slot',action:'.p-note',result:'.p-result',source:'.p-source',cancelReason:'.p-cancel-reason'};
 
 function isFilled(id){const n=notes[id]||{};return ['action','result','source',...(skipsOnlineAppointment(n.result)?[]:['expected','timeSlot'])].every(k=>String(n[k]||'').trim())&&(!isCancellationResult(n.result)||!!n.cancelReason?.trim())}
@@ -812,7 +814,7 @@ const selectedMonths=()=>monthInputs.filter(input=>input.checked).map(input=>Num
 function selectMonths(months){monthInputs.forEach(input=>{input.checked=months.includes(Number(input.value));});}
 function monthSummary(){const months=selectedMonths();$('ibbcMonthSummary').textContent=months.length===12?'Cả năm':months.length<=3?'Tháng '+months.join(', '):'Đã chọn '+months.length+' tháng';$('ibbcMonthSummary').title='Tháng '+months.join(', ');monthInputs.forEach(input=>{input.disabled=months.length===1&&input.checked;});}
 
-function netRows(){const uniq=new Map();for(const r of DATA){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}for(const row of mergeCancellationArchive(window.IBB5_CANCELLED_NET,DATA))uniq.set(row.id,{...uniq.get(row.id),...row});return [...uniq.entries()].map(([id,r])=>({...r,id}));}
+function netRows(){const uniq=new Map();for(const r of dashboardData()){if(r?.type!=='Internet'||!r.id)continue;const id=String(r.id).trim().toUpperCase();uniq.set(id,r)}for(const row of mergeCancellationArchive(window.IBB5_CANCELLED_NET,DATA).filter(includeInDashboardReports))uniq.set(row.id,{...uniq.get(row.id),...row});return [...uniq.entries()].map(([id,r])=>({...r,id}));}
 function roster(){return PERSONNEL.slice().filter(p=>p.acc).sort((a,b)=>{
   const ta=Number(a.team)||99,tb=Number(b.team)||99;if(ta!==tb)return ta-tb;
   const ia=ORDER.indexOf(norm(a.acc)),ib=ORDER.indexOf(norm(b.acc));return (ia<0?999:ia)-(ib<0?999:ib);

@@ -9,8 +9,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const definitions=[['DUE','2026-11-05','', '2026-11-06'],['LATE','2026-11-01','','2026-11-05'],['WAIT','2026-11-01','','2026-11-07'],['MISSING','2026-11-01','',''],['OLD','2026-10-01','','2026-11-06'],['ONLINE','2026-11-01','2026-11-06','2026-11-05'],['DONE','2026-11-01','2026-11-06','2026-11-05'],['FUTURE','2026-11-07','','2026-11-06'],['CANCEL','2026-11-01','','2026-11-06'],['OUTSIDE','2026-11-01','','2026-11-06']];
   const data=definitions.map(([id,created,date])=>({id,created,date,type:'Internet',staff:id==='OUTSIDE'?'DNG.Vypv':'DNG.ManLM3',room:'IBB5',customer:'Khách '+id,package:'Giga'}));
   data.push(...['SEPTCANCEL','OCTCANCEL'].map((id,index)=>({id,type:'Internet',staff:'DNG.ManLM3',room:'IBB5',created:index?'2026-10-01':'2026-09-01',date:index?'':'2026-11-06',status:'Đã chấm dứt hợp đồng'})));
+  // Payroll-only August imports must not alter any of the existing report assertions.
+  data.push(...['AUGONLINE','AUGPENDING','AUGHIDDEN','AUGCANCEL'].map(id=>({id,type:'Internet',staff:'DNG.ManLM3',room:'IBB5',created:'2026-08-20',date:id==='AUGONLINE'?'2026-11-06':'',status:id==='AUGCANCEL'?'Đã chấm dứt hợp đồng':''})));
   const notes=Object.fromEntries(definitions.map(([id,,,expected])=>[id,{expected}]));
   Object.assign(notes.DONE,{timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'});notes.CANCEL.cancellationApproved=true;
+  notes.AUGHIDDEN={cancellationApproved:true};
   for(const role of ['manager','staff']){
    const context=await browser.newContext({viewport:{width:role==='manager'?1440:390,height:900}}),errors=[];
    await context.addInitScript(({data,notes})=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES=notes;window.IBB5_SHARED_STATE={commitments:{},notes,revisions:{}};},{data,notes});
@@ -20,11 +23,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await context.route('https://**/*',r=>r.abort());
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
    await page.goto('http://127.0.0.1:5179/#pendingContracts');await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');
+   assert.equal(await page.locator('#pendCreatedMonth option[value="2026-08"]').count(),0);
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
    await page.evaluate(()=>{location.hash='overview'});await page.locator('#overview.page-active').waitFor();
    await page.locator('#to').fill('2026-11-06');await page.locator('#to').dispatchEvent('change');
    assert.equal(await page.locator('#online').textContent(),'2');
    const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})});assert.equal(await person.locator('td').nth(4).textContent(),'2');
+   // Cancellation history bypasses operational filters, but still excludes payroll-only August.
+   await page.evaluate(()=>{location.hash='cancelled';document.getElementById('ibbcMonth').open=true;});
+   await page.locator('#ibbcMonth input[value="8"]').check();await page.locator('#ibbcMonth input[value="11"]').uncheck();
+   assert.equal(await page.locator('#ibbcCount').textContent(),'0');
+   await page.locator('#ibbcMonth input[value="11"]').check();await page.locator('#ibbcMonth input[value="8"]').uncheck();await page.keyboard.press('Escape');
    assert.equal(await page.locator('#ibbcMonth input:checked').evaluateAll(inputs=>inputs.map(input=>input.value).join(',')),'11');assert.equal(await page.locator('#ibbcCount').textContent(),'0');
    await page.evaluate(()=>{location.hash='cancelled'});await page.locator('#cancelled.page-active').waitFor();
    await page.locator('#ibbcMonth summary').click();await page.locator('#ibbcMonth input[value="9"]').check();await page.locator('#ibbcMonth input[value="11"]').uncheck();assert.equal(await page.locator('#ibbcCount').textContent(),'1');assert.equal(await page.locator('#ibbcCountHead .ibbc-month').count(),1);assert.match(await page.locator('#ibbcCountLabel').textContent(),/9\/2026/);

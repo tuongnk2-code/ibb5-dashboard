@@ -1,5 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { sharedRow } from './_dashboardState.js';
+import { includeInDashboardReports } from '../js/reportScope.js';
 import { canSeeReport, teamOf, reportDay, shiftDay, validDay, validateReport } from '../js/dailyReportModel.js';
 
 const fail = (res, status, error) => res.status(status).json({ error });
@@ -10,8 +11,9 @@ async function metrics(admin, date, profiles) {
   const seen = new Set();
   const snapshot = await sharedRow(admin, 'snapshot');
   for (let from = 0; ; from += 1000) {
-    const rows = snapshot ? snapshot.data.data.filter(r => r.type === 'Internet' && r.date >= date.slice(0, 7) + '-01' && r.date <= date).slice(from, from + 1000) : check(await admin.from('contracts').select('id,staff,date').eq('type', 'Internet').gte('date', date.slice(0, 7) + '-01').lte('date', date).order('id').range(from, from + 999));
+    const rows = snapshot ? snapshot.data.data.filter(r => r.type === 'Internet' && r.date >= date.slice(0, 7) + '-01' && r.date <= date).slice(from, from + 1000) : check(await admin.from('contracts').select('id,staff,date,created').eq('type', 'Internet').gte('date', date.slice(0, 7) + '-01').lte('date', date).order('id').range(from, from + 999));
     for (const row of rows) {
+      if (!includeInDashboardReports(row)) continue;
       const id = byAcc.get(String(row.staff || '').trim().toLowerCase()), key = id + ':' + row.id;
       if (!id || seen.has(key)) continue;
       seen.add(key); counts[id].monthlyOnline++;
