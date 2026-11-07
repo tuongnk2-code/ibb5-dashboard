@@ -10,10 +10,11 @@
 #lcb button{border:1px solid #d0e1f2;border-radius:8px;background:#f5faff;color:#173b60;padding:10px 12px;cursor:pointer;font-size:13px}
 .sal-card{padding:18px;border:1px solid #d7e5f2;border-radius:14px;margin:18px 0;background:white;min-width:0}
 .sal-card summary{cursor:pointer;font-weight:800;padding:6px}
-.sal-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+.sal-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:14px}
 .sal-summary>div{background:#f1f7ff;border:1px solid #d6e5f4;border-radius:12px;padding:16px;min-width:0}
 .sal-summary span{display:block;font-size:12px;color:#6986a2}.sal-summary strong{display:block;margin-top:7px;font-size:26px;overflow-wrap:anywhere}
-.sal-summary>div:last-child{background:#173e64;color:white}.sal-summary>div:last-child span{color:#cbdff5}
+.sal-summary>div:nth-child(4){background:#173e64;color:white}.sal-summary>div:nth-child(4) span{color:#cbdff5}
+.sal-summary small{display:block;margin-top:7px;color:#6986a2;font-size:11px;line-height:1.4}
 .sal-scroll{max-width:100%;overflow:auto;border:1px solid #d0e1f2;border-radius:10px;margin-top:12px}
 #lcb table{width:100%;min-width:740px;border-collapse:collapse;font-size:15px}
 #lcb th,#lcb td{padding:9px 10px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
@@ -21,10 +22,11 @@
 #lcb tbody th,#lcb thead th:first-child{position:sticky;left:0;z-index:1;text-align:left;min-width:140px;background:#e8f1fa}
 #salTable tr>:first-child{width:1%;min-width:0;white-space:nowrap}
 .sal-scroll:has(#salTable){width:fit-content}
-#salTable{width:auto;min-width:860px}
+#salTable{width:auto;min-width:1000px}
 #salTable th,#salTable td{padding:9px 16px}
 #salTable tr>:nth-child(5){min-width:130px}
-#salTable tr>:nth-child(6){min-width:150px;text-align:right;font-variant-numeric:tabular-nums}
+#salTable tr>:nth-child(6),#salTable tr>:nth-child(7){min-width:140px;text-align:right;font-variant-numeric:tabular-nums}
+#salTable .sal-previous{color:#557696;font-size:16px;font-weight:700}
 #salTable tr>:last-child{min-width:100px}
 #lcb td small{display:block;color:#7890a8;font-size:11px;margin-top:2px}
 #lcb .sal-amount{font-size:19px;font-weight:850;color:#076ac0}

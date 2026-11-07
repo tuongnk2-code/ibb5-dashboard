@@ -1,5 +1,7 @@
 # LCB
 
+Cột LCB T-1 đối chiếu với tháng liền trước tháng đang chọn (kể cả chuyển năm), dùng nguồn gốc và trạng thái thử việc riêng của tháng trước; không có dữ liệu nguồn kỳ trước thì hiển thị —. Tổng theo Bầy/phạm vi cũng cộng LCB T-1 của các nhân sự đang lọc. Lương trung bình của phòng ở tài khoản TP = tổng LCB tháng đang chọn / toàn bộ nhân sự trong phòng, gồm thử việc và nhân sự chưa có HĐ; làm tròn đồng. Bộ lọc Bầy/tìm Acc không đổi chỉ số trung bình phòng. Trưởng Bầy chỉ xem trung bình Bầy của mình; nhân viên không xem trung bình lương phòng/Bầy.
+
 Dữ liệu có Ngày tạo thuộc tháng 08/2026 được giữ nguyên trong nguồn chung và chỉ dùng ở tab LCB, gồm HĐ tồn Online các tháng sau. Tất cả báo cáo dashboard khác (kể cả HĐ hủy, HĐ đã ẩn và số Online tự lấy trong báo cáo ngày) loại nhóm này; không xóa nguồn hoặc ghi chú. Khi thiếu Ngày tạo, dùng tháng Online để loại bản ghi tháng 08/2026. Quy tắc này không loại tháng 8 của các năm sau.
 
 Nguồn bảng mốc: ảnh người dùng cung cấp. Công thức đã chốt: Tổng DV = NET × 0,8 + V.VIP × 1,7; không cộng thêm 0,5. Tính bằng phần mười nguyên để tránh sai số dấu phẩy động. Tổng DV gốc hiển thị tối đa 1 chữ số thập phân; DV đối chiếu làm tròn toán học, phần lẻ ≥ 0,5 lên và < 0,5 xuống. Ví dụ 46 NET + 6 V.VIP = 47 DV → mốc 46–50 → 7.800.000 đồng. 25,4 → 25 → 4.700.000; 25,5 hoặc 25,8 → 26 → 5.200.000.

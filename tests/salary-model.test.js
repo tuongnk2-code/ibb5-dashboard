@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { salaryCounts, salaryPeriod, calculateSalary } from '../js/salaryModel.js';
+import { salaryCounts, salaryPeriod, calculateSalary, previousSalaryMonth } from '../js/salaryModel.js';
+
+test('previous salary month crosses year boundaries',()=>{
+  assert.equal(previousSalaryMonth('2027-01'),'2026-12');
+  assert.equal(previousSalaryMonth('2026-11'),'2026-10');
+});
 
 test('LCB source counts distinguish NET, V.VIP and other TV, deduplicate service IDs and obey period', () => {
   const roster = [{ acc: 'DNG.HoaNTB6', team: 3 }, { acc: 'DNG.ManLM3', team: 3 }];

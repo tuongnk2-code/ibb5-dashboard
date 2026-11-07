@@ -4,6 +4,13 @@ import { lookupSalary } from './salaryBands.js';
 const norm = value => String(value || '').trim().toLowerCase();
 const contractId = value => String(value || '').trim().toUpperCase();
 
+export function previousSalaryMonth(month) {
+  if (!validDay(month + '-01')) throw new Error('Tháng LCB không hợp lệ.');
+  const date = new Date(month + '-01T12:00:00Z');
+  date.setUTCMonth(date.getUTCMonth() - 1);
+  return date.toISOString().slice(0, 7);
+}
+
 // Counting is separate from conversion and salary lookup so that the original
 // NET/V.VIP source figures stay visible and auditable.
 export function salaryPeriod(month, today = reportDay()) {

@@ -4,7 +4,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  const {createServer}=await import('../node_modules/vite/dist/node/index.js');
  const {STAFF_ROSTER}=await import('../js/staffRoster.js');
  const {canSeeReport,reportDay}=await import('../js/dailyReportModel.js');
- const {salaryCounts,salaryPeriod,calculateSalary}=await import('../js/salaryModel.js');
+ const {salaryCounts,salaryPeriod,calculateSalary,previousSalaryMonth}=await import('../js/salaryModel.js');
  const server=await createServer({server:{host:'127.0.0.1',port:5189,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
  const settings=new Map(),contexts=[],pages=[];let failNext=false;
@@ -22,7 +22,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     if(request.method()==='GET'){
      const roster=STAFF_ROSTER.filter(p=>canSeeReport(me,{id:p.acc===me.acc?me.id:null,acc:p.acc,role:'staff'})),period=salaryPeriod(month);
      const rows=salaryCounts(data,{month,asOf:period.asOf,roster}).map(p=>({...p,probation:settings.get(month+':'+p.acc)?.probation||false,revision:settings.get(month+':'+p.acc)?.revision||0}));
-     return r.fulfill({json:{rows,month,...period,sourceUpdated:'2026-11-07T02:00:00Z',serverTime:new Date().toISOString()}});
+     for(const row of rows)row.previousSalary=6200000;
+     return r.fulfill({json:{rows,month,previousMonth:previousSalaryMonth(month),...period,sourceUpdated:'2026-11-07T02:00:00Z',serverTime:new Date().toISOString()}});
     }
     const body=request.postDataJSON(),key=body.month+':'+body.acc,old=settings.get(key);
     if(me.role!=='manager')return r.fulfill({status:403,json:{error:'Chỉ Trưởng phòng được đánh dấu thử việc.'}});
@@ -34,6 +35,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#salMonth').fill('2026-10');await page.locator('#salMonth').dispatchEvent('change');await page.locator('#salScope').filter({hasText:'01/10/2026–04/11/2026'}).waitFor();
    assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),role==='manager'?17:role==='staff'?1:8);
    const hoa=page.locator('[data-salary-acc="DNG.HoaNTB6"]');
+   assert.equal(await hoa.locator('.sal-previous').textContent(),'6.200.000');assert.match(await page.locator('#salPrevHeader').textContent(),/09\/2026/);
+   if(role==='manager')assert.match(await page.locator('#salSummary').last().textContent(),/4\.882\.353/);
+   if(role==='staff')assert.doesNotMatch(await page.locator('#salSummary').textContent(),/Lương trung bình/);
    assert.ok((await hoa.locator('th').boundingBox()).width<=220,'Acc column should fit its labels without a wide empty area');
    assert.deepEqual((await hoa.locator('td').allTextContents()).slice(0,3),role==='lead'?['52','6','51,8']:['46','6','47']);assert.equal(await hoa.locator('.sal-amount').textContent(),role==='lead'?'8.600.000':'7.800.000');
    assert.equal(await page.locator('[data-sal-probation]').count(),role==='manager'?17:0);
@@ -45,6 +49,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await hoa.locator('[type="checkbox"]').evaluate(el=>el.click());await hoa.locator('.sal-amount').filter({hasText:'7.800.000'}).waitFor();assert.equal(await hoa.locator('.sal-amount').textContent(),'7.800.000');
     await page.locator('#salTeam').selectOption('3');assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),8);
     await page.locator('#salSearch').fill('hoantb6');assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),1);assert.match(await page.locator('#salSummary').textContent(),/7\.800\.000/);
+    assert.match(await page.locator('#salSummary').textContent(),/4\.882\.353/);
     const download=page.waitForEvent('download');await page.locator('#salExport').click();const csv=fs.readFileSync(await (await download).path(),'utf8');assert.match(csv,/"47","47","46–50 INT","7800000"/);assert.doesNotMatch(csv,/DNG.Vypv/);
     await page.locator('#salSearch').fill('');await page.locator('#salTeam').selectOption('');
    }
