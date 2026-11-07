@@ -423,7 +423,7 @@ const cutoff=$('pendAsOf')?.value||day;
 const ns=readNotes();
 const net=typeof DATA==='undefined'?[]:operationalData().filter(x=>x.type==='Internet'&&x.id);
 const distinct=[...new Map(net.map(x=>[x.id,x])).values()];
-const rows=distinct.filter(x=>!ns[x.id]?.cancellationApproved&&x.created&&x.created<=cutoff&&(!x.date||x.date>cutoff)&&ns[x.id]?.expected===day);
+const rows=distinct.filter(x=>!ns[x.id]?.cancellationApproved&&!isCancellationResult(ns[x.id]?.result)&&!['dự kiến hủy','dự kiến huỷ'].includes(canonical(ns[x.id]?.result).replace(/\s+/g,' '))&&x.created&&x.created<=cutoff&&(!x.date||x.date>cutoff)&&ns[x.id]?.expected===day);
 const counts=Array(5).fill(0);const grouped=new Map();
 for(const x of rows){const person=people[canonical(x.staff)]||{team:0,name:x.staff||'Chưa xác định',acc:x.staff||'—'};const key=canonical(x.staff)||'unknown';if(!grouped.has(key))grouped.set(key,{...person,values:Array.from({length:5},()=>[])});let idx=slots.indexOf(ns[x.id]?.timeSlot);if(idx<0)idx=4;grouped.get(key).values[idx].push(x.id);counts[idx]++;}
 $('psSummary').textContent='Ngày '+day.split('-').reverse().join('/')+' · '+rows.length+' HĐ dự kiến Online · '+counts[4]+' HĐ chưa có mốc hẹn';
@@ -446,6 +446,8 @@ $('psDay').addEventListener('change',()=>{const date=$('pendDailyDate');if(date)
 $('pendDailyDate')?.addEventListener('change',()=>{$('psDay').value=$('pendDailyDate').value;render()});
 $('pendAsOf')?.addEventListener('change',render);
 document.addEventListener('click',e=>{if(e.target.closest?.('#pendingContracts button'))setTimeout(render,60)});
+document.addEventListener('ibb5-shared-updated',()=>queueMicrotask(render));
+document.addEventListener('ibb5-snapshot-updated',()=>queueMicrotask(render));
 window.addEventListener('storage',render);
 window.addEventListener('hashchange',render);
 render();

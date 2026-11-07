@@ -20,3 +20,5 @@ Nút Chụp ảnh bảng trong báo cáo Bán/Online xuất PNG của bảng nh�
 Bảng Hiệu suất nhân sự có nút Chụp ảnh bảng, xuất đầy đủ cột/hàng và tổng theo bộ lọc. Ảnh có tiêu đề, Bầy và ngày theo dõi, giữ cỡ chữ hiện tại.
 
 Bảng HĐ Online dự kiến theo mốc hẹn có nút Chụp ảnh bảng; PNG giữ tiêu đề, thống kê ngày và toàn bộ bảng, tên file theo ngày đang xem.
+
+Bảng hẹn Online loại HĐ có Kết quả Hủy/Huỷ đã lưu, kể cả chưa TP duyệt; tổng mốc hẹn/Bầy/phòng và PNG dùng cùng danh sách. Dự Kiến Hủy cũng được loại theo yêu cầu; chỉ ảnh hưởng bảng hẹn Online.
