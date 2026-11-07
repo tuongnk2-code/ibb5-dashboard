@@ -23,14 +23,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     if(mobile){
      await row.locator('.p-mobile-edit').click();const form=page.locator('#pendingMobileForm');
      await form.locator('[name="result"]').selectOption(result);
-     assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),false);assert.equal(await form.locator('[name="timeSlot"]').evaluate(el=>el.required),false);
-     await form.locator('[name="result"]').selectOption('Chưa Online');assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),true);await form.locator('[name="result"]').selectOption(result);
+     assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),false);assert.equal(await form.locator('[name="timeSlot"]').evaluate(el=>el.required),false);assert.equal(await form.locator('[name="expected"]').isVisible(),false);assert.equal(await form.locator('[name="timeSlot"]').isVisible(),false);
+     await form.locator('[name="result"]').selectOption('Chưa Online');assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),true);assert.equal(await form.locator('[name="expected"]').isVisible(),true);assert.equal(await form.locator('[name="timeSlot"]').isVisible(),true);await form.locator('[name="result"]').selectOption(result);
      await form.locator('[name="action"]').selectOption('Khác');if(result==='Hủy')await form.locator('[name="cancelReason"]').fill('Khách yêu cầu');
      assert.equal(await form.evaluate(el=>el.checkValidity()),false);assert.equal(saved.length,id==='C1'?0:1);
      await form.locator('[name="source"]').selectOption('Web');assert.equal(await form.evaluate(el=>el.checkValidity()),true);await form.locator('[type="submit"]').click();await page.locator('#pendingMobileEditor').waitFor({state:'hidden'});
     }else{
      await row.locator('.p-result').selectOption(result);
-     assert.equal(await row.locator('td').nth(4).locator('.p-result').count(),1);
+     assert.equal(await row.locator('td').nth(4).locator('.p-result').count(),1);assert.equal(await row.locator('.p-date').isVisible(),false);assert.equal(await row.locator('.p-time-slot').isVisible(),false);await row.locator('.p-result').selectOption('Chưa Online');assert.equal(await row.locator('.p-date').evaluate(el=>el.hidden),false);assert.equal(await row.locator('.p-time-slot').evaluate(el=>el.hidden),false);await row.locator('.p-result').selectOption(result);
      await row.locator('.p-note').selectOption('Khác');if(result==='Hủy')await row.locator('.p-cancel-reason').fill('Khách yêu cầu');
      await row.locator('.p-save').click();assert.equal(saved.length,id==='C1'?0:1);assert.match(await row.locator('.pending-validation-message').textContent(),/Nguồn thông tin/);
      await row.locator('.p-source').selectOption('Web');await row.locator('.p-save').click();await row.locator('.p-save').filter({hasText:'Đã lưu'}).waitFor();
