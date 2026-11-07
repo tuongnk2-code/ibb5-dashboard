@@ -31,6 +31,11 @@ async function showApp(profile) {
     const { renderDailyReports } = await import('./dailyReports.js');
     renderDailyReports(reportRoot, profile, (month, acc) => window.IBB5_MONTHLY_TARGET?.(month, acc) ?? null);
   }
+  const marketRoot = document.getElementById('marketReportsRoot');
+  if (marketRoot) {
+    const { renderMarketReports } = await import('./marketReports.js');
+    renderMarketReports(marketRoot, profile);
+  }
   const root = document.getElementById('accountPanelRoot');
   if (root) {
     const { renderPermissions } = await import('./permissions.js');

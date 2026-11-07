@@ -171,7 +171,7 @@ document.querySelectorAll('.sidebar .nav a').forEach(a=>a.addEventListener('clic
 const links=[...document.querySelectorAll('.sidebar .nav a[href^="#"]')];
 const sections=[...document.querySelectorAll('.content > section.panel[id]')];
 const title=document.querySelector('header.top h1');
-const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',account:'Tài khoản'};
+const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',marketReports:'Triển khai thị trường',account:'Tài khoản'};
 function activate(id){if(!sections.some(s=>s.id===id))id='overview';sections.forEach(s=>s.classList.toggle('page-active',s.id===id));links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));if(title)title.textContent=names[id]||'Tổng quan kinh doanh';window.scrollTo(0,0);}
 links.forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const id=this.getAttribute('href').slice(1);if(location.hash!=='#'+id)history.pushState(null,'','#'+id);activate(id)}));
 window.addEventListener('popstate',()=>activate(location.hash.slice(1)));
@@ -656,7 +656,7 @@ async function exportPNG(id, filename){
  await document.fonts.ready;
  if(id==='qDocument')await Promise.all([...node.querySelectorAll('img')].map(image=>image.decode()));
  const perfShot=id==='perfTableCapture',perfTable=perfShot?node.querySelector('table'):null;
- const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width,perfTable?.scrollWidth||0,id==='dpTableCapture'?node.querySelector('table').scrollWidth+2:0)),h=Math.ceil(Math.max(node.scrollHeight,rect.height,perfTable?(perfTable.scrollHeight+85):0));
+ const rect=node.getBoundingClientRect(),w=Math.ceil(Math.max(node.scrollWidth,rect.width,perfTable?.scrollWidth||0,id==='marketCapture'?node.querySelector('table').scrollWidth:0,id==='dpTableCapture'?node.querySelector('table').scrollWidth+2:0)),h=Math.ceil(Math.max(node.scrollHeight,rect.height,perfTable?(perfTable.scrollHeight+85):0));
  if(!w||!h||w>8000||h>12000)throw new Error('Kích thước khu vực không phù hợp để chụp');
  const clone=node.cloneNode(true);inlineCopy(node,clone);
  clone.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
@@ -682,6 +682,7 @@ async function exportPNG(id, filename){
   clone.querySelectorAll('.pending-schedule-scroll,.pending-schedule-list,.pending-schedule-layout').forEach(part=>{part.style.setProperty('overflow','visible','important');part.style.setProperty('max-height','none','important');});
   clone.querySelectorAll('th,td').forEach(cell=>cell.style.setProperty('position','static','important'));
  }
+ if(id==='marketCapture'){clone.querySelector('.mk-scroll').style.setProperty('overflow','visible','important');clone.querySelectorAll('th').forEach(cell=>cell.style.setProperty('position','static','important'));}
  // Avoid duplicate generated/decorative pseudo-elements in SVG export.
  const xml=new XMLSerializer().serializeToString(clone);
  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%">'+xml+'</foreignObject></svg>';
@@ -691,7 +692,7 @@ async function exportPNG(id, filename){
   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Trình duyệt không hỗ trợ chụp PNG với nội dung hiện tại'));img.src=url;});
   const canvas=document.createElement('canvas');const scale=2;canvas.width=w*scale;canvas.height=h*scale;const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
   const png=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!png)throw new Error('Không thể xuất ảnh PNG');
-  const a=document.createElement('a');const out=URL.createObjectURL(png);a.href=out;a.download=filename+'_'+(id==='pendingSchedule'?document.getElementById('psDay').value:id==='dpTableCapture'?(document.getElementById('dpView').value==='day'?document.getElementById('dpDay').value:document.getElementById('dpMonth').value):id==='qDocument'?reportDay():new Date().toISOString().slice(0,10))+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(out),6000);
+  const a=document.createElement('a');const out=URL.createObjectURL(png);a.href=out;a.download=filename+'_'+(id==='marketCapture'?document.getElementById('mkDate').value:id==='pendingSchedule'?document.getElementById('psDay').value:id==='dpTableCapture'?(document.getElementById('dpView').value==='day'?document.getElementById('dpDay').value:document.getElementById('dpMonth').value):id==='qDocument'?reportDay():new Date().toISOString().slice(0,10))+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(out),6000);
  }finally{URL.revokeObjectURL(url);}
 }
 document.addEventListener('click',async function(e){const btn=e.target.closest('[data-shot]');if(!btn)return;e.preventDefault();if(btn.disabled)return;const old=btn.textContent;btn.disabled=true;btn.textContent='Đang tạo PNG…';try{await exportPNG(btn.dataset.shot,btn.dataset.file);toast('Đã tạo ảnh PNG cho khu vực được chọn.');}catch(err){console.error('IBB5 screenshot error:',err);toast('Không chụp được PNG trong trình duyệt này: '+(err.message||err));}finally{btn.disabled=false;btn.textContent=old;}});

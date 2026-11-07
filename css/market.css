@@ -1,0 +1,43 @@
+#marketReports{color:#173b60}
+#marketReports [hidden]{display:none!important}
+#marketReports h2{margin:5px 0;font-size:26px}
+#marketReports h3{margin:0;font-size:18px}
+#marketReports p{color:#6985a1;font-size:13px;line-height:1.5;margin:6px 0 12px}
+.mk-head,.mk-tools{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mk-head{margin-bottom:16px}.mk-head>div:first-child{min-width:0}
+.mk-head small{color:#f47b20;font-weight:800;letter-spacing:.04em}
+.mk-deadline{display:inline-block;background:#fff2e5;color:#ac5316;border-radius:8px;padding:3px 8px}
+.mk-card{border:1px solid #d7e5f2;border-radius:15px;background:white;padding:20px;margin-top:18px;min-width:0}
+#marketReports label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#547394;min-width:0}
+#marketReports input,#marketReports select,#marketReports textarea{box-sizing:border-box;width:100%;max-width:100%;min-width:0;border:1px solid #cddff1;border-radius:8px;padding:10px;font:inherit;color:#173b60;background:white;min-height:40px}
+#marketReports textarea{resize:vertical}
+#marketReports button{cursor:pointer;border:1px solid #cddff1;border-radius:8px;background:#f7fbff;color:#173b60;padding:9px 12px;font-size:13px}
+#marketReports button.primary{background:#ff7917;color:white;border-color:#ff7917}
+#marketReports fieldset{border:0;padding:0;margin:0;display:grid;gap:14px;min-width:0}
+#marketReports fieldset:disabled{opacity:.6}
+.mk-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.mk-tools{justify-content:flex-start}#marketReports .mk-tools label{min-width:130px}.mk-tools label:has(input[type=search]){width:180px}
+.mk-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px}
+.mk-summary button{text-align:left!important;background:#f2f8ff!important;padding:14px!important}
+.mk-summary span{display:block;color:#6883a0;font-size:12px}.mk-summary strong{display:block;font-size:28px;margin-top:6px}
+.mk-alert,.mk-error,.mk-success{padding:13px 16px;border-radius:10px;line-height:1.6;font-size:13px;margin:12px 0}
+.mk-alert{color:#a7520b;background:#fff2df}.mk-error{color:#bc2735;background:#ffedef}.mk-success{color:#137454;background:#eaf8f1}
+.mk-badge{padding:5px 8px;border-radius:7px;font-size:12px;font-weight:700;display:inline-block}
+.mk-submitted{background:#e6f7ee;color:#12865e}.mk-late{background:#fff0df;color:#b56a07}.mk-overdue{background:#ffe6ea;color:#c62437}.mk-draft,.mk-missing,.mk-exempt{background:#eef3fa;color:#5a7490}
+.mk-scroll{overflow:auto;max-width:100%;border:1px solid #cddff1;border-radius:10px}
+#marketReports table{border-collapse:collapse;color:#173b60;width:100%;font-size:14px}
+#marketReports th,#marketReports td{padding:10px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
+#marketReports th{background:#e8f1fa;font-weight:800}
+.mk-monitor{min-width:850px}.mk-monitor td:first-child{text-align:left!important}
+.mk-matrix{min-width:1100px;width:max-content!important}
+.mk-matrix thead tr:first-child th:first-child,.mk-matrix tbody th{position:sticky;left:0;z-index:1;text-align:left!important;min-width:155px;background:#edf4fb}
+.mk-matrix td{min-width:70px}.mk-matrix td button{border:0!important;background:transparent!important;padding:2px 8px!important;width:100%;font-weight:700}
+.mk-zero{background:#ffe1e6!important;color:#c21e32!important}.mk-zero button{color:#c21e32!important}
+.mk-team>*{background:#fff0df!important;color:#ad500a;font-weight:800}.mk-total>*{background:#173e64!important;color:white;font-weight:800}
+#marketCapture{background:white;margin-top:12px;min-width:0}#marketCapture>h3,#marketCapture>p{padding-left:4px}
+#mkDetail{border:1px solid #d7e5f2;border-radius:14px;max-width:600px;width:calc(100% - 60px);color:#173b60;padding:20px}
+#mkDetail::backdrop{background:#0b244766}#mkDetail dl{display:grid;grid-template-columns:140px 1fr;gap:12px}#mkDetail dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:750px){.mk-card{padding:14px}.mk-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.mk-summary button:last-child{grid-column:1/-1}.mk-fields{gap:8px}.mk-tools{width:100%}.mk-tools label{flex:1;min-width:120px}.mk-head{gap:8px}#marketReports h2{font-size:23px}#marketReports input,#marketReports textarea,#marketReports select{font-size:16px}}
+
+#marketCapture.mk-month .mk-matrix td{min-width:45px;padding:8px 5px;font-size:13px}
+#marketCapture.mk-month .mk-matrix thead th{padding:8px 5px;font-size:12px}

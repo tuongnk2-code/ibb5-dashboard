@@ -33,7 +33,7 @@ setMenu(false);
 
 // Tables without their own scroll area keep their original columns on small screens.
 const content = document.querySelector('.content');
-const scrollAreas = '.tablewrap,.pending-scroll,.pending-schedule-scroll,.ct-tablewrap,.dp-scroll,.ibbc-scroll,.dr-table-scroll,.responsive-table-scroll';
+const scrollAreas = '.tablewrap,.pending-scroll,.pending-schedule-scroll,.ct-tablewrap,.dp-scroll,.ibbc-scroll,.dr-table-scroll,.mk-scroll,.responsive-table-scroll';
 function prepareTables(node) {
   if (!(node instanceof Element)) return;
   const tables = node.matches('table') ? [node] : node.querySelectorAll('table');
