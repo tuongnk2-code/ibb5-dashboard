@@ -8,7 +8,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  const server=await createServer({server:{host:'127.0.0.1',port:5189,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
  const settings=new Map(),contexts=[],pages=[];let failNext=false;
- const data=[...Array.from({length:46},(_,i)=>({type:'Internet',id:'N'+i,staff:'DNG.HoaNTB6',date:i<44?'2026-10-25':'2026-11-04'})),...Array.from({length:6},(_,i)=>({type:'Truyền hình',id:'T'+i,staff:'DNG.HoaNTB6',date:'2026-10-25',vvip:true})),{type:'Internet',id:'EXCLUDE',staff:'DNG.HoaNTB6',date:'2026-11-05'}];
+ const data=[...Array.from({length:46},(_,i)=>({type:'Internet',id:'N'+i,staff:'DNG.HoaNTB6',created:'2026-10-01',date:i<44?'2026-10-25':'2026-11-04'})),...Array.from({length:6},(_,i)=>({type:'Truyền hình',id:'T'+i,staff:'DNG.HoaNTB6',created:'2026-10-01',date:'2026-10-25',vvip:true})),{type:'Internet',id:'EXCLUDE',staff:'DNG.HoaNTB6',created:'2026-10-01',date:'2026-11-05'}];
  try{
   for(const role of ['manager','staff','lead']){
    const me={id:role,role,acc:role==='manager'?null:'DNG.HoaNTB6'};
@@ -48,7 +48,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.locator('#salSearch').fill('');await page.locator('#salTeam').selectOption('');
    }
    if(role==='staff'){
-    for(let i=0;i<6;i++)data.push({type:'Internet',id:'LIVE'+i,staff:'DNG.HoaNTB6',date:'2026-10-30'});
+    for(let i=0;i<6;i++)data.push({type:'Internet',id:'LIVE'+i,staff:'DNG.HoaNTB6',created:'2026-10-01',date:'2026-10-30'});
     for(const p of [pages[0],page])await p.evaluate(()=>window.dispatchEvent(new Event('focus')));
     await hoa.locator('.sal-amount').filter({hasText:'8.600.000'}).waitFor();await pages[0].locator('[data-salary-acc="DNG.HoaNTB6"] .sal-amount').filter({hasText:'8.600.000'}).waitFor();
    }

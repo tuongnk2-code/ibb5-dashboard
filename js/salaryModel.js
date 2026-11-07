@@ -30,7 +30,7 @@ export function salaryCounts(data, { month, asOf, roster }) {
   }
   for (const row of distinct.values()) {
     const date = row.date, person = people.get(norm(row.staff));
-    if (!person || !validDay(date) || date < period.start || date > period.asOf) continue;
+    if (!person || !validDay(row.created) || row.created.slice(0, 7) !== month || !validDay(date) || date < period.start || date > period.asOf) continue;
     if (row.type === 'Internet') person.net++;
     else if (row.vvip === true) person.vvip++;
   }

@@ -5,7 +5,7 @@ import { reportDay } from '../js/dailyReportModel.js';
 test('salary API scopes counts/settings, only TP can update probation, revisions and months stay independent', async () => {
   const oldFetch=globalThis.fetch;process.env.SUPABASE_URL='https://supabase.test';process.env.SUPABASE_SERVICE_ROLE_KEY='test-only';
   const today=reportDay(),month=today.slice(0,7),settings=new Map();
-  let caller={id:'manager',role:'manager',full_name:'TP'},snapshot={data:{data:[...Array.from({length:46},(_,i)=>({type:'Internet',id:'N'+i,staff:'DNG.HoaNTB6',date:month+'-01'})),...Array.from({length:6},(_,i)=>({type:'Truyền hình',id:'T'+i,staff:'DNG.HoaNTB6',date:month+'-01',vvip:true}))]},updated_at:new Date().toISOString()};
+  let caller={id:'manager',role:'manager',full_name:'TP'},snapshot={data:{data:[...Array.from({length:46},(_,i)=>({type:'Internet',id:'N'+i,staff:'DNG.HoaNTB6',created:month+'-01',date:month+'-01'})),...Array.from({length:6},(_,i)=>({type:'Truyền hình',id:'T'+i,staff:'DNG.HoaNTB6',created:month+'-01',date:month+'-01',vvip:true}))]},updated_at:new Date().toISOString()};
   globalThis.fetch=async(input,init={})=>{
     const url=new URL(input instanceof Request?input.url:input),method=init.method||'GET',json=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
     if(url.pathname==='/auth/v1/user')return json({id:caller.id});
