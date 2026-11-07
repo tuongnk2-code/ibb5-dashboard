@@ -32,15 +32,15 @@ export function renderSalary(root, me) {
     const allPeople = payload.rows.map(p => ({...p,...calculateSalary(p.net,p.vvip,p.probation)}));
     const allTotals = sum(allPeople), average = allPeople.length && allTotals.salary !== null ? Math.round(allTotals.salary / allPeople.length) : null;
     const cards = [['Số NET', totals.net], ['Số V.VIP', totals.vvip], ['Tổng DV', number(totals.total)], ['Tổng LCB trong phạm vi', money(totals.salary) + ' ₫']];
-    if (me.role !== 'staff') cards.push([manager ? 'Lương trung bình của phòng' : 'Lương trung bình của Bầy', money(average) + ' ₫']);
+    cards.push(['Lương trung bình của phòng', money(average) + ' ₫']);
     $('#salSummary').innerHTML = cards.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join('');
-    if (me.role !== 'staff') $('#salSummary').lastElementChild.insertAdjacentHTML('beforeend', `<small>Tổng LCB / ${allPeople.length} nhân sự · Tháng ${month.split('-').reverse().join('/')}</small>`);
+    $('#salSummary').lastElementChild.insertAdjacentHTML('beforeend', `<small>Tổng LCB / ${allPeople.length} nhân sự · Tháng ${month.split('-').reverse().join('/')}</small>`);
     $('#salTotalHeader').textContent = 'Tổng DV Tháng ' + Number(month.slice(5));
     $('#salCurrentHeader').textContent = 'LCB Tháng ' + Number(month.slice(5));
     $('#salPrevHeader').textContent = payload.previousMonth ? 'LCB T' + Number(payload.previousMonth.slice(5)) : 'LCB T-1';
     $('#salPrevHeader').title = payload.previousMonth || '';
     const day = value => value.split('-').reverse().join('/');
-    $('#salScope').textContent = 'Kỳ ' + day(payload.start) + '–' + day(payload.end) + (payload.provisional ? ' · Tạm tính đến ' + day(payload.asOf) : ' · Đã đủ thời gian kỳ') + ' · ' + (manager ? 'Toàn phòng' : me.role === 'lead' ? 'Bầy của bạn' : 'Của bạn');
+    $('#salScope').textContent = 'Kỳ ' + day(payload.start) + '–' + day(payload.end) + (payload.provisional ? ' · Tạm tính đến ' + day(payload.asOf) : ' · Đã đủ thời gian kỳ') + ' · Toàn phòng';
     $('#salUpdated').textContent = payload.sourceUpdated ? 'Nguồn dữ liệu cập nhật: ' + new Date(payload.sourceUpdated).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
     const totalRow = (label, members, className) => { const s = sum(members); return `<tr class="${className}"><th>${label}</th><td>${s.net}</td><td>${s.vvip}</td><td>${number(s.total)}</td><td>—</td><td>${money(s.salary)}</td><td>${money(s.previousSalary)}</td>${changeCell(s.salary,s.previousSalary)}<td>—</td></tr>`; };
     let html = '';

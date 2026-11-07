@@ -38,9 +38,9 @@ test('salary API scopes counts/settings, only TP can update probation, revisions
     assert.equal((await invoke('GET')).body.rows.find(r=>r.acc===hoa.acc).probation,false);
     assert.equal((await invoke('GET')).body.rows.find(r=>r.acc===hoa.acc).previousSalary,4500000);
     assert.equal((await invoke('GET',{},true,{month:priorMonth})).body.rows.find(r=>r.acc===hoa.acc).probation,true);
-    caller={id:'lead',role:'lead',acc:'DNG.HoaNTB6'};const team=(await invoke('GET')).body.rows;assert.ok(team.every(r=>r.team===3));assert.equal(team.length,8);
+    caller={id:'lead',role:'lead',acc:'DNG.HoaNTB6'};const team=(await invoke('GET')).body.rows;assert.deepEqual(team.map(r=>r.acc),list.body.rows.map(r=>r.acc));assert.equal(team.length,17);
     assert.equal((await invoke('POST',{acc:hoa.acc,probation:true,revision:2})).code,403);
-    caller={id:'staff',role:'staff',acc:'DNG.HoaNTB6'};assert.deepEqual((await invoke('GET')).body.rows.map(r=>r.acc),[hoa.acc]);
+    caller={id:'staff',role:'staff',acc:'DNG.HoaNTB6'};assert.deepEqual((await invoke('GET')).body.rows.map(r=>r.acc),list.body.rows.map(r=>r.acc));
     assert.equal((await invoke('POST',{acc:hoa.acc,probation:true,revision:2})).code,403);
     assert.equal((await invoke('GET',{},true,{month:'2999-01'})).code,400);
     caller={id:'manager',role:'manager'};assert.equal((await invoke('POST',{acc:'UNKNOWN',probation:true,revision:0})).code,400);

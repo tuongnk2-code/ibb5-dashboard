@@ -2,7 +2,7 @@
 
 Tiêu đề bảng dùng tháng đang chọn: Tổng DV Tháng T, LCB Tháng T; lương tháng trước ghi LCB Tn (ví dụ tháng 11/2026 so với LCB T10). LCB tăng/giảm = LCB tháng T − LCB tháng T-1, hiện dấu +/−, cảnh báo đỏ khi giảm; thiếu lương một kỳ hiển thị —. Dòng tổng tính chênh lệch từ tổng lương của cùng nhóm nhân sự; CSV có tiêu đề tháng và chênh lệch số tiền tương ứng.
 
-Cột LCB T-1 đối chiếu với tháng liền trước tháng đang chọn (kể cả chuyển năm), dùng nguồn gốc và trạng thái thử việc riêng của tháng trước; không có dữ liệu nguồn kỳ trước thì hiển thị —. Tổng theo Bầy/phạm vi cũng cộng LCB T-1 của các nhân sự đang lọc. Lương trung bình của phòng ở tài khoản TP = tổng LCB tháng đang chọn / toàn bộ nhân sự trong phòng, gồm thử việc và nhân sự chưa có HĐ; làm tròn đồng. Bộ lọc Bầy/tìm Acc không đổi chỉ số trung bình phòng. Trưởng Bầy chỉ xem trung bình Bầy của mình; nhân viên không xem trung bình lương phòng/Bầy.
+Cột LCB T-1 đối chiếu với tháng liền trước tháng đang chọn (kể cả chuyển năm), dùng nguồn gốc và trạng thái thử việc riêng của tháng trước; không có dữ liệu nguồn kỳ trước thì hiển thị —. Tổng theo Bầy/phạm vi cũng cộng LCB T-1 của các nhân sự đang lọc. Lương trung bình của phòng ở tài khoản TP = tổng LCB tháng đang chọn / toàn bộ nhân sự trong phòng, gồm thử việc và nhân sự chưa có HĐ; làm tròn đồng. Bộ lọc Bầy/tìm Acc không đổi chỉ số trung bình phòng. Tất cả tài khoản đã đăng nhập xem được toàn bộ nhân sự và trung bình lương phòng; chỉ TP được đánh dấu thử việc.
 
 Dữ liệu có Ngày tạo thuộc tháng 08/2026 được giữ nguyên trong nguồn chung và chỉ dùng ở tab LCB, gồm HĐ tồn Online các tháng sau. Tất cả báo cáo dashboard khác (kể cả HĐ hủy, HĐ đã ẩn và số Online tự lấy trong báo cáo ngày) loại nhóm này; không xóa nguồn hoặc ghi chú. Khi thiếu Ngày tạo, dùng tháng Online để loại bản ghi tháng 08/2026. Quy tắc này không loại tháng 8 của các năm sau.
 
@@ -12,7 +12,7 @@ Kỳ tháng T: từ ngày 1 tháng T đến hết ngày 4 tháng T+1, cả hai �
 
 TP đánh dấu thử việc theo từng tháng/từng Acc: mức 4.500.000 đồng, ghi đè mốc dịch vụ của tháng đó. Mặc định chưa đánh dấu thử việc; không suy đoán từ thâm niên. Thay đổi không tự áp dụng cho tháng khác. Tổng LCB theo Bầy/phạm vi là tổng LCB từng người, không tra bảng lại trên tổng DV Bầy.
 
-GET /api/salary?month=YYYY-MM kiểm tra phiên đăng nhập và chỉ trả nhân sự theo phạm vi: TP toàn phòng, Trưởng Bầy Bầy mình, nhân viên của mình. POST chỉ TP được đổi cờ probation và kiểm tra revision, không nhận giá lương tùy ý từ client. salary_settings/salary_setting_history bật RLS, chỉ server có quyền trực tiếp; trigger lưu bản cũ trước mỗi lần cập nhật. Lịch sử thử việc tách biệt với dữ liệu hợp đồng.
+GET /api/salary?month=YYYY-MM kiểm tra phiên đăng nhập và trả toàn bộ nhân sự trong phòng cho mọi tài khoản đã xác thực. POST chỉ TP được đổi cờ probation và kiểm tra revision, không nhận giá lương tùy ý từ client. salary_settings/salary_setting_history bật RLS, chỉ server có quyền trực tiếp; trigger lưu bản cũ trước mỗi lần cập nhật. Lịch sử thử việc tách biệt với dữ liệu hợp đồng.
 
 UI tự đồng bộ khi đang mở tab, có lọc tháng/Bầy/Acc và CSV. Xem được đầy đủ bảng mốc gốc. Trạng thái đủ thời gian kỳ không đồng nghĩa đã được TP chốt bảng lương; đây là đối chiếu LCB theo bảng và nguồn hiện có.
 

@@ -1,12 +1,11 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { sharedRow } from './_dashboardState.js';
 import { STAFF_ROSTER } from '../js/staffRoster.js';
-import { canSeeReport, reportDay, validDay } from '../js/dailyReportModel.js';
+import { reportDay, validDay } from '../js/dailyReportModel.js';
 import { salaryCounts, salaryPeriod, calculateSalary, previousSalaryMonth } from '../js/salaryModel.js';
 
 const check = result => { if (result.error) throw result.error; return result.data; };
 const fail = (res, status, error) => res.status(status).json({ error });
-const norm = value => String(value || '').trim().toLowerCase();
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
@@ -29,7 +28,8 @@ export default async function handler(req, res) {
       if (!saved) return fail(res, 409, 'Trạng thái vừa thay đổi. Tải lại trước khi lưu.');
       return res.status(200).json({ setting: saved });
     }
-    const roster = STAFF_ROSTER.filter(p => canSeeReport(caller, { id: norm(p.acc) === norm(caller.acc) && caller.acc ? caller.id : null, acc: p.acc, role: 'staff' }));
+    // All authenticated profiles may read department LCB; writes remain manager-only.
+    const roster = STAFF_ROSTER;
     const settings = roster.length ? check(await admin.from('salary_settings').select('acc,probation,revision,updated_at').eq('month', month).in('acc', roster.map(p => p.acc))) : [];
     const snapshot = await sharedRow(admin, 'snapshot');
     if (!snapshot?.data?.data) return fail(res, 503, 'Chưa có dữ liệu nguồn đồng bộ để tính LCB. Cần cập nhật NET và Truyền hình tại Trung tâm dữ liệu.');

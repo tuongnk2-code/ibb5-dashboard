@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const {createServer}=await import('../node_modules/vite/dist/node/index.js');
  const {STAFF_ROSTER}=await import('../js/staffRoster.js');
- const {canSeeReport,reportDay}=await import('../js/dailyReportModel.js');
+ const {reportDay}=await import('../js/dailyReportModel.js');
  const {salaryCounts,salaryPeriod,calculateSalary,previousSalaryMonth}=await import('../js/salaryModel.js');
  const server=await createServer({server:{host:'127.0.0.1',port:5189,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
@@ -20,7 +20,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await context.route('**/api/salary*',r=>{
     const request=r.request(),month=new URL(request.url()).searchParams.get('month');
     if(request.method()==='GET'){
-     const roster=STAFF_ROSTER.filter(p=>canSeeReport(me,{id:p.acc===me.acc?me.id:null,acc:p.acc,role:'staff'})),period=salaryPeriod(month);
+     const roster=STAFF_ROSTER,period=salaryPeriod(month);
      const rows=salaryCounts(data,{month,asOf:period.asOf,roster}).map(p=>({...p,probation:settings.get(month+':'+p.acc)?.probation||false,revision:settings.get(month+':'+p.acc)?.revision||0}));
      for(const row of rows)row.previousSalary=6200000;
      return r.fulfill({json:{rows,month,previousMonth:previousSalaryMonth(month),...period,sourceUpdated:'2026-11-07T02:00:00Z',serverTime:new Date().toISOString()}});
@@ -33,14 +33,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    const page=await context.newPage(),errors=[];pages.push(page);page.on('pageerror',e=>errors.push(e.message));
    await page.goto('http://127.0.0.1:5189/#lcb');await page.locator('#salRows tr[data-salary-acc]').first().waitFor();
    await page.locator('#salMonth').fill('2026-10');await page.locator('#salMonth').dispatchEvent('change');await page.locator('#salScope').filter({hasText:'01/10/2026–04/11/2026'}).waitFor();
-   assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),role==='manager'?17:role==='staff'?1:8);
+   assert.equal(await page.locator('#salRows tr[data-salary-acc]').count(),17);
+   assert.match(await page.locator('#salScope').textContent(),/Toàn phòng/);
    const hoa=page.locator('[data-salary-acc="DNG.HoaNTB6"]');
    assert.equal(await hoa.locator('.sal-previous').textContent(),'6.200.000');assert.equal(await page.locator('#salPrevHeader').textContent(),'LCB T9');
    assert.equal(await page.locator('#salTotalHeader').textContent(),'Tổng DV Tháng 10');assert.equal(await page.locator('#salCurrentHeader').textContent(),'LCB Tháng 10');
    assert.equal(await hoa.locator('.sal-change').textContent(),role==='lead'?'+2.400.000':'+1.600.000');
    if(role==='manager')assert.equal(await page.locator('[data-salary-acc="DNG.Vypv"] .sal-change.is-negative').textContent(),'-1.500.000');
    if(role==='manager')assert.match(await page.locator('#salSummary').last().textContent(),/4\.882\.353/);
-   if(role==='staff')assert.doesNotMatch(await page.locator('#salSummary').textContent(),/Lương trung bình/);
+   assert.match(await page.locator('#salSummary').textContent(),/Lương trung bình của phòng/);
    assert.ok((await hoa.locator('th').boundingBox()).width<=220,'Acc column should fit its labels without a wide empty area');
    assert.deepEqual((await hoa.locator('td').allTextContents()).slice(0,3),role==='lead'?['52','6','51,8']:['46','6','47']);assert.equal(await hoa.locator('.sal-amount').textContent(),role==='lead'?'8.600.000':'7.800.000');
    assert.equal(await page.locator('[data-sal-probation]').count(),role==='manager'?17:0);
