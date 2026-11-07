@@ -204,14 +204,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await cancelEditor.locator('[name="result"]').selectOption('Hủy');
     assert.equal(await cancelEditor.locator('.pm-cancel-reason').isVisible(),true);
     assert.equal(await cancelEditor.locator('[name="cancelReason"]').evaluate(el=>el.checkValidity()),false);
+    await cancelEditor.locator('[name="expected"]').fill('');await cancelEditor.locator('[name="timeSlot"]').selectOption('');
     await cancelEditor.locator('[name="cancelReason"]').fill('Khách chuyển nơi ở, không còn nhu cầu');
     await cancelEditor.locator('[type="submit"]').click();await cancelEditor.waitFor({state:'hidden'});
     await desktop.page.waitForFunction(()=>window.IBB5_PENDING_NOTES.OVERDUE1?.result==='Hủy',null,{timeout:15000});
     assert.equal(await cancelRow.locator('.p-cancel-reason').inputValue(),'Khách chuyển nơi ở, không còn nhu cầu');
     assert.equal(await cancelRow.locator('.p-save').textContent(),'Đã lưu');
-    assert.equal(await cancelRow.locator('.p-result').evaluate(el=>el.closest('td').cellIndex),7);
-    assert.equal(await cancelRow.locator('.p-cancel-reason').evaluate(el=>el.closest('td').cellIndex),8);
-    assert.match(await desktop.page.locator('.pending-table thead th').nth(8).textContent(),/Lý do hủy/);
+    assert.equal(await cancelRow.locator('.p-result').evaluate(el=>el.closest('td').cellIndex),4);
+    assert.equal(await cancelRow.locator('.p-cancel-reason').evaluate(el=>el.closest('td').cellIndex),5);
+    assert.match(await desktop.page.locator('.pending-table thead th').nth(5).textContent(),/Lý do hủy/);
     if(process.env.RESPONSIVE_SCREENSHOT_DIR){await cancelRow.locator('.p-cancel-reason').scrollIntoViewIfNeeded();await desktop.page.screenshot({path:process.env.RESPONSIVE_SCREENSHOT_DIR+'/pending-cancellation-reason-column.png'});}
     assert.equal(await cancelRow.locator('.p-cancel-approve').isEnabled(),true);
     // Only the terminated NET source row counts; staff results and approvals do not add cancellations.

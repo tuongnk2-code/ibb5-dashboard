@@ -516,6 +516,11 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .dp-contract-card td .dp-contract-acc{font-size:12px;color:#547393}
 #performance .dp-contract-card tbody tr:last-child td{border-bottom:0}
 #performance .dp-contract-empty{text-align:center!important;color:#7089a2;padding:18px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(5){width:140px!important;min-width:140px!important;max-width:140px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(6){width:200px!important;min-width:200px!important;max-width:200px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(7){width:145px!important;min-width:145px!important;max-width:145px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(8){width:155px!important;min-width:155px!important;max-width:155px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(9){width:235px!important;min-width:235px!important;max-width:235px!important}
 #performance .ibb-dailyperf .dp-grand .dp-staff{white-space:normal!important;line-height:1.35}
 @media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}#performance .dp-day-layout #dpTableCapture .dp-scroll{width:100%}#performance .dp-day-layout #dpTable{width:100%!important;min-width:286px!important}}
 @media(max-width:700px){#performance .dp-contract-details{grid-template-columns:minmax(0,1fr);gap:12px}}

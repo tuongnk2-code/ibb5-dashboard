@@ -162,6 +162,22 @@ test('cancellation requires a reason only for the final Hủy result',()=>{
   assert.equal(validateNote({...note,result:'Chưa Online'}).cancelReason,'');
 });
 
+test('only the two appointment fields are optional for final or planned cancellation',()=>{
+  const note={expected:'',timeSlot:'',action:'Khác',source:'Web',result:'Dự Kiến Hủy'};
+  for(const result of ['Hủy',' huỷ ','Dự Kiến Hủy',' dự   kiến huỷ ']){
+    const data={...note,result,cancelReason:'Khách yêu cầu'};
+    assert.equal(validateNote(data).expected,'');assert.equal(validateNote(data).timeSlot,'');
+    for(const field of ['action','source','result'])assert.throws(()=>validateNote({...data,[field]:''}));
+    assert.throws(()=>validateNote({...data,expected:'2026-02-30'}));
+    assert.equal(validateNote({...data,expected:'2026-11-07',timeSlot:'8h - 10h'}).expected,'2026-11-07');
+  }
+  for(const result of ['Chưa Online','Đã Online']){
+    assert.throws(()=>validateNote({...note,result}),/ngày Online/);
+    assert.throws(()=>validateNote({...note,result,expected:'2026-11-07'}),/trường bắt buộc/);
+  }
+  assert.throws(()=>validateNote({...note,result:'Hủy'}),/lý do hủy/);
+});
+
 test('source import retains omitted service IDs and updates only matching source records',()=>{
   const previous={data:[{id:'OLD',type:'Internet',created:'2026-10-01'},{id:'MATCH',type:'Internet',created:'2026-11-01',date:''},{id:'CAMOLD',type:'Camera',date:'2026-11-01'}]};
   const incoming={data:[{id:' match ',type:'Internet',created:'2026-11-01',date:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'NEW',type:'Internet',created:'2026-11-05'},{id:'CAMNEW',type:'Camera',date:'2026-11-05'}],meta:{files:{Internet:{count:2}}}};

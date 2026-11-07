@@ -22,3 +22,5 @@ Bảng Hiệu suất nhân sự có nút Chụp ảnh bảng, xuất đầy đ�
 Bảng HĐ Online dự kiến theo mốc hẹn có nút Chụp ảnh bảng; PNG giữ tiêu đề, thống kê ngày và toàn bộ bảng, tên file theo ngày đang xem.
 
 Bảng hẹn Online loại HĐ có Kết quả Hủy/Huỷ đã lưu, kể cả chưa TP duyệt; tổng mốc hẹn/Bầy/phòng và PNG dùng cùng danh sách. Dự Kiến Hủy cũng được loại theo yêu cầu; chỉ ảnh hưởng bảng hẹn Online.
+
+Hồ sơ HĐ tồn: Kết quả đặt ngay sau Ngày tạo HĐ, kế tiếp Lý do hủy. Với Hủy/Dự Kiến Hủy, chỉ Ngày Online dự kiến và Mốc Hẹn Online được để trống; Nguyên nhân, Kết quả, Nguồn vẫn bắt buộc. Hủy vẫn cần Lý do hủy. Quy tắc áp dụng cho bảng desktop, form điện thoại và API máy chủ; giá trị hẹn đã có không tự bị xóa.

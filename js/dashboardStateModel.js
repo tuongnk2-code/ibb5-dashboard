@@ -64,12 +64,16 @@ export function mergeNetSnapshot(previous, incoming) {
   return validateSnapshot({ data: [...merged.values()], meta: next.meta, cancelledNet });
 }
 export const isCancellationResult = value => ['hủy', 'huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN'));
+export const skipsOnlineAppointment = value => isCancellationResult(value) || ['dự kiến hủy', 'dự kiến huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN').replace(/\s+/g, ' '));
 export function validateNote(value) {
-  if (!value || !validDay(value.expected)) throw new Error('Cần chọn ngày Online dự kiến hợp lệ.');
-  const result = { expected: value.expected };
+  if (!value || typeof value !== 'object') throw new Error('Nội dung cập nhật không hợp lệ.');
+  const skipAppointment = skipsOnlineAppointment(value.result), expected = value.expected ?? '';
+  if ((!skipAppointment || expected !== '') && !validDay(expected)) throw new Error('Cần chọn ngày Online dự kiến hợp lệ.');
+  const result = { expected };
   for (const field of ['timeSlot', 'action', 'result', 'source']) {
-    if (typeof value[field] !== 'string' || !value[field].trim() || value[field].length > 300) throw new Error('Cần điền đủ mốc hẹn, nguyên nhân, kết quả và nguồn.');
-    result[field] = value[field].trim();
+    const optional = field === 'timeSlot' && skipAppointment, text = value[field] ?? '';
+    if (typeof text !== 'string' || (!optional && !text.trim()) || text.length > 300) throw new Error('Cần điền đủ các trường bắt buộc: nguyên nhân, kết quả, nguồn và mốc hẹn nếu không hủy.');
+    result[field] = text.trim();
   }
   if (value.cancelReason != null && (typeof value.cancelReason !== 'string' || value.cancelReason.length > 1000)) throw new Error('Lý do hủy tối đa 1.000 ký tự.');
   result.cancelReason = String(value.cancelReason || '').trim();
