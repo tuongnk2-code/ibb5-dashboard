@@ -35,7 +35,7 @@ export function renderSalary(root, me) {
     cards.push(['Lương trung bình của phòng', money(average) + ' ₫']);
     $('#salSummary').innerHTML = cards.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join('');
     $('#salSummary').lastElementChild.insertAdjacentHTML('beforeend', `<small>Tổng LCB / ${allPeople.length} nhân sự · Tháng ${month.split('-').reverse().join('/')}</small>`);
-    $('#salTotalHeader').textContent = 'Tổng DV Tháng ' + Number(month.slice(5));
+    $('#salTotalHeader').textContent = 'Tổng DV T' + Number(month.slice(5));
     $('#salCurrentHeader').textContent = 'LCB Tháng ' + Number(month.slice(5));
     $('#salPrevHeader').textContent = payload.previousMonth ? 'LCB T' + Number(payload.previousMonth.slice(5)) : 'LCB T-1';
     $('#salPrevHeader').title = payload.previousMonth || '';

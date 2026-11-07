@@ -1,6 +1,6 @@
 # LCB
 
-Tiêu đề bảng dùng tháng đang chọn: Tổng DV Tháng T, LCB Tháng T; lương tháng trước ghi LCB Tn (ví dụ tháng 11/2026 so với LCB T10). LCB tăng/giảm = LCB tháng T − LCB tháng T-1, hiện dấu +/−, cảnh báo đỏ khi giảm; thiếu lương một kỳ hiển thị —. Dòng tổng tính chênh lệch từ tổng lương của cùng nhóm nhân sự; CSV có tiêu đề tháng và chênh lệch số tiền tương ứng.
+Tiêu đề bảng dùng tháng đang chọn: Tổng DV Tn (ví dụ Tổng DV T11), LCB Tháng T; lương tháng trước ghi LCB Tn (ví dụ tháng 11/2026 so với LCB T10). LCB tăng/giảm = LCB tháng T − LCB tháng T-1, hiện dấu +/−, cảnh báo đỏ khi giảm; thiếu lương một kỳ hiển thị —. Dòng tổng tính chênh lệch từ tổng lương của cùng nhóm nhân sự; CSV có tiêu đề tháng và chênh lệch số tiền tương ứng.
 
 Cột LCB T-1 đối chiếu với tháng liền trước tháng đang chọn (kể cả chuyển năm), dùng nguồn gốc và trạng thái thử việc riêng của tháng trước; không có dữ liệu nguồn kỳ trước thì hiển thị —. Tổng theo Bầy/phạm vi cũng cộng LCB T-1 của các nhân sự đang lọc. Lương trung bình của phòng ở tài khoản TP = tổng LCB tháng đang chọn / toàn bộ nhân sự trong phòng, gồm thử việc và nhân sự chưa có HĐ; làm tròn đồng. Bộ lọc Bầy/tìm Acc không đổi chỉ số trung bình phòng. Tất cả tài khoản đã đăng nhập xem được toàn bộ nhân sự và trung bình lương phòng; chỉ TP được đánh dấu thử việc.
 

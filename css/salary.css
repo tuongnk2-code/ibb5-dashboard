@@ -24,7 +24,8 @@
 .sal-scroll:has(#salTable){width:fit-content}
 #salTable{width:auto;min-width:1020px}
 #salTable th,#salTable td{padding:9px 12px}
-#salTotalHeader{white-space:normal;max-width:110px}
+#lcb #salTable thead th{white-space:normal;line-height:1.35;vertical-align:middle}
+#lcb #salTotalHeader{min-width:110px;max-width:130px}
 #salTable tr>:nth-child(5){min-width:130px}
 #salTable tr>:nth-child(6),#salTable tr>:nth-child(7){min-width:120px;text-align:right;font-variant-numeric:tabular-nums}
 #salTable .sal-previous{color:#557696;font-size:16px;font-weight:700}

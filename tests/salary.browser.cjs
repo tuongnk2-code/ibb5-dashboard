@@ -37,7 +37,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.match(await page.locator('#salScope').textContent(),/Toàn phòng/);
    const hoa=page.locator('[data-salary-acc="DNG.HoaNTB6"]');
    assert.equal(await hoa.locator('.sal-previous').textContent(),'6.200.000');assert.equal(await page.locator('#salPrevHeader').textContent(),'LCB T9');
-   assert.equal(await page.locator('#salTotalHeader').textContent(),'Tổng DV Tháng 10');assert.equal(await page.locator('#salCurrentHeader').textContent(),'LCB Tháng 10');
+   assert.equal(await page.locator('#salTotalHeader').textContent(),'Tổng DV T10');assert.equal(await page.locator('#salCurrentHeader').textContent(),'LCB Tháng 10');
+   assert.equal(await page.locator('#salTotalHeader').evaluate(el=>getComputedStyle(el).whiteSpace),'normal');
+   assert.ok(await page.locator('#salTable thead th').evaluateAll(headers=>headers.every(el=>{
+    const cell=el.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(el);
+    return [...range.getClientRects()].every(rect=>rect.left>=cell.left-1&&rect.right<=cell.right+1);
+   })),'Header text stays inside its own column');
    assert.equal(await hoa.locator('.sal-change').textContent(),role==='lead'?'+2.400.000':'+1.600.000');
    if(role==='manager')assert.equal(await page.locator('[data-salary-acc="DNG.Vypv"] .sal-change.is-negative').textContent(),'-1.500.000');
    if(role==='manager')assert.match(await page.locator('#salSummary').last().textContent(),/4\.882\.353/);
