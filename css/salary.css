@@ -15,15 +15,15 @@
 .sal-summary span{display:block;font-size:12px;color:#6986a2}.sal-summary strong{display:block;margin-top:7px;font-size:26px;overflow-wrap:anywhere}
 .sal-summary>div:last-child{background:#173e64;color:white}.sal-summary>div:last-child span{color:#cbdff5}
 .sal-scroll{max-width:100%;overflow:auto;border:1px solid #d0e1f2;border-radius:10px;margin-top:12px}
-#lcb table{width:100%;min-width:880px;border-collapse:collapse;font-size:15px}
-#lcb th,#lcb td{padding:13px 12px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
+#lcb table{width:100%;min-width:740px;border-collapse:collapse;font-size:15px}
+#lcb th,#lcb td{padding:9px 10px;border:1px solid #d5e3f1;text-align:center;white-space:nowrap}
 #lcb th{background:#e8f1fa;font-weight:800}#lcb tbody tr:nth-child(even)>*{background:#f1f7ff}
 #lcb tbody th,#lcb thead th:first-child{position:sticky;left:0;z-index:1;text-align:left;min-width:140px;background:#e8f1fa}
-#lcb td small{display:block;color:#7890a8;font-size:11px;margin-top:4px}
+#lcb td small{display:block;color:#7890a8;font-size:11px;margin-top:2px}
 #lcb .sal-amount{font-size:19px;font-weight:850;color:#076ac0}
 #lcb .sal-team>*{background:#fff0df!important;color:#ad510c;font-weight:800}
 #lcb .sal-total>*{background:#173e64!important;color:white;font-weight:800}
 #lcb label.sal-probation{display:flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
 #lcb input[type=checkbox]{width:18px;min-height:18px;height:18px;accent-color:#1684e6}
 .sal-error,.sal-success{padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.5}.sal-error{color:#bc2735;background:#ffeded}.sal-success{color:#167758;background:#e7f7ef}
-@media(max-width:700px){.sal-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.sal-summary strong{font-size:22px}.sal-head h2{font-size:23px}.sal-card{padding:12px}.sal-controls{width:100%}.sal-controls label{flex:1;min-width:120px}#lcb input,#lcb select{font-size:16px}#lcb th,#lcb td{padding:11px 9px}}
+@media(max-width:700px){.sal-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.sal-summary strong{font-size:22px}.sal-head h2{font-size:23px}.sal-card{padding:12px}.sal-controls{width:100%}.sal-controls label{flex:1;min-width:120px}#lcb input,#lcb select{font-size:16px}#lcb th,#lcb td{padding:9px 8px}}
