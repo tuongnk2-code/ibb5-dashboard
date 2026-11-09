@@ -8,9 +8,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   const contract=(id,staff,created,date)=>({id,type:'Internet',staff,created,date,room:'IBB5',customer:'Khách <'+id+'>',package:'Giga'});
   const data=[contract('A','DNG.Hoantt','2026-11-06','2026-11-07'),contract('B','DNG.Nhannt137','2026-11-06','2026-11-06'),contract('C','DNG.Namnh170','2026-11-01','2026-11-06'),contract('D','DNG.ManLM3','2026-11-06','2026-11-06'),contract('E','DNG.Hoantt','2026-11-02','2026-11-06')];data.push({...data[1]});
+  data.push({...contract('TERMINATED','DNG.Hoantt','2026-11-06','2026-11-06'),status:'Đã chấm dứt hợp đồng'},contract('FINALCANCEL','DNG.Hoantt','2026-11-06','2026-11-06'),contract('APPROVEDCANCEL','DNG.Hoantt','2026-11-06','2026-11-06'));
   for(const role of ['manager','lead','staff']){
    const context=await browser.newContext({viewport:{width:role==='manager'?1440:390,height:950}}),errors=[];
-   await context.addInitScript(data=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_SHARED_STATE={commitments:{},notes:{},revisions:{}};},data);
+   await context.addInitScript(data=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES={FINALCANCEL:{result:'Hủy'},APPROVEDCANCEL:{cancellationApproved:true}};window.IBB5_SHARED_STATE={commitments:{},notes:window.IBB5_PENDING_NOTES,revisions:{}};},data);
    await context.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:'export async function getSession(){return {access_token:"test"}};export async function signOut(){};export async function callAdminUsersApi(){return {profiles:[]}}'}));
    await context.route('**/js/api.js',r=>r.fulfill({contentType:'application/javascript',body:'import * as data from "/js/mockData.sample.js";export async function fetchDashboardData(){return data}'}));
    await context.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE={id:'details-${role}',role:'${role}',acc:'DNG.Hoantt'};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';await import('/js/main.js');`}));
@@ -39,7 +40,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     const overviewDownload=page.waitForEvent('download');await page.locator('[data-shot="ibbCaptureOverview"]').click();const overviewImage=await overviewDownload;
     const overviewPng=fs.readFileSync(await overviewImage.path());assert.equal(overviewPng.subarray(1,4).toString(),'PNG');assert.ok(overviewPng.readUInt32BE(20)>1000);
     if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)fs.writeFileSync(process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/overview-export.png',overviewPng);
-    await page.evaluate(()=>{window.IBB5_PENDING_NOTES={A:{expected:'2026-11-06',timeSlot:'15h30 - 17h30'}};location.hash='pendingContracts';});
+    await page.evaluate(()=>{window.IBB5_PENDING_NOTES={...window.IBB5_PENDING_NOTES,A:{expected:'2026-11-06',timeSlot:'15h30 - 17h30'}};location.hash='pendingContracts';});
     await page.locator('#psShot').waitFor({state:'visible'});await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');await page.locator('#psDay').fill('2026-11-06');await page.locator('#psDay').dispatchEvent('change');
     assert.match(await page.locator('#psRows').textContent(),/DNG.Hoantt/);
     for(const result of ['Hủy',' huỷ ','Dự Kiến Hủy',' dự   kiến huỷ ']){
@@ -58,8 +59,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.locator('#dpTeam').selectOption('2');
    }
    const download=page.waitForEvent('download');await page.locator('#dpExport').click();const csv=fs.readFileSync(await (await download).path(),'utf8');assert.match(csv,/Mã HĐ đã lên/);assert.match(csv,/"A"/);assert.match(csv,/"E"/);if(role==='staff')assert.doesNotMatch(csv,/"B"|"C"/);
+   assert.doesNotMatch(csv,/TERMINATED|FINALCANCEL|APPROVEDCANCEL/);
    await page.locator('#dpSearch').fill('Hoantt');assert.deepEqual(await ids('sold'),['A']);assert.deepEqual(await ids('online'),['E']);await page.locator('#dpSearch').fill('');
    await page.locator('#dpDay').fill('2026-11-07');await page.locator('#dpDay').dispatchEvent('change');assert.deepEqual(await ids('sold'),[]);assert.deepEqual(await ids('online'),['A']);
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.A={...window.IBB5_PENDING_NOTES.A,result:'Hủy'};document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:A']}}));});
+   assert.deepEqual(await ids('online'),[]);assert.equal(await page.locator('#dpKpis strong').nth(1).textContent(),'0 HĐ');
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.A.result='Chưa Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:A']}}));});
+   assert.deepEqual(await ids('online'),['A']);
    await page.locator('#dpView').selectOption('month');assert.equal(await page.locator('#dpContractDetails').isVisible(),false);
    await page.locator('#dpView').selectOption('day');await page.locator('#dpDay').fill('2026-11-06');await page.locator('#dpDay').dispatchEvent('change');
    await page.evaluate(()=>{window.IBB5_SHARED_STATE.snapshot={data:[...window.IBB5_IMPORTED_DATA,{id:'LIVE',type:'Internet',staff:'DNG.Hoantt',created:'2026-11-06',date:'',room:'IBB5'}]};document.dispatchEvent(new CustomEvent('ibb5-snapshot-updated'));document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['snapshot']}}));});

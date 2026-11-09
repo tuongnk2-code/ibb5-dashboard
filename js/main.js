@@ -1,6 +1,7 @@
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
+import { dailyPerformanceContracts } from './dailyPerformanceModel.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -724,7 +725,7 @@ const order=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trin
 const root=el('ibbDayPerf');if(!root)return;
 let current={};
 function fromReportDate(){const base=el('to')?.value||reportDay(),m=base.slice(0,7),end=monthEnd(m);el('dpMonth').value=m;el('dpDay').min=m+'-01';el('dpDay').max=end;el('dpDay').value=base.startsWith(m)?base:end;}
-function distinctNet(){const acc=new Map();for(const r of operationalData()){if(r.type!=='Internet'||!r.id)continue;const key=String(r.id).trim().toUpperCase(),old=acc.get(key);if(!old||(!old.date&&r.date))acc.set(key,r);}return [...acc.values()];}
+function distinctNet(){return dailyPerformanceContracts(operationalData(),IBB_CALC.notes());}
 function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('dpView').value,team=el('dpTeam')?.value||'',search=norm(el('dpSearch')?.value||''),room=el('room')?.value||'';
  const max=+monthEnd(m).slice(-2),days=Array.from({length:max},(_,i)=>i+1),people=PERSONNEL.filter(p=>(!team||String(p.team)===team)&&(!search||norm(p.name+' '+p.acc).includes(search))).sort((a,b)=>{if(+a.team!==+b.team)return +a.team-+b.team;const x=order.indexOf(norm(a.acc)),y=order.indexOf(norm(b.acc));return (x<0?999:x)-(y<0?999:y)});
  const persons=new Map(people.map(p=>[norm(p.acc),{...p,team:String(p.team),sold:Array(max).fill(0),online:Array(max).fill(0)}]));
