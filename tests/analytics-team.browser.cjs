@@ -18,6 +18,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.locator('#anaShareTeam').selectOption('2');
   assert.deepEqual(await page.locator('#anaStaffBars .ana-row>span').allTextContents(),['DNG.Nhannt137']);
   assert.match(await page.locator('#anaShareTotal').textContent(),/Bầy 2.*2 HĐ/);assert.match(await page.locator('#anaStaffBars').textContent(),/100%/);
+  assert.match(await page.locator('#anaShareTotal').textContent(),/Đóng góp phòng: 50%/);assert.match(await page.locator('#anaShareTotal').getAttribute('title'),/2 \/ 4 HĐ/);
+  await page.locator('#anaShareTeam').selectOption('1');assert.match(await page.locator('#anaShareTotal').textContent(),/Đóng góp phòng: 25%/);await page.locator('#anaShareTeam').selectOption('2');
   assert.match(await page.locator('#anaMonthlyTotal').textContent(),/Toàn phòng.*4 HĐ/);
   await page.locator('#anaChannelTeam').selectOption('2');
   assert.equal(await page.locator('#anaMonthlyRows tr[data-acc]').count(),3);
@@ -27,6 +29,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.locator('#anaChannelMonth').fill('2026-12');await page.locator('#anaChannelMonth').dispatchEvent('change');assert.match(await page.locator('#anaMonthlyTotal').textContent(),/— HĐ/);assert.match(await page.locator('#anaShareTotal').textContent(),/0 HĐ/);
   await page.locator('#anaChannelMonth').fill('2026-11');await page.locator('#anaChannelMonth').dispatchEvent('change');
   await page.locator('#anaChannelTeam').selectOption('');await page.locator('#anaShareTeam').selectOption('');assert.equal(await page.locator('#anaMonthlyRows tr[data-acc]').count(),17);assert.match(await page.locator('#anaShareTotal').textContent(),/4 HĐ/);
+  assert.match(await page.locator('#anaShareTotal').textContent(),/Đóng góp phòng: 100%/);
   for(const width of [390,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
   assert.deepEqual(errors,[]);console.log('PASS: independent analytics team filters, team totals, percentages, full channel roster, month/staff intersections and mobile layout');
  }finally{await browser.close();await server.close();}

@@ -412,7 +412,9 @@ const onlineSubset=subset.filter(x=>x.date?.slice(0,7)===m);$('anaPrepaid').text
 const shareTeam=$('anaShareTeam').value,shareLabel=shareTeam?'Bầy '+shareTeam:'Toàn phòng';
 const onlineMonth=filterStaffTeam(all,shareTeam).filter(x=>x.date?.slice(0,7)===m),counts=new Map();onlineMonth.forEach(x=>counts.set(x.staff||'Chưa gán',1+(counts.get(x.staff||'Chưa gán')||0)));barRows('anaStaffBars',[...counts].sort((a,b)=>b[1]-a[1]),onlineMonth.length,true);
 $('anaShareScope').textContent='HĐ Internet Online thực tế trong tháng · Tỷ trọng trong '+shareLabel.toLocaleLowerCase('vi-VN');
-$('anaShareTotal').textContent=shareLabel+' · Tổng Online: '+fmt(onlineMonth.length)+' HĐ';
+const departmentOnline=all.filter(x=>x.date?.slice(0,7)===m).length,departmentShare=departmentOnline?formatPercent(onlineMonth.length/departmentOnline*100):'—';
+$('anaShareTotal').textContent=shareLabel+' · Tổng Online: '+fmt(onlineMonth.length)+' HĐ · Đóng góp phòng: '+departmentShare;
+$('anaShareTotal').title=fmt(onlineMonth.length)+' / '+fmt(departmentOnline)+' HĐ NET Online toàn phòng trong tháng';
 const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source){annotated++;chan.set(source,1+(chan.get(source)||0))}});barRows('anaChannelBars',[...chan].sort((a,b)=>b[1]-a[1]),annotated);$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Chưa cập nhật nguồn không được tự gán vào kênh.';
 $('anaChannelMonth').value=m;
 const channelTeam=$('anaChannelTeam').value,channelLabel=channelTeam?'Bầy '+channelTeam:'Toàn phòng';
