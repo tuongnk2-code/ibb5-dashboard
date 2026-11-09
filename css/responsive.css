@@ -242,6 +242,7 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #ibb5Analytics .ana-share-value small { display: block; font-size: 12px; color: #087bdc; margin-top: 3px; }
 #ibb5Analytics .ana-channel-head { display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 #ibb5Analytics .ana-channel-head label { display: flex; align-items: center; gap: 8px; color: #4e6e90; font-size: 13px; }
+#ibb5Analytics .ana-team-total { background: #edf6ff; border: 1px solid #d2e5f7; border-radius: 9px; padding: 10px 12px; margin: 10px 0; color: #174b7a; font-size: 16px; font-weight: 800; }
 @media(max-width:600px) {
   #ibb5Analytics #anaStaffBars .ana-row { grid-template-columns: minmax(100px,1.2fr) minmax(25px,1fr) 70px; gap: 7px; }
   #ibb5Analytics .ana-overdue-scroll { max-height: 320px; }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { overdueContracts, monthlyStaffChannels, SALES_CHANNELS } from '../js/analyticsDetails.js';
+import { overdueContracts, monthlyStaffChannels, SALES_CHANNELS, filterStaffTeam } from '../js/analyticsDetails.js';
 
 test('overdue detail matches the >5-day cutoff and actual online date', () => {
   const rows = [
@@ -42,4 +42,17 @@ test('monthly channels show the full roster, fixed channels, source aliases and 
 test('unrecognized channels and accounts remain visible instead of being dropped into Other',()=>{
   const report=monthlyStaffChannels([{id:'X',staff:'DNG.NEW',created:'2026-02-02',sourceExcel:'Sự kiện'}],{},'2026-02','',[]);
   assert.equal(report.counts['Sự kiện'],1);assert.equal(report.counts['Khác'],0);assert.equal(report.groups[0].team,0);assert.equal(report.total,1);
+});
+
+test('team selection limits personnel and conserved channel totals while retaining all channel columns',()=>{
+  const roster=[{acc:'DNG.A',team:1},{acc:'DNG.B',team:2},{acc:'DNG.ZERO',team:2}];
+  const rows=[{id:'A',staff:'DNG.A',created:'2026-11-01',sourceExcel:'Web'},{id:'B',staff:' dng.b ',created:'2026-11-02',sourceExcel:'IBB'},{id:'C',staff:'DNG.B',created:'2026-11-03',sourceExcel:'Web'},{id:'U',staff:'UNKNOWN',created:'2026-11-04',sourceExcel:'Khác'}];
+  const all=monthlyStaffChannels(rows,{},'2026-11','',roster);
+  const team=monthlyStaffChannels(rows,{},'2026-11','',roster,'2');
+  assert.equal(all.total,4);assert.equal(team.total,2);assert.deepEqual(team.channels,all.channels);
+  assert.deepEqual(team.groups.flatMap(g=>g.rows.map(p=>p.acc)),['DNG.B','DNG.ZERO']);
+  assert.equal(team.counts.Web,1);assert.equal(team.counts.IBB,1);
+  assert.equal(Object.values(team.counts).reduce((a,b)=>a+b,0),team.total);
+  assert.equal(monthlyStaffChannels(rows,{},'2026-11','DNG.A',roster,'2').total,0);
+  assert.equal(filterStaffTeam(rows,'2',roster).length,2);assert.equal(filterStaffTeam(rows,'',roster).length,4);
 });
