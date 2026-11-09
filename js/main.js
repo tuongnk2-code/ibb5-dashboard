@@ -150,6 +150,10 @@ function perfRender(){
  const list=PERSONNEL.filter(p=>(!team||p.team===team)&&(!q||(p.name+' '+p.acc).toLowerCase().includes(q))).sort((a,b)=>ORDER.findIndex(x=>x.toLowerCase()===a.acc.toLowerCase())-ORDER.findIndex(x=>x.toLowerCase()===b.acc.toLowerCase()));
  const all=operationalData().filter(x=>x.type==='Internet'&&(!room||x.room===room)),cm=getCommit(month,room||'__ALL__').staff,prevCut=IBB_CALC.prior(month,+asof.slice(-2)),pm=prevCut.slice(0,7),havePrev=IBB_CALC.validPrev(all,pm);
  document.querySelectorAll('#perfPrevOnlineTitle').forEach(title=>{title.textContent='Online Tháng '+Number(pm.slice(5));title.title='Online từ '+pm+'-01 đến '+prevCut;});
+ const trackingSuffix=' T'+Number(month.slice(5));
+ for(const [id,label] of [['perfGoalTitle','Cam kết'],['perfSoldTitle','Bán mới'],['perfOnlineTitle','Online tháng']]){
+  const title=$(id);if(title){title.textContent=label+trackingSuffix;title.title='Tháng theo dõi '+month;}
+ }
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
  const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
  const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td></tr>'};
