@@ -556,3 +556,11 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 .aged-contract-dialog .aged-source-status.is-pending{color:#ad651b}
 .aged-contract-dialog .aged-source-mismatch{display:block;color:#b46718;font-size:11px;margin-top:4px}
 .aged-contract-dialog [hidden]{display:none!important}
+body.contract-details-open{overflow:hidden;overscroll-behavior:none}
+.aged-contract-dialog[open]{display:flex;flex-direction:column;overflow:hidden;max-height:85dvh}
+.aged-contract-head,.aged-contract-dialog>p{flex:0 0 auto}
+.aged-contract-head>button{flex-shrink:0;min-height:44px}
+.aged-contract-dialog .tablewrap{flex:1 1 auto;min-height:0;max-height:60dvh;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+.aged-contract-dialog table.aged-mobile-table{table-layout:fixed;min-width:0}
+.aged-contract-dialog .aged-mobile-table :is(th,td){white-space:normal;overflow-wrap:anywhere;padding:8px 4px;font-size:12px;line-height:1.35;vertical-align:top}
+@media(max-width:600px){.aged-contract-dialog{padding:12px}.aged-contract-head h3{font-size:18px}.aged-contract-dialog>p{margin:8px 0;font-size:12px}}

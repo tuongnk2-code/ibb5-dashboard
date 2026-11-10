@@ -29,6 +29,19 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      assert.equal(await detail.locator('thead th:visible').count(),8);assert.doesNotMatch(await detail.locator('tbody').innerText(),/Chưa Online/);assert.match(await detail.locator('tbody').innerText(),/Bình thường/);
     }
     assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);
+    if(role==='staff'){
+     const layout=await detail.evaluate(el=>{const scroll=el.querySelector('.tablewrap'),cells=el.querySelector('tbody tr').cells;return {viewport:scroll.clientWidth,frozen:[...cells].slice(0,3).reduce((n,cell)=>n+cell.getBoundingClientRect().width,0)};});
+     assert.ok(layout.frozen<layout.viewport*.72,'Pinned columns leave room to read scrolling data: '+JSON.stringify(layout));
+     assert.ok(await page.evaluate(()=>document.body.classList.contains('contract-details-open')));
+     for(const width of [360,430,390]){
+      await page.setViewportSize({width,height:950});
+      await page.waitForFunction(()=>{const el=document.getElementById('overviewMetricDialog'),scroll=el.querySelector('.tablewrap'),cells=el.querySelector('tbody tr').cells;return [...cells].slice(0,3).reduce((n,cell)=>n+cell.getBoundingClientRect().width,0)<scroll.clientWidth*.72;});
+      await detail.locator('.tablewrap').evaluate(async el=>{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));el.scrollLeft=el.scrollWidth;await new Promise(resolve=>requestAnimationFrame(resolve));});
+      const last=detail.locator('thead th:visible').last();
+      const reach=await last.evaluate(el=>{const r=el.getBoundingClientRect(),s=el.closest('.tablewrap'),hit=document.elementFromPoint(r.right-8,r.top+r.height/2);return {ok:hit===el,rect:r.toJSON(),scroll:s.scrollLeft,sw:s.scrollWidth,cw:s.clientWidth,hit:hit?.outerHTML.slice(0,300)};});assert.ok(reach.ok,'Scrolling columns stay reachable beside pinned columns: '+JSON.stringify({id,width,...reach}));
+     }
+     if(process.env.CONTRACT_MOBILE_SCREENSHOT_DIR)await detail.screenshot({path:process.env.CONTRACT_MOBILE_SCREENSHOT_DIR+'/contract-mobile-'+id+'.png'});
+    }
     assert.equal(await detail.locator('[data-aged-id="TVOTHER"],[data-aged-id="CAMFUTURE"]').count(),0);await detail.locator('[data-aged-close]').click();
    }
    await page.locator('#aged').click();const dialog=page.locator('#agedContractDialog');assert.equal(await dialog.isVisible(),true);

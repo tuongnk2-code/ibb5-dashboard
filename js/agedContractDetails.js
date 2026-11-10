@@ -14,8 +14,22 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
     row.cells[row.cells.length-1].textContent='Kết quả NV cập nhật (HĐ tồn)';
   }
   dialog.querySelector('h3').id=id+'Title';
+  const table=dialog.querySelector('table'),scroll=dialog.querySelector('.tablewrap'),columns=document.createElement('colgroup');
+  table.prepend(columns);let layoutKey='';
+  function sizeMobileColumns() {
+    const headers=[...dialog.querySelectorAll('thead th')].filter(header=>!header.hidden),mobile=window.innerWidth<=600;
+    const key=mobile?scroll.clientWidth+':'+headers.map(header=>header.textContent).join('|'):'desktop';
+    if(layoutKey===key)return;layoutKey=key;
+    table.classList.toggle('aged-mobile-table',mobile);
+    if(!mobile){columns.replaceChildren();table.style.removeProperty('width');return;}
+    const width=scroll.clientWidth;
+    const sizes=headers.map((header,index)=>index<3?Math.round(width*[.18,.22,.26][index]):Math.floor(width*.32));
+    columns.replaceChildren(...sizes.map(size=>{const col=document.createElement('col');col.style.width=size+'px';return col;}));
+    table.style.width=sizes.reduce((total,size)=>total+size,0)+'px';
+  }
   function pinColumns() {
     if (!dialog.open) return;
+    sizeMobileColumns();
     const headers = [...dialog.querySelectorAll('thead th')];
     let left = 0;
     for (let index = 0; index < 3; index++) {
@@ -41,9 +55,10 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
     }).join('') || '<tr><td colspan="'+(showOnline?(fileOnly?8:hideNotes?7:10):8)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
     pinColumns();
   }
-  function open() { draw(); dialog.showModal(); pinColumns(); }
+  function open() { draw(); dialog.showModal();document.body.classList.add('contract-details-open'); pinColumns(); }
   button?.addEventListener('click', open);
-  new ResizeObserver(pinColumns).observe(dialog.querySelector('table'));
+  const resize=new ResizeObserver(pinColumns);resize.observe(table);resize.observe(scroll);
+  dialog.addEventListener('close',()=>{if(!document.querySelector('.aged-contract-dialog[open]'))document.body.classList.remove('contract-details-open');});
   dialog.querySelector('[data-aged-close]').addEventListener('click', () => dialog.close());
   return {open, refresh: () => { if (dialog.open) draw(); }};
 }
