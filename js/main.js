@@ -2,6 +2,7 @@ import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
 import { dailyPerformanceContracts } from './dailyPerformanceModel.js';
+import { installAgedContractDetails } from './agedContractDetails.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -51,6 +52,8 @@ const IBB_CALC={
  camOnline:(rows,asof)=>netWithOnlineCamera(rows,dashboardData(),asof),
 };
 const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(dashboardData().map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=dashboardData().map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){window.IBB5_CANCELLED_NET=snapshot.cancelledNet||[];DATA.splice(0,DATA.length,...snapshot.data);dates=dashboardData().map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...dashboardData().map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
+let agedContracts=[];
+const agedDetails=installAgedContractDetails({button:$('aged'),getRows:()=>agedContracts,getAsOf:()=>$('to').value,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
 function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
@@ -73,7 +76,7 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('forecast').textContent=forecast===null?'—':fmt(forecast)+' HĐ';$('forecastNote').textContent=target===null?'Chưa có cam kết để đối chiếu':forecast===null?'Chưa có ngày lịch':forecast<target?'Dự kiến thiếu '+fmt(target-forecast)+' HĐ':'Dự kiến đạt/vượt '+fmt(forecast-target)+' HĐ';$('forecastBar').style.width=target>0&&forecast!==null?Math.min(100,forecast/target*100)+'%':'0%';
  $('forecastRatio').textContent=target===null?'Tỷ lệ dự phóng: chưa ký cam kết':target===0?'Cam kết tháng bằng 0 — không tính tỷ lệ':forecast===null?'—':('Dự phóng đạt '+formatPercent(forecast/target*100)+' / '+fmt(target)+' HĐ cam kết');
  $('forecastPace7').textContent='Pace 7 ngày ('+windowStart.split('-').reverse().join('/')+' – '+asOf.split('-').reverse().join('/')+'): '+fmt(online7)+' HĐ / '+calendarDays7+' ngày lịch = '+show(pace7)+' HĐ/ngày · còn '+remaining+' ngày';
- const pend=netRows.filter(x=>IBB_CALC.pending(x,asOf));$('pending').textContent=fmt(IBB_CALC.unique(pend));$('aged').textContent=fmt(IBB_CALC.unique(pend.filter(x=>(Date.parse(asOf+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7)));
+ const pend=netRows.filter(x=>IBB_CALC.pending(x,asOf));$('pending').textContent=fmt(IBB_CALC.unique(pend));agedContracts=[...new Map(pend.filter(x=>(Date.parse(asOf+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7).map(row=>[row.id,row])).values()];$('aged').textContent=fmt(agedContracts.length);agedDetails.refresh();
  const tvOnline=dashboardData().filter(x=>x.type==='Truyền hình'&&(!room||x.room===room)&&x.id&&/^[A-Z0-9]+$/.test(x.id)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')&&x.date>=start&&x.date<=asOf);
  const tvVvipOnline=tvOnline.filter(x=>x.vvip===true||(x.vvip==null&&IBB_TV_META[x.id]?.vvip===true));
  const vvipCount=IBB_CALC.unique(tvVvipOnline);
