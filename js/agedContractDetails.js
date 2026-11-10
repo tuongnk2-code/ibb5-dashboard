@@ -1,7 +1,7 @@
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const day = value => value ? value.split('-').reverse().join('/') : '—';
 
-export function installAgedContractDetails({button, getRows, getAsOf, getNotes, canView, id='agedContractDialog', getTitle=()=> 'HĐ tồn từ 7 ngày', getDescription=asOf=>'Ngày theo dõi '+day(asOf)+' · Chưa Online tại ngày chốt, quá 7 ngày theo ngày tạo', showOnline=false, sourceOnly=()=>false, getSourceLabel=()=>''}) {
+export function installAgedContractDetails({button, getRows, getAsOf, getNotes, canView, id='agedContractDialog', getTitle=()=> 'HĐ tồn từ 7 ngày', getDescription=asOf=>'Ngày theo dõi '+day(asOf)+' · Chưa Online tại ngày chốt, quá 7 ngày theo ngày tạo', showOnline=false, sourceOnly=()=>false, getSourceLabel=()=>'', hideFollowup=()=>false}) {
   const dialog = document.createElement('dialog');
   dialog.id = id; dialog.className = 'aged-contract-dialog';
   dialog.setAttribute('aria-labelledby',id+'Title');
@@ -28,8 +28,8 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
     }
   }
   function draw() {
-    const all = getRows(), rows = all.filter(canView), asOf = getAsOf(), fileOnly=sourceOnly(), notes = fileOnly ? {} : getNotes();
-    if(showOnline){const headers=dialog.querySelectorAll('thead th');headers[7].hidden=fileOnly;headers[8].hidden=fileOnly;headers[9].textContent=fileOnly?'Tình trạng trong file '+getSourceLabel():'Kết quả NV cập nhật (HĐ tồn)';}
+    const all = getRows(), rows = all.filter(canView), asOf = getAsOf(), fileOnly=sourceOnly(), hideNotes=hideFollowup(), notes = fileOnly || hideNotes ? {} : getNotes();
+    if(showOnline){const headers=dialog.querySelectorAll('thead th');headers[7].hidden=fileOnly||hideNotes;headers[8].hidden=fileOnly||hideNotes;headers[9].hidden=hideNotes&&!fileOnly;headers[9].textContent=fileOnly?'Tình trạng trong file '+getSourceLabel():'Kết quả NV cập nhật (HĐ tồn)';}
     dialog.querySelector('h3').textContent = getTitle() + ' · ' + rows.length + ' HĐ';
     dialog.querySelector('[data-aged-scope]').textContent = getDescription(asOf) + (rows.length !== all.length ? ' · Hiển thị ' + rows.length + '/' + all.length + ' HĐ theo quyền tài khoản' : '');
     dialog.querySelector('tbody').innerHTML = rows.map(row => {
@@ -37,8 +37,8 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
       const isOnline=validDay(row.date)&&row.date<=asOf;
       const mismatch=isOnline&&note.result&&String(note.result).trim().toLocaleLowerCase('vi-VN')!=='đã online';
       const result=fileOnly?(row.status||'Chưa có tình trạng trong file'):showOnline?(note.result||'Chưa cập nhật'):(note.result||row.status||'Chưa cập nhật');
-      return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td><td>'+(Number.isFinite(age)?age:'—')+'</td>'+(showOnline?'<td>'+esc(day(row.date))+'</td><td class="aged-source-status '+(isOnline?'is-online':'is-pending')+'">'+(isOnline?'Đã Online':'Chưa Online tại ngày chốt')+'</td>':'')+'<td'+(fileOnly?' hidden':'')+'>'+esc(day(note.expected))+'</td><td'+(fileOnly?' hidden':'')+'>'+esc(note.action || note.reason || 'Chưa cập nhật')+'</td><td>'+esc(result)+(showOnline&&mismatch?'<small class="aged-source-mismatch">Khác dữ liệu Online nguồn</small>':'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="'+(showOnline&&!fileOnly?10:8)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
+      return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td><td>'+(Number.isFinite(age)?age:'—')+'</td>'+(showOnline?'<td>'+esc(day(row.date))+'</td><td class="aged-source-status '+(isOnline?'is-online':'is-pending')+'">'+(isOnline?'Đã Online':'Chưa Online tại ngày chốt')+'</td>':'')+'<td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(day(note.expected))+'</td><td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(note.action || note.reason || 'Chưa cập nhật')+'</td><td'+(hideNotes&&!fileOnly?' hidden':'')+'>'+esc(result)+(showOnline&&mismatch?'<small class="aged-source-mismatch">Khác dữ liệu Online nguồn</small>':'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="'+(showOnline?(fileOnly?8:hideNotes?7:10):8)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
     pinColumns();
   }
   function open() { draw(); dialog.showModal(); pinColumns(); }

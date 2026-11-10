@@ -23,6 +23,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.equal(Number(await page.locator('#'+id).textContent()),expected);await page.locator('#'+id).click();const detail=page.locator('#overviewMetricDialog');
     assert.equal(await detail.locator('[data-aged-id]').count(),role==='manager'?expected:scoped);assert.equal(await detail.locator('thead th').count(),10);
     if(['online','vvip','cameraKpi'].includes(id))assert.ok((await detail.locator('.aged-source-status').allTextContents()).every(text=>text==='Đã Online'));
+    if(id==='online'){assert.equal(await detail.locator('thead th:visible').count(),7);assert.doesNotMatch(await detail.locator('thead').innerText(),/dự kiến|Nguyên nhân|NV cập nhật/);}
     if(['vvip','cameraKpi'].includes(id)){
      assert.equal(await detail.locator('.aged-source-mismatch').count(),0);assert.match(await detail.locator('thead th:visible').last().textContent(),id==='vvip'?/file Truyền hình/:/file Camera/);
      assert.equal(await detail.locator('thead th:visible').count(),8);assert.doesNotMatch(await detail.locator('tbody').innerText(),/Chưa Online/);assert.match(await detail.locator('tbody').innerText(),/Bình thường/);
@@ -54,6 +55,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    for(const [kind,count] of [['sold',1],['online',1],['previous',1],['pending',15],['aged',14]]){
     const cell=person.locator('[data-perf-contracts="'+kind+'"]');assert.equal(Number(await cell.textContent()),count);await cell.click();
     assert.equal(await detail.locator('[data-aged-id]').count(),count);assert.equal(await detail.locator('thead th').count(),10);
+    assert.equal(await detail.locator('thead th:visible').count(),['online','previous'].includes(kind)?7:10);
     assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);await detail.locator('[data-aged-close]').click();
    }
    if(role==='manager'){
