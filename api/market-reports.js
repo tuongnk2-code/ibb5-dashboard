@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { canSeeReport, teamOf, reportDay, validDay } from '../js/dailyReportModel.js';
-import { validateMarketReport, monthDays } from '../js/marketReportModel.js';
+import { validateMarketReport, monthDays, canViewAllMarketReports } from '../js/marketReportModel.js';
 
 const check = result => { if (result.error) throw result.error; return result.data; };
 const fail = (res, status, error) => res.status(status).json({ error });
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (!validDay(date) || date > reportDay()) return fail(res, 400, 'Ngày báo cáo không hợp lệ hoặc vượt quá hôm nay.');
     const days = monthDays(date.slice(0, 7));
     const profiles = check(await admin.from('profiles').select('id,full_name,acc,role,created_at').order('full_name'))
-      .filter(p => p.role !== 'manager' && canSeeReport(caller, p) && (!p.created_at || reportDay(new Date(p.created_at)) <= days.at(-1)))
+      .filter(p => p.role !== 'manager' && ((req.method === 'GET' && canViewAllMarketReports(caller)) || canSeeReport(caller, p)) && (!p.created_at || reportDay(new Date(p.created_at)) <= days.at(-1)))
       .map(p => ({ ...p, team: teamOf(p) }));
     const ids = profiles.map(p => p.id);
     if (req.method === 'GET') {

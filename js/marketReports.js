@@ -1,6 +1,6 @@
 import { getSession } from './auth.js';
 import { reportDay, reportState, STATE_LABEL, reportIdentity } from './dailyReportModel.js';
-import { marketTotals, monthDays, validateMarketReport } from './marketReportModel.js';
+import { marketTotals, monthDays, validateMarketReport, canViewAllMarketReports } from './marketReportModel.js';
 import '../css/market.css';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -9,6 +9,7 @@ const rate = value => value === null ? '—' : Math.round(value * 100) + '%';
 const time = value => value ? new Date(value).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' }) : '—';
 export function renderMarketReports(root, me) {
   const $ = s => root.querySelector(s), manager = me.role === 'manager', supervisor = ['manager', 'lead'].includes(me.role);
+  const departmentViewer = canViewAllMarketReports(me);
   let date = reportDay(), snapshot = null, dirty = false, busy = false, generation = 0, editRevision = 0, offset = 0;
   root.innerHTML = `<div class="mk-head"><div><small>IBB5 · TRIỂN KHAI THỊ TRƯỜNG</small><h2>Theo dõi thị trường của phòng</h2><p>Tham gia · Demo · PTTB <span class="mk-deadline">Chốt 22:00 · Giờ Việt Nam</span></p></div><div class="mk-tools"><label>Ngày báo cáo<input id="mkDate" type="date" value="${date}" max="${date}"></label><button id="mkReload" type="button">↻ Tải lại</button></div></div>
   <div id="mkMessage" role="status" hidden></div><div id="mkSummary" class="mk-summary"></div><div id="mkAlerts" class="mk-alert" hidden></div>
@@ -49,7 +50,7 @@ export function renderMarketReports(root, me) {
     $('#mkSummary').innerHTML = [['Đã gửi', sent.length, 'sent'], ['Chưa gửi', pending.length, 'pending'], ['Quá hạn / Gửi muộn', overdue.length, 'overdue'], ['Demo trong ngày', totals.demos, 'all'], ['PTTB trong ngày', totals.pttb, 'all']].map(([label, n, key]) => `<button type="button" data-mk-filter="${key}"><span>${label}</span><strong>${n}</strong></button>`).join('');
     $('#mkAlerts').hidden = !pending.length;
     $('#mkAlerts').textContent = 'Chưa gửi ngày ' + dayLabel(date) + ': ' + pending.map(({ p, r }) => reportIdentity(p) + (state(r) === 'overdue' ? ' (quá hạn)' : r?.status === 'draft' ? ' (nháp)' : '')).join(' · ');
-    $('#mkScope').textContent = dayLabel(date) + ' · ' + (manager ? 'Toàn phòng' : me.role === 'lead' ? 'Phạm vi Bầy của bạn' : 'Báo cáo của bạn');
+    $('#mkScope').textContent = dayLabel(date) + ' · ' + (departmentViewer ? 'Toàn phòng' : me.role === 'lead' ? 'Phạm vi Bầy của bạn' : 'Báo cáo của bạn');
     const filter = $('#mkFilter').value;
     const shown = entries.filter(({ r }) => filter === 'all' || (filter === 'pending' && !['submitted', 'exempt'].includes(r?.status)) || (filter === 'overdue' && ['late', 'overdue'].includes(state(r))) || (filter === 'sent' && r?.status === 'submitted') || (filter === 'exempt' && r?.status === 'exempt'));
     $('#mkRows').innerHTML = shown.map(({ p, r }) => `<tr><td><b>${esc(reportIdentity(p))}</b></td><td>${p.team || '—'}</td><td>${r?.status === 'submitted' ? r.data.sessions : '—'}</td><td>${r?.status === 'submitted' ? r.data.demos : '—'}</td><td>${r?.status === 'submitted' ? r.data.pttb : '—'}</td><td>${badge(r)}</td><td>${time(r?.submitted_at)}</td><td><button type="button" data-mk-user="${esc(p.id)}" data-mk-day="${date}">Xem</button>${supervisor && r?.status !== 'submitted' ? `<button type="button" data-mk-exempt="${esc(p.id)}">${r?.status === 'exempt' ? 'Bỏ nghỉ' : 'Ngày nghỉ'}</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="8">Không có nhân sự phù hợp.</td></tr>';
@@ -63,7 +64,7 @@ export function renderMarketReports(root, me) {
   function matrix(people) {
     $('#marketCapture').classList.toggle('mk-month', $('#mkView').value === 'month');
     const days = $('#mkView').value === 'month' ? monthDays(date.slice(0, 7)) : [date];
-    $('#mkMatrixScope').textContent = 'Tháng ' + date.slice(0, 7) + ' · Ngày theo dõi ' + dayLabel(date) + ' · ' + ($('#mkTeam').value ? 'Bầy ' + $('#mkTeam').value : manager ? 'Toàn phòng' : 'Theo quyền tài khoản');
+    $('#mkMatrixScope').textContent = 'Tháng ' + date.slice(0, 7) + ' · Ngày theo dõi ' + dayLabel(date) + ' · ' + ($('#mkTeam').value ? 'Bầy ' + $('#mkTeam').value : departmentViewer ? 'Toàn phòng' : 'Theo quyền tài khoản');
     $('#mkHead').innerHTML = `<tr><th rowspan="2">Mã Acc / Bầy</th><th colspan="5">TỔNG THÁNG ${date.slice(0, 7)}</th>${days.map(day => `<th colspan="3">${dayLabel(day)}</th>`).join('')}</tr><tr><th>Số buổi</th><th>Demo</th><th>PTTB</th><th>Tỷ lệ Demo</th><th>Tỷ lệ PTTB</th>${days.map(() => '<th>Tham gia</th><th>Demo</th><th>PTTB</th>').join('')}</tr>`;
     const cells = (members, aggregate = false) => {
       const ids = new Set(members.map(p => p.id)), reports = snapshot.reports.filter(r => ids.has(r.user_id)), total = marketTotals(reports);
@@ -80,7 +81,7 @@ export function renderMarketReports(root, me) {
       for (const p of members) html += `<tr><th>${esc(reportIdentity(p))}</th>${cells([p])}</tr>`;
       html += `<tr class="mk-team"><th>TỔNG ${team ? 'BẦY ' + team : 'CHƯA GÁN BẦY'}</th>${cells(members, true)}</tr>`;
     }
-    html += `<tr class="mk-total"><th>${manager && !$('#mkTeam').value ? 'TỔNG PHÒNG' : 'TỔNG PHẠM VI'}</th>${cells(people, true)}</tr>`;
+    html += `<tr class="mk-total"><th>${departmentViewer && !$('#mkTeam').value ? 'TỔNG PHÒNG' : 'TỔNG PHẠM VI'}</th>${cells(people, true)}</tr>`;
     $('#mkMatrix').innerHTML = html;
   }
   async function load(refreshForm = false) {

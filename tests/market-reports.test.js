@@ -58,6 +58,13 @@ test('market API authenticates and scopes reports, protects revisions and first 
     assert.equal((await invoke('POST', { action: 'exempt', user_id: 'b', revision: 0, reason: '' })).code, 400);
     assert.equal((await invoke('POST', { action: 'exempt', user_id: 'b', revision: 0, reason: 'Nghỉ phép' })).code, 200);
     assert.equal((await invoke('POST', { action: 'unexempt', user_id: 'b', revision: 1 })).body.report.status, 'draft');
+    const dat={id:'dat',role:'staff',acc:'DNG.DatHX4',full_name:'Dat',created_at:'2020-01-01T00:00:00Z'};people.push(dat);caller=dat;
+    assert.deepEqual((await invoke('GET')).body.profiles.map(p=>p.id),['a','b','lead','dat']);
+    assert.equal((await invoke('POST',{action:'exempt',user_id:'b',revision:2,reason:'Nghỉ'})).code,403);
+    assert.equal((await invoke('POST',{action:'submit',user_id:'a',revision:0,data:payload()})).code,200);assert.equal(writes.at(-1).user_id,'dat');
+    caller={...dat,role:'lead'};assert.equal((await invoke('GET')).body.profiles.length,4);
+    assert.equal((await invoke('POST',{action:'exempt',user_id:'a',revision:2,reason:'Nghỉ'})).code,403);
+    caller=people[0];assert.deepEqual((await invoke('GET')).body.profiles.map(p=>p.id),['a']);
     assert.equal((await invoke('DELETE')).code, 405);
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });

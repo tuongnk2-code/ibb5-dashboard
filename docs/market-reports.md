@@ -11,3 +11,4 @@ API GET trả báo cáo cả tháng trong phạm vi; POST có kiểm tra phiên 
 Chạy `supabase/market-reports.sql` một lần tại project hiện có. Hai bảng market_reports/market_report_history bật RLS, không cấp truy cập trực tiếp cho anon/authenticated, chỉ API server dùng service_role sau khi xác thực và kiểm tra phạm vi. Trigger lưu bản cũ trước mỗi lần sửa. Không thay dữ liệu/policy báo cáo ngày.
 
 Kiểm tra: `node --test tests/market-reports.test.js`; `node tests/market-reports.browser.cjs` dùng Playwright/Edge sẵn trong môi trường, `npm run build`.
+Riêng DNG.DatHX4 được xem toàn phòng trong tab Triển khai thị trường, gồm tổng hợp, chi tiết, lịch sử, lọc Bầy và xuất báo cáo. Quyền này chỉ áp dụng cho GET trong module thị trường; không đổi vai trò toàn hệ thống, quyền gửi/sửa báo cáo hoặc đánh dấu nghỉ cho người khác. Giao diện vẫn giữ form báo cáo cá nhân của DNG.DatHX4.

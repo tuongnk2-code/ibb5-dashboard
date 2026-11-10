@@ -26,3 +26,5 @@ export function marketTotals(reports) {
   }
   return { ...sum, demoRate: sum.sessions ? sum.demos / sum.sessions : null, pttbRate: sum.sessions ? sum.pttb / sum.sessions : null };
 }
+// Read-only department access is specific to the market deployment module.
+export const canViewAllMarketReports = profile => profile?.role === 'manager' || String(profile?.acc || '').trim().toLowerCase() === 'dng.dathx4';
