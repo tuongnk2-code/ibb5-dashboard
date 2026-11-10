@@ -10,7 +10,7 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
   if(showOnline){
     dialog.querySelectorAll('thead th')[4].textContent='Số ngày từ lúc tạo';
     const row=dialog.querySelector('thead tr'),before=row.cells[5];
-    for(const text of ['Ngày Online thực tế','Trạng thái Online theo nguồn']){const header=document.createElement('th');header.textContent=text;row.insertBefore(header,before);}
+    for(const text of ['Ngày Online thực tế','Trạng thái Online theo nguồn']){const header=document.createElement('th');header.textContent=text;header.hidden=text==='Trạng thái Online theo nguồn';row.insertBefore(header,before);}
     row.cells[row.cells.length-1].textContent='Kết quả NV cập nhật (HĐ tồn)';
   }
   dialog.querySelector('h3').id=id+'Title';
@@ -51,8 +51,8 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
       const isOnline=validDay(row.date)&&row.date<=asOf;
       const mismatch=isOnline&&note.result&&String(note.result).trim().toLocaleLowerCase('vi-VN')!=='đã online';
       const result=fileOnly?(row.status||'Chưa có tình trạng trong file'):showOnline?(note.result||'Chưa cập nhật'):(note.result||row.status||'Chưa cập nhật');
-      return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td><td>'+(Number.isFinite(age)?age:'—')+'</td>'+(showOnline?'<td>'+esc(day(row.date))+'</td><td class="aged-source-status '+(isOnline?'is-online':'is-pending')+'">'+(isOnline?'Đã Online':'Chưa Online tại ngày chốt')+'</td>':'')+'<td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(day(note.expected))+'</td><td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(note.action || note.reason || 'Chưa cập nhật')+'</td><td'+(hideNotes&&!fileOnly?' hidden':'')+'>'+esc(result)+(showOnline&&mismatch?'<small class="aged-source-mismatch">Khác dữ liệu Online nguồn</small>':'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="'+(showOnline?(fileOnly?8:hideNotes?7:10):8)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
+      return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td><td>'+(Number.isFinite(age)?age:'—')+'</td>'+(showOnline?'<td>'+esc(day(row.date))+'</td><td hidden class="aged-source-status '+(isOnline?'is-online':'is-pending')+'">'+(isOnline?'Đã Online':'Chưa Online tại ngày chốt')+'</td>':'')+'<td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(day(note.expected))+'</td><td'+(fileOnly||hideNotes?' hidden':'')+'>'+esc(note.action || note.reason || 'Chưa cập nhật')+'</td><td'+(hideNotes&&!fileOnly?' hidden':'')+'>'+esc(result)+(showOnline&&mismatch?'<small class="aged-source-mismatch">Khác dữ liệu Online nguồn</small>':'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="'+(showOnline?(fileOnly?7:hideNotes?6:9):8)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
     pinColumns();
   }
   function open() { draw(); dialog.showModal();document.body.classList.add('contract-details-open'); pinColumns(); }
