@@ -552,3 +552,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #overview :is(#pending,#online,#vvip,#cameraKpi)[role=button]{cursor:pointer;outline-offset:4px}
 #overview :is(#pending,#online,#vvip,#cameraKpi)[role=button]:hover{text-decoration:underline}
 #overview :is(#pending,#online,#vvip,#cameraKpi)[role=button]:focus-visible{outline:2px solid #1684e6;border-radius:4px}
+.aged-contract-dialog .aged-source-status{font-weight:800}.aged-contract-dialog .aged-source-status.is-online{color:#12835d;background:#edf9f3}
+.aged-contract-dialog .aged-source-status.is-pending{color:#ad651b}
+.aged-contract-dialog .aged-source-mismatch{display:block;color:#b46718;font-size:11px;margin-top:4px}
+.aged-contract-dialog [hidden]{display:none!important}
