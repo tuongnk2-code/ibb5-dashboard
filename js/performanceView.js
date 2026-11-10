@@ -29,6 +29,7 @@ if (panel && button) {
   }
   button.addEventListener('click', () => setExpanded(!panel.classList.contains('perf-expanded'), true));
   document.addEventListener('keydown', event => {
+    if (document.querySelector('dialog[open]')) return;
     if (event.key === 'Escape' && panel.classList.contains('perf-expanded')) { event.preventDefault(); setExpanded(false, true); }
   });
   window.addEventListener('hashchange', () => setExpanded(false));

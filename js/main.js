@@ -3,6 +3,7 @@ import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
 import { dailyPerformanceContracts } from './dailyPerformanceModel.js';
 import { installAgedContractDetails } from './agedContractDetails.js';
+import { performanceContractRows } from './performanceContractDetails.js';
 import { quotePolicies } from './quotePolicy.js';
 import { renderQuoteBuilder } from './quoteBuilder.js';
 import { locationPicker } from './locationPicker.js';
@@ -54,6 +55,9 @@ const IBB_CALC={
 const $=id=>document.getElementById(id);const colors=['#1684e6','#f47b20','#21b58b'],types=['Internet','Camera','Truyền hình'];let filtered=[],page=0;const fmt=n=>n.toLocaleString('vi-VN',{maximumFractionDigits:0});const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const count=(a,k)=>a.filter(x=>x.type===k).length;const online=x=>!!x.date;const day=x=>x.date||x.created;const rooms=[...new Set(dashboardData().map(x=>x.room).filter(Boolean))].sort();rooms.forEach(r=>$('room').insertAdjacentHTML('beforeend','<option>'+esc(r)+'</option>'));let dates=dashboardData().map(day).filter(Boolean).sort();$('from').value=reportDay().slice(0,7)+'-01';$('to').value=reportDay();document.addEventListener('ibb5-snapshot-updated',()=>{const snapshot=window.IBB5_SHARED_STATE?.snapshot;if(snapshot){window.IBB5_CANCELLED_NET=snapshot.cancelledNet||[];DATA.splice(0,DATA.length,...snapshot.data);dates=dashboardData().map(day).filter(Boolean).sort();const selected=$('room').value;$('room').innerHTML='<option value="">Tất cả phòng</option>'+[...new Set([...dashboardData().map(row=>row.room),selected].filter(Boolean))].sort().map(room=>'<option>'+esc(room)+'</option>').join('');$('room').value=selected;if(!$('room').value)$('room').value='';}});
 let agedContracts=[];
 const agedDetails=installAgedContractDetails({button:$('aged'),getRows:()=>agedContracts,getAsOf:()=>$('to').value,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
+let performanceSelection=null;
+const performanceTitles={sold:'HĐ bán mới',online:'HĐ Online trong tháng',previous:'HĐ Online cùng kỳ tháng trước',pending:'HĐ tồn',aged:'HĐ tồn trên 7 ngày'};
+const performanceDetails=installAgedContractDetails({button:null,id:'performanceContractDialog',showOnline:true,getRows:()=>performanceContractRows(operationalData(),performanceSelection),getAsOf:()=>performanceSelection?.kind==='previous'?performanceSelection.previousCut:performanceSelection?.asOf,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>performanceTitles[performanceSelection.kind]+' · '+performanceSelection.label,getDescription:()=>performanceSelection.kind==='previous'?'Online từ '+performanceSelection.previousMonth+'-01 đến '+performanceSelection.previousCut:'Tháng '+performanceSelection.asOf.slice(0,7)+' · Ngày theo dõi '+performanceSelection.asOf.split('-').reverse().join('/')});
 function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
@@ -166,7 +170,25 @@ function perfRender(){
   const growth=periodGrowth(online,havePrev?prev:null),pct=goal>0?formatPercent(online/goal*100):'—',projected=goal>0&&elapsed?formatPercent((online/elapsed*allDays)/goal*100):'—';const missing=goal===null?null:Math.max(0,goal-online),need=missing!==null&&calendarRemaining?fmt(missing/calendarRemaining):'—';
   out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td></tr>');
  }if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));$('perfRows').innerHTML=out.join('')||'<tr><td colspan="13">Không có nhân sự phù hợp</td></tr>';$('perfFoot').innerHTML=summary('TỔNG PHÒNG ('+list.length+' NS)',overall,true);
+ for(const row of [...$('perfRows').rows,...$('perfFoot').rows]){
+  if(row.cells.length!==13)continue;
+  const person=row.querySelector('.person'),teamNumber=row.classList.contains('perf-team-total')?row.cells[0].textContent.match(/(\d+)$/)?.[1]:null;
+  const accs=person?[person.textContent]:list.filter(p=>!teamNumber||String(p.team)===teamNumber).map(p=>p.acc);
+  row.dataset.perfAccs=JSON.stringify(accs);
+  for(const [index,kind] of [[3,'sold'],[4,'online'],[5,'previous'],[11,'pending'],[12,'aged']]){
+   const cell=row.cells[index];if(cell.textContent.trim()==='—')continue;
+   cell.dataset.perfContracts=kind;cell.setAttribute('role','button');cell.tabIndex=0;cell.setAttribute('aria-haspopup','dialog');cell.setAttribute('aria-controls','performanceContractDialog');cell.title='Xem danh sách '+performanceTitles[kind];
+  }
+ }
+ performanceDetails.refresh();
 }
+function openPerformanceContracts(cell){
+ const asOf=$('to').value||reportDay(),month=asOf.slice(0,7),previousCut=IBB_CALC.prior(month,+asOf.slice(-2)),row=cell.closest('tr');
+ performanceSelection={kind:cell.dataset.perfContracts,accs:JSON.parse(row.dataset.perfAccs),label:row.cells[0].textContent.trim(),asOf,start:month+'-01',previousCut,previousMonth:previousCut.slice(0,7),room:$('room').value};
+ performanceDetails.open();
+}
+document.getElementById('performance').addEventListener('click',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell)openPerformanceContracts(cell);});
+document.getElementById('performance').addEventListener('keydown',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell&&['Enter',' '].includes(event.key)){event.preventDefault();openPerformanceContracts(cell);}});
 ['to','from','room','perfTeam'].forEach(id=>document.getElementById(id)?.addEventListener('change',perfRender));document.getElementById('perfSearch')?.addEventListener('input',perfRender);
 document.getElementById('perfExport')?.addEventListener('click',()=>{const rows=[...document.querySelectorAll('#performance table tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+td.innerText.replace(/"/g,'""').replace(/\n/g,' ')+'"').join(','));const u=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='hieu_suat_nhan_su.csv';a.click();URL.revokeObjectURL(u)});
 try{perfRender()}catch(e){console.error('perfRender',e)}

@@ -7,6 +7,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   const data=Array.from({length:28},(_,i)=>({id:'OLD'+i,type:'Internet',created:'2026-10-30',date:'',room:'IBB5',staff:i%2?'DNG.Vypv':'DNG.ManLM3',customer:'Khách <script>test</script>'}));
   data.push({...data[0]},{...data[0],id:'SEVENDAYS',created:'2026-11-03'},{...data[0],id:'ONLINE',date:'2026-11-09'},{...data[0],id:'FUTURE',created:'2026-11-11'});
+  data.push({...data[0],id:'PREVIOUS',created:'2026-10-01',date:'2026-10-05'});
   for(const role of ['manager','staff']){
    const page=await browser.newPage({viewport:{width:role==='manager'?1440:390,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(data=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES={OLD0:{action:'Not hạ tầng',result:'Chưa Online',expected:'2026-11-12'}};window.IBB5_SHARED_STATE={commitments:{},notes:window.IBB5_PENDING_NOTES,revisions:{}};},data);
@@ -34,7 +35,22 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.evaluate(()=>{const to=document.getElementById('to');to.value='2026-11-06';to.dispatchEvent(new Event('change'));});assert.equal(await dialog.locator('[data-aged-id]').count(),0);
    await page.keyboard.press('Escape');assert.equal(await dialog.isVisible(),false);
    await page.locator('#to').fill('2026-11-10');await page.locator('#to').dispatchEvent('change');await page.locator('#aged').focus();await page.keyboard.press('Enter');assert.equal(await dialog.isVisible(),true);
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await dialog.locator('[data-aged-close]').click();assert.deepEqual(errors,[]);await page.close();
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await dialog.locator('[data-aged-close]').click();
+   await page.evaluate(()=>location.hash='performance');await page.locator('#performance.page-active').waitFor();
+   const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})}),detail=page.locator('#performanceContractDialog');
+   for(const [kind,count] of [['sold',1],['online',1],['previous',1],['pending',15],['aged',14]]){
+    const cell=person.locator('[data-perf-contracts="'+kind+'"]');assert.equal(Number(await cell.textContent()),count);await cell.click();
+    assert.equal(await detail.locator('[data-aged-id]').count(),count);assert.equal(await detail.locator('thead th').count(),9);
+    assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);await detail.locator('[data-aged-close]').click();
+   }
+   if(role==='manager'){
+    for(const kind of ['sold','online','previous','pending','aged']){
+     const cell=page.locator('#perfFoot [data-perf-contracts="'+kind+'"]'),expected=Number(await cell.textContent());await cell.click();assert.equal(await detail.locator('[data-aged-id]').count(),expected);await detail.locator('[data-aged-close]').click();
+    }
+    const team=page.locator('#perfRows .perf-team-total').filter({hasText:'TỔNG BẦY 3'});await team.locator('[data-perf-contracts="aged"]').click();assert.equal(await detail.locator('[data-aged-id]').count(),14);await detail.locator('[data-aged-close]').click();
+    await page.locator('#perfExpand').click();await person.locator('[data-perf-contracts="sold"]').click();await page.keyboard.press('Escape');assert.equal(await detail.isVisible(),false);assert.ok(await page.locator('#performance').evaluate(el=>el.classList.contains('perf-expanded')));await page.locator('#perfExpand').click();
+   }
+   assert.deepEqual(errors,[]);await page.close();
   }
   console.log('PASS: 28-contract KPI drilldown, deduplication, exact age/Online cutoff, saved notes, permissions, live date, keyboard and mobile');
  }finally{await browser.close();await server.close();}

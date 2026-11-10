@@ -544,3 +544,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 .pending-metrics [role=button]{cursor:pointer;outline-offset:3px}
 .pending-metrics [role=button]:hover{text-decoration:underline}
 .pending-metrics [role=button]:focus-visible{outline:2px solid #1684e6;border-radius:4px}
+#performance [data-perf-contracts]{cursor:pointer;outline-offset:-3px}
+#performance [data-perf-contracts]:hover{text-decoration:underline}
+#performance [data-perf-contracts]:focus-visible{outline:2px solid #1684e6}
+#performance #perfTableCapture{scroll-padding-inline-start:calc(var(--perf-font-size,20px) * 10 + 8px)}
+#performance [data-perf-contracts]{scroll-margin-top:100px}
