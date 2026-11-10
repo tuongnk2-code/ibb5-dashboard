@@ -83,7 +83,20 @@ export function renderMarketReports(root, me) {
     }
     html += `<tr class="mk-total"><th>${departmentViewer && !$('#mkTeam').value ? 'TỔNG PHÒNG' : 'TỔNG PHẠM VI'}</th>${cells(people, true)}</tr>`;
     $('#mkMatrix').innerHTML = html;
+    pinMonthSummary();
   }
+  function pinMonthSummary() {
+    if ($('#mkView').value !== 'month') return;
+    const first = $('#mkMatrix').rows[0]; if (!first || !first.cells[0].getBoundingClientRect().width) return;
+    const offsets = []; let left = 0;
+    for (let i = 0; i < 6; i++) { offsets.push(left); left += first.cells[i].getBoundingClientRect().width; }
+    const pin = (cell, index, edge = false) => { cell.classList.add('mk-pinned'); cell.classList.toggle('mk-pin-edge', edge); cell.style.left = offsets[index] + 'px'; };
+    for (const row of $('#mkMatrix').rows) for (let i = 0; i < 6; i++) pin(row.cells[i], i, i === 5);
+    const head = $('#mkHead').rows;
+    pin(head[0].cells[0], 0); pin(head[0].cells[1], 1, true);
+    for (let i = 0; i < 5; i++) pin(head[1].cells[i], i + 1, i === 4);
+  }
+  new ResizeObserver(pinMonthSummary).observe(root.querySelector('.mk-matrix'));
   async function load(refreshForm = false) {
     const token = ++generation;
     try {

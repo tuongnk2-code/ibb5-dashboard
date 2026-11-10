@@ -12,3 +12,4 @@ Chạy `supabase/market-reports.sql` một lần tại project hiện có. Hai b
 
 Kiểm tra: `node --test tests/market-reports.test.js`; `node tests/market-reports.browser.cjs` dùng Playwright/Edge sẵn trong môi trường, `npm run build`.
 Riêng DNG.DatHX4 được xem toàn phòng trong tab Triển khai thị trường, gồm tổng hợp, chi tiết, lịch sử, lọc Bầy và xuất báo cáo. Quyền này chỉ áp dụng cho GET trong module thị trường; không đổi vai trò toàn hệ thống, quyền gửi/sửa báo cáo hoặc đánh dấu nghỉ cho người khác. Giao diện vẫn giữ form báo cáo cá nhân của DNG.DatHX4.
+Khi xem Cả tháng, cố định sáu cột từ Mã Acc/Bầy đến Tỷ lệ PTTB (cả tiêu đề hai hàng, từng nhân sự và dòng tổng). Các cột ngày cuộn ngang; vị trí cố định tự đo theo kích thước cột khi đổi cỡ màn hình. Chế độ Ngày chọn giữ cách hiển thị cũ.

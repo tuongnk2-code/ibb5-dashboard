@@ -41,3 +41,7 @@
 
 #marketCapture.mk-month .mk-matrix td{min-width:45px;padding:8px 5px;font-size:13px}
 #marketCapture.mk-month .mk-matrix thead th{padding:8px 5px;font-size:12px}
+#marketCapture.mk-month .mk-matrix .mk-pinned{position:sticky;z-index:2;background:#fff;background-clip:padding-box}
+#marketCapture.mk-month .mk-matrix th.mk-pinned{background:#edf4fb}
+#marketCapture.mk-month .mk-matrix thead .mk-pinned{z-index:4;background:#e8f1fa}
+#marketCapture.mk-month .mk-matrix .mk-pin-edge{box-shadow:3px 0 5px -2px #173b6033}
