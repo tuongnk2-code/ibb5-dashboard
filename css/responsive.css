@@ -541,3 +541,6 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 .aged-contract-dialog td.aged-pinned{position:sticky;z-index:2;background:white}
 .aged-contract-dialog thead th.aged-pinned{z-index:4}
 .aged-contract-dialog .aged-pin-edge{box-shadow:3px 0 5px -2px #173b6033}
+.pending-metrics [role=button]{cursor:pointer;outline-offset:3px}
+.pending-metrics [role=button]:hover{text-decoration:underline}
+.pending-metrics [role=button]:focus-visible{outline:2px solid #1684e6;border-radius:4px}

@@ -26,6 +26,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.equal(await page.locator('#pendCreatedMonth option[value="2026-08"]').count(),0);
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
    await page.locator('#pendDailyDate').fill('2026-11-06');await page.locator('#pendDailyDate').dispatchEvent('change');
+   for(const id of ['pendTotal','pendDue','pendMissing','pendOld','pendForwardTotal','pendOld1','pendOld2','pendOld3','pendForward1','pendForward2','pendForward3']){
+    const expected=Number(await page.locator('#'+id).textContent());await page.locator('#'+id).click();const detail=page.locator('#pendingMetricDialog');
+    assert.equal(await detail.isVisible(),true);const rows=detail.locator('[data-aged-id]');
+    if(role==='manager')assert.equal(await rows.count(),expected,'KPI/list match for '+id);
+    else {assert.ok(await rows.count()<=expected);assert.doesNotMatch(await detail.locator('tbody').textContent(),/DNG.Vypv/);}
+    if(await rows.count())assert.equal(await rows.first().locator('.aged-pinned').count(),3);
+    await detail.locator('[data-aged-close]').click();
+   }
    const initialAppointments=Number(await page.locator('#pendDue').textContent());
    assert.equal(Number(await page.locator('#psRows .ps-total td').nth(1).textContent()),initialAppointments);
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.DUE.result='Hủy';window.IBB5_PENDING_NOTES.OLD.result='Dự Kiến Hủy';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DUE','pending:OLD']}}));});
