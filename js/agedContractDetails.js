@@ -7,7 +7,7 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
   dialog.setAttribute('aria-labelledby',id+'Title');
   dialog.innerHTML = '<div class="aged-contract-head"><h3 id="agedContractTitle">HĐ tồn từ 7 ngày</h3><button type="button" data-aged-close>Đóng</button></div><p data-aged-scope></p><div class="tablewrap"><table><thead><tr><th>Mã HĐ</th><th>Nhân viên bán</th><th>Khách hàng</th><th>Ngày tạo</th><th>Số ngày tồn</th><th>Ngày Online dự kiến</th><th>Nguyên nhân hẹn Online</th><th>Kết quả</th></tr></thead><tbody></tbody></table></div>';
   document.body.append(dialog);
-  if(showOnline){const header=document.createElement('th');header.textContent='Ngày Online thực tế';dialog.querySelector('thead tr').insertBefore(header,dialog.querySelectorAll('thead th')[5]);}
+  if(showOnline){dialog.querySelectorAll('thead th')[4].textContent='Số ngày từ lúc tạo';const header=document.createElement('th');header.textContent='Ngày Online thực tế';dialog.querySelector('thead tr').insertBefore(header,dialog.querySelectorAll('thead th')[5]);}
   dialog.querySelector('h3').id=id+'Title';
   function pinColumns() {
     if (!dialog.open) return;

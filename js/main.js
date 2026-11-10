@@ -58,6 +58,14 @@ const agedDetails=installAgedContractDetails({button:$('aged'),getRows:()=>agedC
 let performanceSelection=null;
 const performanceTitles={sold:'HĐ bán mới',online:'HĐ Online trong tháng',previous:'HĐ Online cùng kỳ tháng trước',pending:'HĐ tồn',aged:'HĐ tồn trên 7 ngày'};
 const performanceDetails=installAgedContractDetails({button:null,id:'performanceContractDialog',showOnline:true,getRows:()=>performanceContractRows(operationalData(),performanceSelection),getAsOf:()=>performanceSelection?.kind==='previous'?performanceSelection.previousCut:performanceSelection?.asOf,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>performanceTitles[performanceSelection.kind]+' · '+performanceSelection.label,getDescription:()=>performanceSelection.kind==='previous'?'Online từ '+performanceSelection.previousMonth+'-01 đến '+performanceSelection.previousCut:'Tháng '+performanceSelection.asOf.slice(0,7)+' · Ngày theo dõi '+performanceSelection.asOf.split('-').reverse().join('/')});
+let overviewMetricSelection='pending';
+const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[]},overviewMetricTitles={pending:'HĐ tồn chưa Online',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng'};
+const overviewMetricDetails=installAgedContractDetails({button:null,id:'overviewMetricDialog',showOnline:true,getRows:()=>overviewMetricRows[overviewMetricSelection],getAsOf:()=>$('to').value,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>overviewMetricTitles[overviewMetricSelection],getDescription:asOf=>'Tháng '+asOf.slice(0,7)+' · Ngày theo dõi '+asOf.split('-').reverse().join('/')+($('room').value?' · '+$('room').value:' · Toàn phòng')});
+for(const id of Object.keys(overviewMetricRows)){
+ const trigger=$(id);trigger.setAttribute('role','button');trigger.tabIndex=0;trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','overviewMetricDialog');trigger.setAttribute('aria-label','Xem danh sách '+overviewMetricTitles[id]);
+ trigger.addEventListener('click',()=>{overviewMetricSelection=id;overviewMetricDetails.open();});
+ trigger.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();trigger.click();}});
+}
 function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$('from').value)&&(!$('to').value||day(x)<=$('to').value)&&(!$('room').value||x.room===$('room').value))}function update(){
  filtered=base();page=0;
  const month=($('to').value||reportDay()).slice(0,7),asOf=$('to').value||month+'-30',start=month+'-01',last=IBB_CALC.monthEnd(month),room=$('room').value;
@@ -88,7 +96,10 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('vvip').textContent=fmt(vvipCount);$('vvip').title='V.VIP: '+vvipCount+' mã HĐ duy nhất; gói ở cột H, Ngày Online ở cột P của nguồn Truyền hình mới nhất.';
  const prepaid=prepaidShare(onlineRows),p=prepaid.count;
  const cameraOnline=IBB_CALC.camOnline(onlineRows,asOf);
- $('cameraKpi').textContent=fmt(onlineCameraContracts(dashboardData(),start,asOf,room).length);$('cameraKpi').title='Mã HĐ Camera duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn Camera mới nhất, không yêu cầu NET Online cùng tháng.';
+ const sourceCameraOnline=onlineCameraContracts(dashboardData(),start,asOf,room);
+ $('cameraKpi').textContent=fmt(sourceCameraOnline.length);$('cameraKpi').title='Mã HĐ Camera duy nhất có Ngày Online từ '+start+' đến '+asOf+'; nguồn Camera mới nhất, không yêu cầu NET Online cùng tháng.';
+ for(const [key,rows] of Object.entries({pending:pend,online:onlineRows,vvip:tvVvipOnline,cameraKpi:sourceCameraOnline}))overviewMetricRows[key]=[...new Map(rows.map(row=>[row.id,row])).values()];
+ overviewMetricDetails.refresh();
  $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(formatPercent(payCount/totalOnline*100)):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';
  const managed=managedShare(onlineRows);$('managed').textContent=managed.percent===null?'—':formatPercent(managed.percent);$('managed').title=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01 hoặc DNG_02 · từ '+start+' đến '+asOf;
  $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';

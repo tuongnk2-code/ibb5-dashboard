@@ -8,6 +8,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const data=Array.from({length:28},(_,i)=>({id:'OLD'+i,type:'Internet',created:'2026-10-30',date:'',room:'IBB5',staff:i%2?'DNG.Vypv':'DNG.ManLM3',customer:'Khách <script>test</script>'}));
   data.push({...data[0]},{...data[0],id:'SEVENDAYS',created:'2026-11-03'},{...data[0],id:'ONLINE',date:'2026-11-09'},{...data[0],id:'FUTURE',created:'2026-11-11'});
   data.push({...data[0],id:'PREVIOUS',created:'2026-10-01',date:'2026-10-05'});
+  for(const [type,prefix] of [['Truyền hình','TV'],['Camera','CAM']])for(let i=0;i<2;i++)data.push({...data[i],id:prefix+i,type,created:'2026-11-01',date:'2026-11-09',vvip:true});
+  data.push({...data[0],id:'TVOTHER',type:'Truyền hình',vvip:false,date:'2026-11-09'},{...data[0],id:'CAMFUTURE',type:'Camera',date:'2026-11-11'});
   for(const role of ['manager','staff']){
    const page=await browser.newPage({viewport:{width:role==='manager'?1440:390,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(data=>{window.IBB5_IMPORTED_DATA=data;window.IBB5_PENDING_NOTES={OLD0:{action:'Not hạ tầng',result:'Chưa Online',expected:'2026-11-12'}};window.IBB5_SHARED_STATE={commitments:{},notes:window.IBB5_PENDING_NOTES,revisions:{}};},data);
@@ -17,6 +19,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.route('https://**/*',r=>r.abort());
    await page.goto('http://127.0.0.1:5219/#overview');await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');
    await page.locator('#to').fill('2026-11-10');await page.locator('#to').dispatchEvent('change');assert.equal(await page.locator('#aged').textContent(),'28');
+   for(const [id,expected,scoped] of [['pending',29,15],['online',1,1],['vvip',2,1],['cameraKpi',2,1]]){
+    assert.equal(Number(await page.locator('#'+id).textContent()),expected);await page.locator('#'+id).click();const detail=page.locator('#overviewMetricDialog');
+    assert.equal(await detail.locator('[data-aged-id]').count(),role==='manager'?expected:scoped);assert.equal(await detail.locator('thead th').count(),9);
+    assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);
+    assert.equal(await detail.locator('[data-aged-id="TVOTHER"],[data-aged-id="CAMFUTURE"]').count(),0);await detail.locator('[data-aged-close]').click();
+   }
    await page.locator('#aged').click();const dialog=page.locator('#agedContractDialog');assert.equal(await dialog.isVisible(),true);
    assert.equal(await dialog.locator('[data-aged-id]').count(),role==='manager'?28:14);assert.match(await dialog.textContent(),/Not hạ tầng/);assert.equal(await dialog.locator('script').count(),0);
    assert.equal(await dialog.locator('[data-aged-id="OLD0"] td').nth(4).textContent(),'11');
