@@ -7,6 +7,19 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
   dialog.setAttribute('aria-labelledby','agedContractTitle');
   dialog.innerHTML = '<div class="aged-contract-head"><h3 id="agedContractTitle">HĐ tồn từ 7 ngày</h3><button type="button" data-aged-close>Đóng</button></div><p data-aged-scope></p><div class="tablewrap"><table><thead><tr><th>Mã HĐ</th><th>Nhân viên bán</th><th>Khách hàng</th><th>Ngày tạo</th><th>Số ngày tồn</th><th>Ngày Online dự kiến</th><th>Nguyên nhân hẹn Online</th><th>Kết quả</th></tr></thead><tbody></tbody></table></div>';
   document.body.append(dialog);
+  function pinColumns() {
+    if (!dialog.open) return;
+    const headers = [...dialog.querySelectorAll('thead th')];
+    let left = 0;
+    for (let index = 0; index < 3; index++) {
+      const width = headers[index].getBoundingClientRect().width;
+      for (const row of dialog.querySelectorAll('tr')) {
+        const cell = row.cells[index]; if (!cell || cell.colSpan > 1) continue;
+        cell.classList.add('aged-pinned');cell.classList.toggle('aged-pin-edge', index === 2);cell.style.left = left + 'px';
+      }
+      left += width;
+    }
+  }
   function draw() {
     const all = getRows(), rows = all.filter(canView), asOf = getAsOf(), notes = getNotes();
     dialog.querySelector('h3').textContent = 'HĐ tồn từ 7 ngày · ' + rows.length + ' HĐ';
@@ -15,8 +28,10 @@ export function installAgedContractDetails({button, getRows, getAsOf, getNotes, 
       const note = notes[row.id] || {}, age = Math.round((Date.parse(asOf+'T12:00:00Z')-Date.parse(row.created+'T12:00:00Z'))/86400000);
       return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td><td>'+age+'</td><td>'+esc(day(note.expected))+'</td><td>'+esc(note.action || note.reason || 'Chưa cập nhật')+'</td><td>'+esc(note.result || row.status || 'Chưa cập nhật')+'</td></tr>';
     }).join('') || '<tr><td colspan="8">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
+    pinColumns();
   }
-  button.addEventListener('click', () => { draw(); dialog.showModal(); });
+  button.addEventListener('click', () => { draw(); dialog.showModal(); pinColumns(); });
+  new ResizeObserver(pinColumns).observe(dialog.querySelector('table'));
   dialog.querySelector('[data-aged-close]').addEventListener('click', () => dialog.close());
   return {refresh: () => { if (dialog.open) draw(); }};
 }
