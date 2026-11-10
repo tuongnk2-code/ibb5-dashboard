@@ -205,7 +205,7 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #overview .overview-focus > .mini .name { grid-column: 1; grid-row: 1; min-height: 0 !important; font-size: 16px !important; font-weight: 850 !important; color: #1d456e !important; }
 #overview .overview-focus > .mini .value { grid-column: 2; grid-row: 1 / span 2; font-size: 48px !important; line-height: 1.1 !important; }
 #overview .overview-focus > .mini .detail { grid-column: 1; grid-row: 2; margin-top: 0 !important; font-size: 12px !important; color: #5e7b9a !important; }
-#overview .subkpis.overview-support { grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 14px !important; margin-top: 14px !important; }
+#overview .subkpis.overview-support { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 14px !important; margin-top: 14px !important; }
 #overview .overview-support > .mini { min-height: 146px !important; display: flex; flex-direction: column; gap: 10px; padding: 18px !important; box-shadow: none !important; }
 #overview .overview-support > .mini .name { min-height: 34px !important; font-size: 13px !important; }
 #overview .overview-support > .mini .name::before { display: none !important; }
