@@ -28,7 +28,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#pendDailyDate').fill('2026-11-06');await page.locator('#pendDailyDate').dispatchEvent('change');
    for(const id of ['pendTotal','pendDue','pendMissing','pendOld','pendForwardTotal','pendOld1','pendOld2','pendOld3','pendForward1','pendForward2','pendForward3']){
     const expected=Number(await page.locator('#'+id).textContent());await page.locator('#'+id).click();const detail=page.locator('#pendingMetricDialog');
-    assert.equal(await detail.isVisible(),true);const rows=detail.locator('[data-aged-id]');
+    assert.equal(await detail.isVisible(),true);assert.deepEqual(await detail.locator('thead th').allTextContents(),['Mã HĐ','Acc','Khách hàng','Ngày tạo','Ngày Online thực tế']);const rows=detail.locator('[data-aged-id]');
     if(role==='manager')assert.equal(await rows.count(),expected,'KPI/list match for '+id);
     else {assert.ok(await rows.count()<=expected);assert.doesNotMatch(await detail.locator('tbody').textContent(),/DNG.Vypv/);}
     if(await rows.count())assert.equal(await rows.first().locator('.aged-pinned').count(),3);

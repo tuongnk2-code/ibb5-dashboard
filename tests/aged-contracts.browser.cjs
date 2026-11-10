@@ -21,14 +21,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#to').fill('2026-11-10');await page.locator('#to').dispatchEvent('change');assert.equal(await page.locator('#aged').textContent(),'28');
    for(const [id,expected,scoped] of [['pending',29,15],['online',1,1],['vvip',2,1],['cameraKpi',2,1]]){
     assert.equal(Number(await page.locator('#'+id).textContent()),expected);await page.locator('#'+id).click();const detail=page.locator('#overviewMetricDialog');
-    assert.equal(await detail.locator('[data-aged-id]').count(),role==='manager'?expected:scoped);assert.equal(await detail.locator('thead th').count(),10);
-    assert.equal(await detail.locator('.aged-source-status:visible').count(),0);assert.doesNotMatch(await detail.locator('thead').innerText(),/Trạng thái Online theo nguồn/);
-    if(['online','vvip','cameraKpi'].includes(id))assert.ok((await detail.locator('.aged-source-status').allTextContents()).every(text=>text==='Đã Online'));
-    if(id==='online'){assert.equal(await detail.locator('thead th:visible').count(),6);assert.doesNotMatch(await detail.locator('thead').innerText(),/dự kiến|Nguyên nhân|NV cập nhật/);}
-    if(['vvip','cameraKpi'].includes(id)){
-     assert.equal(await detail.locator('.aged-source-mismatch').count(),0);assert.match(await detail.locator('thead th:visible').last().textContent(),id==='vvip'?/file Truyền hình/:/file Camera/);
-     assert.equal(await detail.locator('thead th:visible').count(),7);assert.doesNotMatch(await detail.locator('tbody').innerText(),/Chưa Online/);assert.match(await detail.locator('tbody').innerText(),/Bình thường/);
-    }
+    assert.equal(await detail.locator('[data-aged-id]').count(),role==='manager'?expected:scoped);
+    assert.deepEqual(await detail.locator('thead th').allTextContents(),['Mã HĐ','Acc','Khách hàng','Ngày tạo','Ngày Online thực tế']);
+    if(['online','vvip','cameraKpi'].includes(id))assert.equal(await detail.locator('tbody tr').first().locator('td').nth(4).textContent(),'09/11/2026');
     assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);
     if(role==='staff'){
      const layout=await detail.evaluate(el=>{const scroll=el.querySelector('.tablewrap'),cells=el.querySelector('tbody tr').cells;return {viewport:scroll.clientWidth,frozen:[...cells].slice(0,3).reduce((n,cell)=>n+cell.getBoundingClientRect().width,0)};});
@@ -46,8 +41,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.equal(await detail.locator('[data-aged-id="TVOTHER"],[data-aged-id="CAMFUTURE"]').count(),0);await detail.locator('[data-aged-close]').click();
    }
    await page.locator('#aged').click();const dialog=page.locator('#agedContractDialog');assert.equal(await dialog.isVisible(),true);
-   assert.equal(await dialog.locator('[data-aged-id]').count(),role==='manager'?28:14);assert.match(await dialog.textContent(),/Not hạ tầng/);assert.equal(await dialog.locator('script').count(),0);
-   assert.equal(await dialog.locator('[data-aged-id="OLD0"] td').nth(4).textContent(),'11');
+   assert.equal(await dialog.locator('[data-aged-id]').count(),role==='manager'?28:14);assert.doesNotMatch(await dialog.textContent(),/Not hạ tầng/);assert.equal(await dialog.locator('script').count(),0);
+   assert.equal(await dialog.locator('[data-aged-id="OLD0"] td').nth(4).textContent(),'—');
    assert.equal(await dialog.locator('[data-aged-id="SEVENDAYS"],[data-aged-id="ONLINE"],[data-aged-id="FUTURE"]').count(),0);
    await dialog.locator('.tablewrap').evaluate(el=>{el.style.width='800px';el.style.maxWidth='100%';});await page.waitForTimeout(100);
    const headerTop=await dialog.locator('thead th').first().evaluate(el=>el.getBoundingClientRect().top);
@@ -68,8 +63,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})}),detail=page.locator('#performanceContractDialog');
    for(const [kind,count] of [['sold',1],['online',1],['previous',1],['pending',15],['aged',14]]){
     const cell=person.locator('[data-perf-contracts="'+kind+'"]');assert.equal(Number(await cell.textContent()),count);await cell.click();
-    assert.equal(await detail.locator('[data-aged-id]').count(),count);assert.equal(await detail.locator('thead th').count(),10);
-    assert.equal(await detail.locator('thead th:visible').count(),['online','previous'].includes(kind)?6:9);
+    assert.equal(await detail.locator('[data-aged-id]').count(),count);assert.equal(await detail.locator('thead th').count(),5);
+    assert.equal(await detail.locator('thead th:visible').count(),5);
     assert.equal(await detail.locator('[data-aged-id]').first().locator('.aged-pinned').count(),3);await detail.locator('[data-aged-close]').click();
    }
    if(role==='manager'){
