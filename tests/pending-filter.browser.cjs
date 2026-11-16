@@ -28,6 +28,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
    const updatedRow=page.locator('#pendRows tr[data-id="DUE"]');assert.equal(await updatedRow.locator('td').nth(1).textContent(),'DNG.ManLM3');
    assert.equal(await updatedRow.locator('time.p-updated').getAttribute('datetime'),'2026-11-06T03:15:20Z');assert.match(await updatedRow.locator('time.p-updated').textContent(),/10:15:20.*06\/11\/2026/);
+   await page.evaluate(()=>{window.pendingAgeTestNow=Date.now;Date.now=()=>Date.parse('2026-11-09T03:15:20Z');window.dispatchEvent(new Event('focus'));});assert.equal(await updatedRow.locator('.p-updated-stale').count(),0,'Exactly 72h is not stale');
+   await page.evaluate(()=>{Date.now=()=>Date.parse('2026-11-09T03:15:20.001Z');window.dispatchEvent(new Event('focus'));});assert.equal(await updatedRow.locator('.p-updated-stale').count(),1,'More than 72h is stale');
+   assert.deepEqual(await updatedRow.locator('time.p-updated').evaluate(time=>({color:getComputedStyle(time).color,weight:getComputedStyle(time).fontWeight})),{color:'rgb(217, 45, 32)',weight:'800'});
+   await page.evaluate(()=>{Date.now=window.pendingAgeTestNow;delete window.pendingAgeTestNow;window.dispatchEvent(new Event('focus'));});
    if(role==='manager'){await updatedRow.locator('.p-source').selectOption('Web');assert.equal(await updatedRow.locator('time.p-updated').getAttribute('datetime'),'2026-11-06T03:15:20Z');await updatedRow.locator('.p-discard').click();}
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.DUE.updated='2026-11-06T12:00:00Z';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DUE']}}));});assert.match(await updatedRow.locator('time.p-updated').textContent(),/19:00:00/);
    if(role==='manager'){

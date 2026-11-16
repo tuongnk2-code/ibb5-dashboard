@@ -247,7 +247,10 @@ const teamMap={'DNG.Vypv':'1','DNG.OanhLTH3':'1','DNG.ChuongHM':'1','DNG.NguyenT
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pendingUpdatedDate=note=>[note?.updated,note?.cancellationApprovedAt].filter(value=>value&&Number.isFinite(Date.parse(value))).sort((a,b)=>Date.parse(b)-Date.parse(a))[0]||'';
 const pendingUpdatedText=note=>{const value=pendingUpdatedDate(note);return value?new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(value)):'Chưa ghi nhận';};
-const pendingUpdatedHtml=note=>{const value=pendingUpdatedDate(note);return value?'<time class="p-updated" datetime="'+escapeHTML(value)+'" title="Lưu gần nhất · Giờ Việt Nam">'+escapeHTML(pendingUpdatedText(note))+'</time>':'<small class="p-updated">Chưa ghi nhận</small>';};
+const pendingUpdateIsStale=value=>Number.isFinite(Date.parse(value))&&Date.now()-Date.parse(value)>3*86400000;
+const pendingUpdatedHtml=note=>{const value=pendingUpdatedDate(note);return value?'<time class="p-updated'+(pendingUpdateIsStale(value)?' p-updated-stale':'')+'" datetime="'+escapeHTML(value)+'" title="Lưu gần nhất · Giờ Việt Nam'+(pendingUpdateIsStale(value)?' · Quá 3 ngày chưa cập nhật':'')+'">'+escapeHTML(pendingUpdatedText(note))+'</time>':'<small class="p-updated">Chưa ghi nhận</small>';};
+function refreshPendingTimestampWarnings(){el('pendingContracts').querySelectorAll('time.p-updated').forEach(time=>{const stale=pendingUpdateIsStale(time.dateTime);time.classList.toggle('p-updated-stale',stale);time.title='Lưu gần nhất · Giờ Việt Nam'+(stale?' · Quá 3 ngày chưa cập nhật':'');});}
+setInterval(refreshPendingTimestampWarnings,60000);window.addEventListener('focus',refreshPendingTimestampWarnings);document.addEventListener('visibilitychange',refreshPendingTimestampWarnings);
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
 const isManager=()=>window.IBB5_CURRENT_PROFILE?.role==='manager';
 const buildDistinct=()=>[...new Map(operationalData().filter(x=>x.type==='Internet'&&x.id).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
@@ -335,7 +338,7 @@ function openPendingEditor(id){
  const contract=[...distinct,...hiddenContracts()].find(x=>x.id===id);if(!contract||!window.IBB5_ROLE?.canView(contract)){alert('Không có quyền cập nhật hợp đồng này');return;}
  const n=notes[id]||{},editorRevision=window.IBB5_SHARED_STATE?.revisions['pending:'+id]??0;
  mobileEditor.innerHTML='<div class="pm-head"><div><h3>'+(isCancelled(id)?'Xem HĐ đã ẩn ':'Cập nhật ')+escapeHTML(id)+'</h3><p>'+escapeHTML(contract.staff||'—')+'</p></div><button type="button" class="pm-close" aria-label="Đóng cập nhật hợp đồng">✕</button></div>'+
- '<dl class="pm-info"><dt>Khách hàng</dt><dd>'+escapeHTML(customer(contract)||'—')+'</dd><dt>Ngày tạo HĐ</dt><dd>'+escapeHTML(contract.created||'—')+'</dd><dt>Online thực tế</dt><dd>'+escapeHTML(contract.date||'Chưa Online')+'</dd><dt>Lưu gần nhất (giờ VN)</dt><dd>'+escapeHTML(pendingUpdatedText(n))+'</dd></dl>'+
+ '<dl class="pm-info"><dt>Khách hàng</dt><dd>'+escapeHTML(customer(contract)||'—')+'</dd><dt>Ngày tạo HĐ</dt><dd>'+escapeHTML(contract.created||'—')+'</dd><dt>Online thực tế</dt><dd>'+escapeHTML(contract.date||'Chưa Online')+'</dd><dt>Lưu gần nhất (giờ VN)</dt><dd>'+pendingUpdatedHtml(n)+'</dd></dl>'+
  '<form id="pendingMobileForm">'+
  '<label>Kết quả<select name="result" required>'+opts(RESULTS,n.result||'')+'</select></label>'+
  '<label class="pm-cancel-reason" '+(isCancellationResult(n.result)?'':'hidden')+'>Lý do hủy<textarea name="cancelReason" maxlength="1000" rows="3" '+(isCancellationResult(n.result)?'required':'')+' placeholder="Nhập lý do hủy...">'+escapeHTML(n.cancelReason||'')+'</textarea></label>'+
