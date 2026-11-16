@@ -12,6 +12,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   // Payroll-only August imports must not alter any of the existing report assertions.
   data.push(...['AUGONLINE','AUGPENDING','AUGHIDDEN','AUGCANCEL'].map(id=>({id,type:'Internet',staff:'DNG.ManLM3',room:'IBB5',created:'2026-08-20',date:id==='AUGONLINE'?'2026-11-06':'',status:id==='AUGCANCEL'?'Đã chấm dứt hợp đồng':''})));
   const notes=Object.fromEntries(definitions.map(([id,,,expected])=>[id,{expected}]));
+  notes.DUE.updated='2026-11-06T03:15:20Z';notes.CANCEL.updated='2026-11-06T03:00:00Z';notes.CANCEL.cancellationApprovedAt='2026-11-06T04:15:00Z';
   Object.assign(notes.DONE,{timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'});notes.CANCEL.cancellationApproved=true;
   notes.AUGHIDDEN={cancellationApproved:true};
   for(const role of ['manager','staff']){
@@ -25,6 +26,16 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.goto('http://127.0.0.1:5179/#pendingContracts');await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');
    assert.equal(await page.locator('#pendCreatedMonth option[value="2026-08"]').count(),0);
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
+   const updatedRow=page.locator('#pendRows tr[data-id="DUE"]');assert.equal(await updatedRow.locator('td').nth(1).textContent(),'DNG.ManLM3');
+   assert.equal(await updatedRow.locator('time.p-updated').getAttribute('datetime'),'2026-11-06T03:15:20Z');assert.match(await updatedRow.locator('time.p-updated').textContent(),/10:15:20.*06\/11\/2026/);
+   if(role==='manager'){await updatedRow.locator('.p-source').selectOption('Web');assert.equal(await updatedRow.locator('time.p-updated').getAttribute('datetime'),'2026-11-06T03:15:20Z');await updatedRow.locator('.p-discard').click();}
+   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.DUE.updated='2026-11-06T12:00:00Z';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DUE']}}));});assert.match(await updatedRow.locator('time.p-updated').textContent(),/19:00:00/);
+   if(role==='manager'){
+    await page.evaluate(()=>{window.pendingStampTestBackup={note:{...window.IBB5_PENDING_NOTES.DUE},sync:window.IBB5_SYNC};window.IBB5_SYNC={pending:async(id,value)=>{window.IBB5_PENDING_NOTES[id]={...value,updated:'2026-11-06T13:30:15Z'};}};});
+    await updatedRow.locator('.p-result').selectOption('Chưa Online');await updatedRow.locator('.p-time-slot').selectOption('8h - 10h');await updatedRow.locator('.p-note').selectOption('Khác');await updatedRow.locator('.p-source').selectOption('Web');await updatedRow.locator('.p-save').click();
+    assert.equal(await updatedRow.locator('.p-save').textContent(),'Đã lưu');assert.match(await updatedRow.locator('time.p-updated').textContent(),/20:30:15/);
+    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.DUE=window.pendingStampTestBackup.note;window.IBB5_SYNC=window.pendingStampTestBackup.sync;delete window.pendingStampTestBackup;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:DUE']}}));});
+   }
    await page.locator('#pendDailyDate').fill('2026-11-06');await page.locator('#pendDailyDate').dispatchEvent('change');
    for(const id of ['pendTotal','pendDue','pendMissing','pendOld','pendForwardTotal','pendOld1','pendOld2','pendOld3','pendForward1','pendForward2','pendForward3']){
     const expected=Number(await page.locator('#'+id).textContent());await page.locator('#'+id).click();const detail=page.locator('#pendingMetricDialog');
@@ -115,6 +126,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.locator('#pendQuery').fill('');await page.locator('#pendCreatedMonth').selectOption('');await page.locator('.ph-filter[data-field="staff"]').selectOption('');
    await page.locator('#pendStatus').selectOption('due');await page.locator('#pendAsOf').fill('2026-11-05');await page.locator('#pendAsOf').dispatchEvent('change');assert.deepEqual(await ids(),['DONE','LATE','ONLINE']);
    await page.locator('#pendStatus').selectOption('hidden');assert.deepEqual(await ids(),['CANCEL']);
+   assert.match(await page.locator('#pendRows tr[data-id="CANCEL"] time.p-updated').textContent(),/11:15:00/);
    assert.equal(await page.locator('#pendRows .p-result').isDisabled(),true);assert.equal(await page.locator('#pendRows .p-save').isDisabled(),true);assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),0);
    assert.match(await page.locator('#pendCount').textContent(),/HĐ đã ẩn: 1 \/ 1/);
    await page.locator('#pendQuery').fill('Khách CANCEL');assert.deepEqual(await ids(),['CANCEL']);

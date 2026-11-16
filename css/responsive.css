@@ -564,3 +564,4 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 .aged-contract-dialog table.aged-mobile-table{table-layout:fixed;min-width:0}
 .aged-contract-dialog .aged-mobile-table :is(th,td){white-space:normal;overflow-wrap:anywhere;padding:8px 4px;font-size:12px;line-height:1.35;vertical-align:top}
 @media(max-width:600px){.aged-contract-dialog{padding:12px}.aged-contract-head h3{font-size:18px}.aged-contract-dialog>p{margin:8px 0;font-size:12px}}
+#pendingContracts .p-updated{display:block;max-width:125px;margin-top:6px;font-size:11px;line-height:1.5;color:#58799b;white-space:normal;font-variant-numeric:tabular-nums}
