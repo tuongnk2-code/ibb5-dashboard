@@ -246,9 +246,14 @@ const el=id=>document.getElementById(id),key='ibb5_pending_followup_v1';let note
 const teamMap={'DNG.Vypv':'1','DNG.OanhLTH3':'1','DNG.ChuongHM':'1','DNG.NguyenTP10':'1','DNG.TriNP':'1','DNG.Hoantt':'2','DNG.Nhannt137':'2','DNG.Namnh170':'2','DNG.DatHX4':'1','DNG.HoaNTB6':'3','DNG.ManLM3':'3','DNG.Tienna2':'3','DNG.HanNVN':'3','DNG.BachND7':'3','DNG.DoanLT4':'3','DNG.LanMH2':'3','DNG.DatBTH':'3'};
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pendingUpdatedDate=note=>[note?.updated,note?.cancellationApprovedAt].filter(value=>value&&Number.isFinite(Date.parse(value))).sort((a,b)=>Date.parse(b)-Date.parse(a))[0]||'';
-const pendingUpdatedText=note=>{const value=pendingUpdatedDate(note);return value?new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(value)):'Chưa ghi nhận';};
+const pendingUpdatedText=(note,compact=false)=>{
+ const value=pendingUpdatedDate(note);if(!value)return 'Chưa ghi nhận';
+ const formatter=new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),date=new Date(value);
+ if(!compact)return formatter.format(date);
+ const parts=Object.fromEntries(formatter.formatToParts(date).map(part=>[part.type,part.value]));return parts.hour+':'+parts.minute+':'+parts.second+' '+parts.day+'/'+parts.month;
+};
 const pendingUpdateIsStale=value=>Number.isFinite(Date.parse(value))&&Date.now()-Date.parse(value)>3*86400000;
-const pendingUpdatedHtml=note=>{const value=pendingUpdatedDate(note);return value?'<time class="p-updated'+(pendingUpdateIsStale(value)?' p-updated-stale':'')+'" datetime="'+escapeHTML(value)+'" title="Lưu gần nhất · Giờ Việt Nam'+(pendingUpdateIsStale(value)?' · Quá 3 ngày chưa cập nhật':'')+'">'+escapeHTML(pendingUpdatedText(note))+'</time>':'<small class="p-updated">Chưa ghi nhận</small>';};
+const pendingUpdatedHtml=note=>{const value=pendingUpdatedDate(note);return value?'<time class="p-updated'+(pendingUpdateIsStale(value)?' p-updated-stale':'')+'" datetime="'+escapeHTML(value)+'" title="Lưu gần nhất · Giờ Việt Nam'+(pendingUpdateIsStale(value)?' · Quá 3 ngày chưa cập nhật':'')+'">'+escapeHTML(pendingUpdatedText(note,true))+'</time>':'<small class="p-updated">Chưa ghi nhận</small>';};
 function refreshPendingTimestampWarnings(){el('pendingContracts').querySelectorAll('time.p-updated').forEach(time=>{const stale=pendingUpdateIsStale(time.dateTime);time.classList.toggle('p-updated-stale',stale);time.title='Lưu gần nhất · Giờ Việt Nam'+(stale?' · Quá 3 ngày chưa cập nhật':'');});}
 setInterval(refreshPendingTimestampWarnings,60000);window.addEventListener('focus',refreshPendingTimestampWarnings);document.addEventListener('visibilitychange',refreshPendingTimestampWarnings);
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
