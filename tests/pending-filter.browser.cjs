@@ -27,6 +27,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.equal(await page.locator('#pendCreatedMonth option[value="2026-08"]').count(),0);
    await page.locator('#pendAsOf').fill('2026-11-06');await page.locator('#pendAsOf').dispatchEvent('change');
    const updatedRow=page.locator('#pendRows tr[data-id="DUE"]');assert.equal(await updatedRow.locator('td').nth(1).textContent(),'DNG.ManLM3');
+   const appointmentWidths=await updatedRow.evaluate(row=>[row.cells[6],row.cells[7]].map(cell=>cell.getBoundingClientRect().width));assert.ok(appointmentWidths[0]<=129&&appointmentWidths[1]<=121,'Compact date/time columns: '+appointmentWidths.join('/'));
    assert.equal(await updatedRow.locator('time.p-updated').getAttribute('datetime'),'2026-11-06T03:15:20Z');assert.match(await updatedRow.locator('time.p-updated').textContent(),/10:15:20.*06\/11\/2026/);
    await page.evaluate(()=>{window.pendingAgeTestNow=Date.now;Date.now=()=>Date.parse('2026-11-09T03:15:20Z');window.dispatchEvent(new Event('focus'));});assert.equal(await updatedRow.locator('.p-updated-stale').count(),0,'Exactly 72h is not stale');
    await page.evaluate(()=>{Date.now=()=>Date.parse('2026-11-09T03:15:20.001Z');window.dispatchEvent(new Event('focus'));});assert.equal(await updatedRow.locator('.p-updated-stale').count(),1,'More than 72h is stale');

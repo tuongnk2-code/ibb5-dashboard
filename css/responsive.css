@@ -352,7 +352,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #datahub .ibb-sync-file-source { color: #0b549e; font-size: 14px; font-weight: 850; }
 #datahub .ibb-sync-file small { display: block; margin-top: 4px; color: #647e9a; font-size: 11px; }
 @media(max-width:700px) { #datahub .ibb-sync-file { grid-template-columns: minmax(0,1fr); gap: 12px; padding: 14px; } #datahub .ibb-sync-audit-top { flex-wrap: wrap; gap: 10px; } }
-#pendingContracts .pending-table { width: 1818px!important; min-width: 1818px!important; }
+#pendingContracts .pending-table { width: 1766px!important; min-width: 1766px!important; }
 #pendingContracts .pending-table :is(th,td):nth-child(9) { width: 200px!important; min-width: 200px!important; max-width: 200px!important; }
 #pendingContracts .pending-table :is(th,td):nth-child(10) { width: 155px!important; min-width: 155px!important; max-width: 155px!important; }
 #pendingContracts .pending-table :is(th,td):nth-child(11) { width: 112px!important; min-width: 112px!important; max-width: 112px!important; }
@@ -366,7 +366,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts .p-cancel-reason-wrap { margin: 0; }
 #pendingContracts .pending-table .p-cancel-reason { box-sizing: border-box; height: 54px; min-height: 54px; max-height: 140px; background: #fff8f8; border-color: #e7bcbc; line-height: 1.5; }
 #pendingMobileEditor textarea[name="cancelReason"] { width: 100%; box-sizing: border-box; border: 1px solid #e7bcbc; background: #fff8f8; border-radius: 10px; padding: 10px; font: inherit; resize: vertical; }
-@media(max-width:600px) { #pendingContracts .pending-table { width: 1680px!important; min-width: 1680px!important; } }
+@media(max-width:600px) { #pendingContracts .pending-table { width: 1628px!important; min-width: 1628px!important; } }
 
 /* Pending contract summary: a clear total, distinct statuses and readable month detail. */
 #pendingContracts .pending-cards.pending-metrics {
@@ -519,8 +519,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .dp-contract-empty{text-align:center!important;color:#7089a2;padding:18px!important}
 #pendingContracts .pending-table :is(th,td):nth-child(5){width:140px!important;min-width:140px!important;max-width:140px!important}
 #pendingContracts .pending-table :is(th,td):nth-child(6){width:200px!important;min-width:200px!important;max-width:200px!important}
-#pendingContracts .pending-table :is(th,td):nth-child(7){width:145px!important;min-width:145px!important;max-width:145px!important}
-#pendingContracts .pending-table :is(th,td):nth-child(8){width:155px!important;min-width:155px!important;max-width:155px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(7){width:128px!important;min-width:128px!important;max-width:128px!important}
+#pendingContracts .pending-table :is(th,td):nth-child(8){width:120px!important;min-width:120px!important;max-width:120px!important}
 #pendingContracts .pending-table :is(th,td):nth-child(9){width:235px!important;min-width:235px!important;max-width:235px!important}
 #performance .ibb-dailyperf .dp-grand .dp-staff{white-space:normal!important;line-height:1.35}
 @media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}#performance .dp-day-layout #dpTableCapture .dp-scroll{width:100%}#performance .dp-day-layout #dpTable{width:100%!important;min-width:286px!important}}
