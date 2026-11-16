@@ -4,6 +4,7 @@ import { STAFF_ROSTER } from './staffRoster.js';
 import { installAgedContractDetails } from './agedContractDetails.js';
 import { getSession } from './auth.js';
 import { dailyReportRollup } from './dailyReportRollupModel.js';
+import { assistantAIRequest } from './assistantAIClient.js';
 import './dashboardAssistant.css';
 
 const labels={sold:'NET bán mới',online:'NET Online',camera:'Camera Online',vvip:'V.VIP Online',pending:'HĐ tồn',aged:'Tồn >7 ngày',overdue:'Quá ngày hẹn',missing:'Thiếu ngày hẹn',stale:'Quá 3 ngày chưa cập nhật'};
@@ -21,8 +22,13 @@ export function installDashboardAssistant({getData,getNotes,canView,getProfile,g
   STAFF_ROSTER.filter(person=>visible({staff:person.acc})).forEach(person=>{const option=element('option',person.acc);option.value=person.acc;$('[data-chat-staff]').append(option);});
   $('[data-chat-day]').value=reportDay();
   let busy=false,selectedRows=[],selectedTitle='',selectedDay=reportDay(),draftSerial=0;
+  let aiConfigured=false,aiEnabled=false,aiHistory=[];
+  const aiMode=button('Kiểm tra AI…',()=>{if(!aiConfigured){checkAI();return;}aiEnabled=!aiEnabled;renderAIMode();});aiMode.disabled=true;panel.querySelector('header div').after(aiMode);
+  const sampleFoot='Câu hỏi mẫu · Số liệu theo dữ liệu đã đồng bộ và quyền tài khoản.';
+  function renderAIMode(){aiMode.disabled=false;aiMode.textContent=aiConfigured?(aiEnabled?'AI: Bật':'AI: Tắt'):'Kết nối AI';aiMode.setAttribute('aria-pressed',String(aiEnabled));$('.chat-foot').textContent=aiEnabled?'AI phân tích câu hỏi và số liệu tổng hợp trong quyền xem. Anh kiểm tra bản nháp trước khi lưu.':sampleFoot;}
+  async function checkAI(){try{aiMode.disabled=true;const status=await assistantAIRequest();aiConfigured=status.configured===true;aiEnabled=aiConfigured;renderAIMode();if(!aiConfigured)$('.chat-foot').textContent='AI chưa được cấu hình trên máy chủ. Hiện dùng câu hỏi mẫu.';}catch{aiConfigured=false;aiEnabled=false;renderAIMode();$('.chat-foot').textContent='Chưa kết nối được AI. Hiện dùng câu hỏi mẫu; bấm Kết nối AI để kiểm tra lại.';}}
   const details=installAgedContractDetails({button:null,id:'assistantContractDialog',getRows:()=>selectedRows,getAsOf:()=>selectedDay,canView:visible,getTitle:()=>selectedTitle,getDescription:()=> 'Dữ liệu lúc trả lời · Ngày chốt '+date(selectedDay)});
-  function open(){panel.hidden=false;launcher.hidden=true;launcher.setAttribute('aria-expanded','true');input.focus();}
+  function open(){panel.hidden=false;launcher.hidden=true;launcher.setAttribute('aria-expanded','true');input.focus();checkAI();}
   function close(){panel.hidden=true;launcher.hidden=false;launcher.setAttribute('aria-expanded','false');launcher.focus();}
   $('[data-chat-close]').onclick=close;
   panel.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.querySelector('dialog[open]')){event.preventDefault();close();}});
@@ -32,7 +38,7 @@ export function installDashboardAssistant({getData,getNotes,canView,getProfile,g
   const note=text=>message(text);
   function welcome(){note('Chào anh. Em có thể tóm tắt ngày/tuần/tháng, so sánh kết quả, xem đóng góp nhân sự, kênh bán và cảnh báo HĐ tồn. Để sửa, nhập “Cập nhật HĐ [mã HĐ]”. Mọi thay đổi đều cần anh xem và xác nhận trước khi lưu.');}
   welcome();
-  $('[data-chat-clear]').onclick=()=>{if(busy)return;draftSerial++;log.replaceChildren();welcome();};
+  $('[data-chat-clear]').onclick=()=>{if(busy)return;draftSerial++;aiHistory=[];log.replaceChildren();welcome();};
   const scope=()=>({period:$('[data-chat-period]').value,anchor:$('[data-chat-day]').value,team:$('[data-chat-team]').value,staff:$('[data-chat-staff]').value});
   function scopeLabel(s){return [s.team?'Bầy '+s.team:'Trong quyền tài khoản',s.staff].filter(Boolean).join(' · ');}
   async function refresh(){if(window.IBB5_SYNC?.refresh)await window.IBB5_SYNC.refresh();}
@@ -140,6 +146,19 @@ export function installDashboardAssistant({getData,getNotes,canView,getProfile,g
   async function send(text){
     text=text.trim();if(!text||busy)return;message(text,'user');input.value='';busy=true;$('.chat-composer button').disabled=true;
     try{
+      if(aiEnabled){
+        await refresh();const result=await assistantAIRequest({message:text,scope:scope(),history:aiHistory}),plan=result.plan;
+        if(!plan)throw new Error('AI chưa trả kế hoạch hợp lệ.');
+        aiHistory=[...aiHistory,{role:'user',content:text.slice(0,1000)},{role:'assistant',content:String(result.answer||plan.intent).slice(0,1000)}].slice(-6);
+        const s=plan.scope;$('[data-chat-period]').value=s.period;$('[data-chat-day]').value=s.anchor;$('[data-chat-team]').value=s.team;$('[data-chat-staff]').value=s.staff;
+        if(['update','approve'].includes(plan.intent)){await editContract(plan.contractId,plan.patch,plan.intent==='approve');return;}
+        if(plan.intent==='search'){searchReply(findAssistantContracts(getData(),plan.query||plan.contractId,visible));return;}
+        const report=assistantReport(getData(),{scope:s,notes:getNotes(),canView:visible,commitments:getCommitments()});
+        if(result.answer)note(result.answer);
+        if(!['daily','chat'].includes(plan.intent))reportReply(report,s,plan.intent);
+        if(['daily','warnings'].includes(plan.intent))await dailyReply(report,s);
+        return;
+      }
       if(/huong dan|giup|help|lam duoc gi/.test(normalize(text))){note('Ví dụ anh có thể hỏi:\n• Tóm tắt tuần này bầy 2\n• So sánh Online tháng 11/2026\n• Nhân sự cần hỗ trợ\n• Kênh bán\n• HĐ tồn quá 7 ngày\n• Tìm DAAAR5872\n• Cập nhật HĐ DAAAR5872 sang 20/11/2026, 15h30 - 17h30\n• Cập nhật HĐ DAAAR5872; nguồn: Web; nguyên nhân: Kh muốn hẹn ngày đó\n• Duyệt hủy HĐ DAAAR5872 (Trưởng phòng)\nAnh bổ sung các trường còn thiếu trong bản nháp rồi bấm Xem thay đổi → Xác nhận lưu.');return;}
       await refresh();const q=normalize(text),data=getData();
       const matchId=data.filter(visible).find(row=>new RegExp('(^|[^a-z0-9])'+String(row.id).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i').test(text));

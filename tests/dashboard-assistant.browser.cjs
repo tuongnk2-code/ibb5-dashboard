@@ -7,6 +7,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   for(const role of ['manager','lead','staff']){
    const page=await browser.newPage({viewport:{width:role==='manager'?1440:390,height:950}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+   let aiAvailable=false;
+   await page.route('**/api/assistant',async r=>{
+    if(r.request().method()==='GET')return r.fulfill({contentType:'application/json',body:JSON.stringify({configured:aiAvailable})});
+    const body=r.request().postDataJSON();if(body.message==='AI ERROR')return r.fulfill({status:429,contentType:'application/json',body:JSON.stringify({error:'AI hết hạn mức thử nghiệm'})});
+    const update=body.message.includes('dời lịch'),plan={intent:update?'update':'chat',scope:body.scope,contractId:update?'TEST1':'',query:'',patch:update?{expected:'2026-11-22'}:{}};
+    return r.fulfill({contentType:'application/json',body:JSON.stringify({plan,answer:'Em đã hiểu câu hỏi tự nhiên của anh; chưa lưu dữ liệu.'})});
+   });
    await page.addInitScript(()=>{
     const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const contract=(id,extra={})=>({id,type:'Internet',status:'Bình thường',room:'IBB5',staff:'DNG.ManLM3',created:today.slice(0,7)+'-01',date:'',customer:'<img src=x onerror=alert(1)>',...extra});
@@ -42,6 +49,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await send('Cập nhật HĐ TERMINATED');assert.match(await log.locator('article').last().innerText(),/chấm dứt/);
    await send('Duyệt hủy HĐ TEST3');if(role==='manager'){await panel.getByRole('button',{name:'Xác nhận duyệt hủy',exact:true}).click();await page.waitForFunction(()=>window.assistantCalls.length===2);assert.equal(await page.evaluate(()=>window.assistantCalls.at(-1).kind),'approve');}else assert.match(await log.locator('article').last().innerText(),/Trưởng phòng/);
    await send('Cập nhật HĐ FOREIGN');if(role!=='manager')assert.equal(await panel.locator('.chat-edit').count(),0);
+   if(role==='manager')await panel.locator('.chat-edit').last().getByRole('button',{name:'Bỏ nháp'}).click();
+   aiAvailable=true;await panel.getByRole('button',{name:'Kết nối AI',exact:true}).click();await panel.getByRole('button',{name:'AI: Bật',exact:true}).waitFor();
+   await send('Theo em, lúc này anh nên ưu tiên chuyện gì nhỉ?');assert.match(await log.innerText(),/Em đã hiểu câu hỏi tự nhiên/);
+   const beforeAI=await page.evaluate(()=>window.assistantCalls.length);await send('Anh muốn dời lịch của TEST1 sang ngày 22 nhé');assert.equal(await panel.locator('.chat-edit [name=expected]').inputValue(),'2026-11-22');assert.equal(await page.evaluate(()=>window.assistantCalls.length),beforeAI);
+   await panel.locator('.chat-edit').getByRole('button',{name:'Xem thay đổi'}).click();await panel.getByRole('button',{name:'Xác nhận lưu TEST1',exact:true}).last().click();await page.waitForFunction(n=>window.assistantCalls.length===n,beforeAI+1);
+   await send('AI ERROR');assert.match(await log.locator('article').last().innerText(),/AI hết hạn mức/);assert.equal(await page.evaluate(()=>window.assistantCalls.length),beforeAI+1);await panel.getByRole('button',{name:'AI: Bật',exact:true}).click();
    await panel.getByRole('button',{name:'Xóa nội dung chat'}).click();assert.equal(await log.locator('article').count(),1);assert.ok(await panel.evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}));
    if(process.env.ASSISTANT_SCREENSHOT_DIR){await send('Nhân sự cần hỗ trợ');await panel.screenshot({path:process.env.ASSISTANT_SCREENSHOT_DIR+'/assistant-'+role+'.png'});}
    await panel.getByRole('button',{name:'Đóng trợ lý'}).click();assert.equal(await panel.isVisible(),false);assert.deepEqual(errors,[]);await page.close();

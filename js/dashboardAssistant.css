@@ -4,6 +4,7 @@
 #ibbAssistant *{box-sizing:border-box}
 #ibbAssistant header{display:flex;align-items:center;gap:10px;background:#103f75;padding:14px;color:white;flex-shrink:0}
 #ibbAssistant header div{flex:1}#ibbAssistant header small{display:block;margin-top:4px;font-size:11px;color:#d0e4ff}
+#ibbAssistant header div{min-width:0}
 #ibbAssistant button{cursor:pointer;border:1px solid #c5d8ef;border-radius:9px;padding:8px 10px;font:inherit;background:white;color:#164e88}
 #ibbAssistant header button{color:white;background:#ffffff15;border-color:#ffffff30;font-size:12px}
 #ibbAssistant button:disabled{opacity:.55;cursor:default}
@@ -25,3 +26,4 @@
 #ibbAssistant .chat-edit{display:grid;gap:9px;margin-top:10px}#ibbAssistant .chat-edit label{font-size:12px}#ibbAssistant .chat-error{color:#b92c27;font-size:12px}
 #ibbAssistant .chat-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(max-width:600px){#ibbAssistant{right:6px;bottom:6px;width:calc(100vw - 12px);height:calc(100dvh - 12px);border-radius:12px}#ibbAssistant :is(input,select,textarea){font-size:16px}#ibbAssistantLauncher{right:14px;bottom:max(16px,env(safe-area-inset-bottom))}#ibbAssistant .chat-scope{gap:6px;padding:8px 12px}#ibbAssistant .chat-messages{padding:10px}#ibbAssistant .chat-composer{padding-bottom:max(8px,env(safe-area-inset-bottom))}}
+@media(max-width:600px){#ibbAssistant header{padding:10px;gap:6px}#ibbAssistant header button{font-size:10px;padding:6px;flex-shrink:0}#ibbAssistant header strong{font-size:13px}#ibbAssistant header small{font-size:10px}}
