@@ -567,3 +567,6 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #pendingContracts .p-updated{display:block;max-width:125px;margin-top:6px;font-size:11px;line-height:1.5;color:#58799b;white-space:normal;font-variant-numeric:tabular-nums}
 #pendingContracts .p-updated.p-updated-stale{color:#d92d20;font-weight:800}
 #pendingMobileEditor .p-updated{max-width:none;margin-top:0;font-size:inherit}
+#pendingContracts .pending-table :is(th,td){border-right:1px solid #bfd1e5!important;border-bottom:1px solid #bfd1e5!important}
+#pendingContracts .pending-table :is(th,td):first-child{border-left:1px solid #bfd1e5!important}
+#pendingContracts .pending-table thead th{border-top:1px solid #bfd1e5!important}
