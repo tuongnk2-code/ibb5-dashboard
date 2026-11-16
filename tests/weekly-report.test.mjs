@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { weeklyPeriod, weeklyReport } from '../js/weeklyReportModel.js';
+assert.deepEqual(weeklyPeriod('2027-01-01','2027-01-01'),{start:'2026-12-28',end:'2027-01-03',asOf:'2027-01-01',future:false,previousStart:'2026-12-21',previousEnd:'2026-12-25'});
+assert.equal(weeklyPeriod('2026-11-15','2026-11-16').start,'2026-11-09');
+const record=(id,staff,created,date='',type='Internet',extra={})=>({id,staff,created,date,type,...extra});
+const data=[record('A','DNG.ManLM3','2026-11-09','2026-11-09'),record('A','DNG.ManLM3','2026-11-09','2026-11-09'),record('B','DNG.Vypv','2026-11-10','2026-11-10'),record('PREV','DNG.ManLM3','2026-11-02','2026-11-02'),record('PREVLATE','DNG.ManLM3','2026-11-06','2026-11-06'),record('OLD','DNG.ManLM3','2026-10-25'),record('AGED','DNG.ManLM3','2026-11-02'),record('EXACT','DNG.ManLM3','2026-11-03'),record('CANCEL','DNG.ManLM3','2026-11-09','', 'Internet',{status:'Đã chấm dứt hợp đồng'}),record('NOTE','DNG.ManLM3','2026-11-09'),record('AUG','DNG.ManLM3','2026-08-10','2026-11-09'),record('TV','DNG.ManLM3','2026-10-20','2026-11-09','Truyền hình',{vvip:true}),record('TVOTHER','DNG.ManLM3','2026-11-09','2026-11-09','Truyền hình',{vvip:false}),record('TVWAIT','DNG.ManLM3','2026-11-09','','Truyền hình',{vvip:true}),record('CAM','DNG.Vypv','2026-11-09','2026-11-10','Camera'),record('CAMWAIT','DNG.Vypv','2026-11-09','','Camera')];
+const options={anchor:'2026-11-10',today:'2026-11-10',canView:()=>true,notes:{OLD:{expected:'2026-11-09'},NOTE:{result:'Hủy'}}};
+const result=weeklyReport(data,options);
+assert.equal(result.period.asOf,'2026-11-10');assert.equal(result.groups.sold.length,2);assert.equal(result.groups.online.length,2);assert.equal(result.groups.previous.length,1);assert.equal(result.change,1);assert.equal(result.groups.vvip.length,1);assert.equal(result.groups.camera.length,1);
+assert.deepEqual(result.groups.aged.map(row=>row.id),['OLD','AGED']);assert.equal(result.groups.overdue.length,1);assert.equal(result.groups.pending.length,3);
+assert.equal(result.rows.reduce((sum,row)=>sum+row.online,0),2);assert.equal(result.staffCount,17);
+const staff=weeklyReport(data,{...options,canView:row=>row.staff==='DNG.ManLM3'});assert.equal(staff.groups.online.length,1);assert.equal(staff.groups.camera.length,0);assert.equal(staff.staffCount,1);
+const team=weeklyReport(data,{...options,team:'1'});assert.equal(team.groups.online.length,1);assert.equal(team.groups.camera.length,1);assert.equal(team.staffCount,6);
+const future=weeklyReport(data,{...options,anchor:'2026-11-30'});assert.equal(future.groups.pending.length,0);assert.equal(future.groups.online.length,0);
+assert.equal(weeklyReport([],options).hasPrevious,false);
+const crossYear=weeklyReport([record('NEW','DNG.ManLM3','2026-12-31','2027-01-01')],{...options,anchor:'2027-01-01',today:'2027-01-04'});assert.equal(crossYear.groups.online.length,1);
+console.log('PASS: weekly dates, equal-period comparison, cancellation/scope, deduplication, service sources, pending age and role filtering');

@@ -1,3 +1,4 @@
+import { renderWeeklyReports } from './weeklyReports.js';
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
@@ -213,7 +214,7 @@ document.querySelectorAll('.sidebar .nav a').forEach(a=>a.addEventListener('clic
 const links=[...document.querySelectorAll('.sidebar .nav a[href^="#"]')];
 const sections=[...document.querySelectorAll('.content > section.panel[id]')];
 const title=document.querySelector('header.top h1');
-const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',lcb:'LCB',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',marketReports:'Triển khai thị trường',account:'Tài khoản'};
+const names={overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',lcb:'LCB',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',weeklyReports:'Báo cáo tuần',marketReports:'Triển khai thị trường',account:'Tài khoản'};
 function activate(id){if(!sections.some(s=>s.id===id))id='overview';sections.forEach(s=>s.classList.toggle('page-active',s.id===id));links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));if(title)title.textContent=names[id]||'Tổng quan kinh doanh';window.scrollTo(0,0);}
 links.forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const id=this.getAttribute('href').slice(1);if(location.hash!=='#'+id)history.pushState(null,'','#'+id);activate(id)}));
 window.addEventListener('popstate',()=>activate(location.hash.slice(1)));
@@ -980,3 +981,5 @@ document.addEventListener('ibb5-shared-updated',()=>{commitDB=window.IBB5_SHARED
 window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??null;
 
 renderQuoteBuilder(document.getElementById('pricing'),window.IBB5_CURRENT_PROFILE);
+
+renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
