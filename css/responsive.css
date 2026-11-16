@@ -232,11 +232,16 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 }
 
 /* Analytics details stay readable within each card on narrow screens. */
-#ibb5Analytics .ana-overdue-scroll { max-height: 370px; overflow: auto; margin: 14px 0 10px; border: 1px solid #e1eaf5; border-radius: 10px; }
+#ibb5Analytics .ana-overdue-card{display:flex;flex-direction:column;min-height:0}
+#ibb5Analytics .ana-overdue-scroll { flex:1 1 auto;height:0;min-height:370px;max-height:none;overflow: auto; margin: 14px 0 10px; border: 1px solid #e1eaf5; border-radius: 10px; }
 #ibb5Analytics .ana-overdue-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 #ibb5Analytics .ana-overdue-table :is(th,td) { padding: 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #e8eff7; white-space: normal; overflow-wrap: anywhere; }
 #ibb5Analytics .ana-overdue-table th { position: sticky; top: 0; z-index: 1; background: #edf4fc; color: #31577e; }
 #ibb5Analytics .ana-overdue-table td:nth-child(4) { min-width: 180px; max-width: 280px; }
+#ibb5Analytics .ana-old-filter{display:block;box-sizing:border-box;width:100%;min-width:0;margin-top:8px;padding:6px;border:1px solid #d2e0ef;border-radius:8px;background:white;color:#31577e;font:inherit;font-size:11px}
+#ibb5Analytics .ana-overdue-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
+#ibb5Analytics #anaOldReset{flex-shrink:0;padding:6px 10px;font-size:12px}
+@media(max-width:900px){#ibb5Analytics .ana-overdue-scroll{flex:initial;height:auto;min-height:0;max-height:70dvh}}
 #ibb5Analytics #anaStaffBars .ana-row { grid-template-columns: minmax(100px,1.15fr) minmax(45px,1.7fr) 82px; }
 #ibb5Analytics .ana-share-value { text-align: right; font-size: 12px; white-space: nowrap; }
 #ibb5Analytics .ana-share-value small { display: block; font-size: 12px; color: #087bdc; margin-top: 3px; }
@@ -245,7 +250,7 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #ibb5Analytics .ana-team-total { background: #edf6ff; border: 1px solid #d2e5f7; border-radius: 9px; padding: 10px 12px; margin: 10px 0; color: #174b7a; font-size: 16px; font-weight: 800; }
 @media(max-width:600px) {
   #ibb5Analytics #anaStaffBars .ana-row { grid-template-columns: minmax(100px,1.2fr) minmax(25px,1fr) 70px; gap: 7px; }
-  #ibb5Analytics .ana-overdue-scroll { max-height: 320px; }
+  #ibb5Analytics .ana-overdue-scroll { max-height: 70dvh; }
 }
 
 #ibb5Analytics .ana-overdue-table td small { display: block; color: #70879f; line-height: 1.5; margin-top: 5px; }
