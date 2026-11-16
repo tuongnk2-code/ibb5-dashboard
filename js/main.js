@@ -268,6 +268,7 @@ const filterControls=document.createElement('div');filterControls.className='pen
 const statusFilter=el('pendStatus');statusFilter.replaceWith(filterControls);
 const statusLabel=document.createElement('label');statusLabel.className='pending-status-label';statusLabel.textContent='Tình trạng HĐ';statusLabel.append(statusFilter);filterControls.append(statusLabel);
 filterControls.insertAdjacentHTML('beforeend','<label class="pending-created-month-label">Tháng tạo HĐ<select id="pendCreatedMonth" aria-label="Lọc tháng tạo HĐ"><option value="">Tất cả tháng</option></select></label>');
+filterControls.insertAdjacentHTML('beforeend','<label>Bầy<select id="pendTeam" aria-label="Lọc HĐ theo Bầy"><option value="">Tất cả Bầy</option><option value="1">Bầy 1</option><option value="2">Bầy 2</option><option value="3">Bầy 3</option></select></label>');
 const opts=(arr,selected)=>'<option value="">Chọn...</option>'+[...new Set([...arr,...(selected?[selected]:[])])].map(v=>'<option value="'+escapeHTML(v)+'"'+(selected===v?' selected':'')+'>'+escapeHTML(v)+'</option>').join('');
 const customer=x=>x.customer||x.customerName||x.customer_name||x.tenKhachHang||x.ten_khach_hang||'';
 function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn':status(x)==='overdue'?'Quá hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
@@ -289,6 +290,7 @@ a=a.filter(x=>{
 });
 a=a.filter(x=>!q||[x.id,customer(x),x.staff,x.created,x.date,x.package,teamMap[x.staff],notes[x.id]?.expected,notes[x.id]?.timeSlot,notes[x.id]?.reason,notes[x.id]?.cancelReason,notes[x.id]?.result,notes[x.id]?.source,...fields.map(f=>cellValue(x,f))].some(v=>String(v??'').toLocaleLowerCase('vi').includes(q)));
 const createdMonth=el('pendCreatedMonth').value;if(createdMonth)a=a.filter(x=>String(x.created||'').slice(0,7)===createdMonth);
+a=filterStaffTeam(a,el('pendTeam').value);
 header.querySelectorAll('.ph-filter').forEach(sel=>{if(sel.value && !sel.value.startsWith('__SORT_'))a=a.filter(x=>pendingDrafts.has(x.id)||String(cellValue(x,sel.dataset.field))===sel.value)});
 a.sort((x,y)=>(notes[x.id]?.expected||'9999-12-31').localeCompare(notes[y.id]?.expected||'9999-12-31'));if(columnSortField){const dir=columnSortDirection==='az'?1:-1;a.sort((x,y)=>String(cellValue(x,columnSortField)).localeCompare(String(cellValue(y,columnSortField)),'vi',{numeric:true,sensitivity:'base'})*dir)}return a}
 function populateFilters(){const hidden=el('pendStatus').value==='hidden',all=(hidden?hiddenContracts():el('pendQuery').value.trim()?distinct:pending()).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
@@ -362,6 +364,7 @@ function trackPendingDraft(event){if(!event.target.matches(Object.values(draftFi
 el('pendRows').addEventListener('input',trackPendingDraft);el('pendRows').addEventListener('change',trackPendingDraft);
 el('pendRows').addEventListener('change',e=>{if(!e.target.matches('.p-date,.p-time-slot,.p-note,.p-result,.p-source,.p-cancel-reason'))return;e.target.classList.remove('pending-required-error');e.target.removeAttribute('aria-invalid');const row=e.target.closest('tr');if([...row.querySelectorAll('.p-date,.p-time-slot,.p-note,.p-result,.p-source,.p-cancel-reason')].filter(input=>!input.classList.contains('p-cancel-reason')||isCancellationResult(row.querySelector('.p-result').value)).every(input=>String(input.value||'').trim()))row.querySelector('.pending-validation-message')?.remove()});
 el('pendCreatedMonth').addEventListener('change',render);
+el('pendTeam').addEventListener('change',render);
 header.addEventListener('change',e=>{if(!e.target.classList.contains('ph-filter'))return;const sel=e.target;if(sel.value==='__SORT_AZ__'||sel.value==='__SORT_ZA__'){columnSortField=sel.dataset.field;columnSortDirection=sel.value==='__SORT_AZ__'?'az':'za';header.querySelectorAll('.ph-filter').forEach(other=>{if(other!==sel && other.value.startsWith('__SORT_'))other.value='';});}else if(columnSortField===sel.dataset.field){columnSortField='';columnSortDirection='';}render()});
 let metricSelection='pendTotal';
 const metricMonth=offset=>{const date=new Date(el('pendAsOf').value+'T12:00:00Z');date.setUTCDate(1);date.setUTCMonth(date.getUTCMonth()+offset);return date.toISOString().slice(0,7);};
