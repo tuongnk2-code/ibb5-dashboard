@@ -269,7 +269,7 @@ const fields=['id','staff','customer','created','result','cancelReason','expecte
 const fieldLabels=['Mã HĐ','Nhân viên bán','Tên Khách Hàng','Ngày Tạo HĐ','Kết Quả','Lý do hủy','Ngày Online dự kiến','Mốc Hẹn Online','Nguyên Nhân Hẹn Online','Nguồn thông tin'];
 let columnSortField='',columnSortDirection='';
 const header=el('pendRows').closest('table').querySelector('thead');
-header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+escapeHTML(v)+'</div>'+'<select class="ph-filter" data-field="'+fields[i]+'" aria-label="Lọc '+escapeHTML(v)+'"><option value="">Tất cả</option></select></th>').join('')+'<th>Cập nhật</th><th>TP Duyệt hủy</th></tr>';
+header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+escapeHTML(v)+'</div>'+'<select class="ph-filter" data-field="'+fields[i]+'" aria-label="Lọc '+escapeHTML(v)+'"><option value="">Tất cả</option></select></th>').join('')+'<th><div class="ph-label">Cập nhật</div></th><th><div class="ph-label">TP Duyệt hủy</div></th></tr>';
 const filterControls=document.createElement('div');filterControls.className='pending-header-filters';
 const statusFilter=el('pendStatus');statusFilter.replaceWith(filterControls);
 const statusLabel=document.createElement('label');statusLabel.className='pending-status-label';statusLabel.textContent='Tình trạng HĐ';statusLabel.append(statusFilter);filterControls.append(statusLabel);
