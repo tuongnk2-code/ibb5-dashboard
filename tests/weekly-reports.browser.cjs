@@ -21,7 +21,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     return r.fulfill({json:{profiles,reports,trackingStart:'2026-11-04',serverTime:new Date().toISOString()}});
    });
    await page.route('https://**/*',r=>r.abort());
-   await page.goto('http://127.0.0.1:5233/#weeklyReports');const root=page.locator('#weeklyReports');await root.locator('[data-week-date]').waitFor();
+   await page.goto('http://127.0.0.1:5233/#overview');await page.locator('.sidebar a[href="#weeklyReports"]').click();const root=page.locator('#weeklyReports');await root.locator('[data-week-date]').waitFor();await root.locator('[data-rollup-content]').waitFor({state:'visible',timeout:5000});
    const today=await page.evaluate(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
    assert.equal(await root.locator('[data-week-date]').inputValue(),'2026-11-10');
    assert.match(await root.locator('.wr-data-notice').innerText(),/10\/11\/2026/);
