@@ -30,6 +30,20 @@ export default async function handler(req, res) {
     const auth = await requireProfile(req);
     if (auth.error) return fail(res, auth.status, auth.error);
     const { caller, admin } = auth;
+    if (req.method === 'GET' && (req.query?.from !== undefined || req.query?.to !== undefined)) {
+      const { from, to } = req.query;
+      if (!validDay(from) || !validDay(to) || from > to || to > reportDay() || Date.parse(to)-Date.parse(from) > 61*86400000) return fail(res, 400, 'Chọn khoảng báo cáo hợp lệ, tối đa 62 ngày và không vượt hôm nay.');
+      const profiles = check(await admin.from('profiles').select('id,full_name,acc,role,created_at').order('full_name'))
+        .filter(p => p.role !== 'manager' && canSeeReport(caller,p) && (!p.created_at || reportDay(new Date(p.created_at)) <= to))
+        .map(p => ({...p,team:teamOf(p)}));
+      const ids = profiles.map(p=>p.id), reports=[];
+      if(ids.length) for(let offset=0;;offset+=1000){
+        const batch=check(await admin.from('daily_reports').select('*').in('user_id',ids).gte('report_date',from).lte('report_date',to).order('report_date').order('user_id').range(offset,offset+999));
+        reports.push(...batch);if(batch.length<1000)break;
+      }
+      const first=ids.length?check(await admin.from('daily_reports').select('report_date').in('user_id',ids).order('report_date').limit(1)):[];
+      return res.status(200).json({profiles,reports,trackingStart:first[0]?.report_date||null,serverTime:new Date().toISOString()});
+    }
     if (req.method === 'GET' && req.query?.history === 'mine') {
       const month = req.query.month;
       if (typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || !validDay(month + '-01')) return fail(res, 400, 'Chọn tháng báo cáo hợp lệ.');

@@ -141,6 +141,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       const saved = await api('POST', { date, action, revision: own()?.revision || 0, data });
       snapshot.reports = snapshot.reports.filter(r => r.user_id !== me.id);
       snapshot.reports.push(saved.report);
+      document.dispatchEvent(new CustomEvent('ibb5-daily-report-updated'));
       drawBoard();
       dirty = false; await load();
       if (saved.report.status === 'submitted') { $('#drHistoryMonth').value = date.slice(0, 7); await loadHistory(); }
