@@ -14,7 +14,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE={id:'test',role:'${role}',acc:'DNG.ManLM3'};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';await import('/js/main.js');`}));
    await page.route('https://**/*',r=>r.abort());
    await page.goto('http://127.0.0.1:5233/#weeklyReports');const root=page.locator('#weeklyReports');await root.locator('[data-week-date]').waitFor();
-   const today=await page.evaluate(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));assert.equal(await root.locator('[data-week-date]').inputValue(),today);
+   const today=await page.evaluate(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
+   assert.equal(await root.locator('[data-week-date]').inputValue(),'2026-11-10');
+   assert.match(await root.locator('.wr-data-notice').innerText(),/10\/11\/2026/);
+   await root.locator('[data-week-today]').click();assert.equal(await root.locator('[data-week-date]').inputValue(),today);
+   if(today>='2026-11-16'){assert.equal(await root.locator('.wr-summary [data-week-kind="online"]').textContent(),'0');await root.locator('[data-week-latest]').click();assert.equal(await root.locator('[data-week-date]').inputValue(),'2026-11-10');}
    await root.locator('[data-week-date]').fill('2026-11-10');await root.locator('[data-week-date]').dispatchEvent('change');
    assert.match(await root.locator('[data-week-range]').innerText(),/09\/11\/2026.*15\/11\/2026/);
    const count=role==='manager'?2:1;assert.equal(await root.locator('.wr-summary [data-week-kind="online"]').textContent(),String(count));

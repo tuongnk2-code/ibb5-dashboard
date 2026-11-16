@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { weeklyPeriod, weeklyReport } from '../js/weeklyReportModel.js';
+import { weeklyPeriod, weeklyReport, latestWeeklyActivity } from '../js/weeklyReportModel.js';
 assert.deepEqual(weeklyPeriod('2027-01-01','2027-01-01'),{start:'2026-12-28',end:'2027-01-03',asOf:'2027-01-01',future:false,previousStart:'2026-12-21',previousEnd:'2026-12-25'});
 assert.equal(weeklyPeriod('2026-11-15','2026-11-16').start,'2026-11-09');
 const record=(id,staff,created,date='',type='Internet',extra={})=>({id,staff,created,date,type,...extra});
@@ -13,5 +13,9 @@ const staff=weeklyReport(data,{...options,canView:row=>row.staff==='DNG.ManLM3'}
 const team=weeklyReport(data,{...options,team:'1'});assert.equal(team.groups.online.length,1);assert.equal(team.groups.camera.length,1);assert.equal(team.staffCount,6);
 const future=weeklyReport(data,{...options,anchor:'2026-11-30'});assert.equal(future.groups.pending.length,0);assert.equal(future.groups.online.length,0);
 assert.equal(weeklyReport([],options).hasPrevious,false);
+assert.equal(latestWeeklyActivity(data,{today:'2026-11-16',canView:()=>true}),'2026-11-10');
+assert.equal(latestWeeklyActivity([...data,record('FUTURE','DNG.ManLM3','2026-12-01','2026-12-01')],{today:'2026-11-16',canView:()=>true}),'2026-11-10');
+assert.equal(latestWeeklyActivity(data,{today:'2026-11-16',canView:row=>row.staff==='DNG.ManLM3'}),'2026-11-09');
+assert.equal(latestWeeklyActivity([],{canView:()=>true}),null);
 const crossYear=weeklyReport([record('NEW','DNG.ManLM3','2026-12-31','2027-01-01')],{...options,anchor:'2027-01-01',today:'2027-01-04'});assert.equal(crossYear.groups.online.length,1);
 console.log('PASS: weekly dates, equal-period comparison, cancellation/scope, deduplication, service sources, pending age and role filtering');

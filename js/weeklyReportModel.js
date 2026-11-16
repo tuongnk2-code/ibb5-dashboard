@@ -8,6 +8,11 @@ import { STAFF_ROSTER } from './staffRoster.js';
 const norm = value => String(value || '').trim().toLowerCase();
 const unique = rows => [...new Map(rows.filter(row => row.id).map(row => [String(row.id).trim().toUpperCase(), row])).values()];
 const between = (value, start, end) => validDay(value) && value >= start && value <= end;
+export function latestWeeklyActivity(data, {today=reportDay(),canView=()=>false,team='',roster=STAFF_ROSTER}={}) {
+  const dates=data.filter(includeInDashboardReports).filter(row=>['Internet','Truyền hình','Camera'].includes(row.type)&&canView(row)&&(!team||roster.some(person=>String(person.team)===String(team)&&norm(person.acc)===norm(row.staff))))
+    .flatMap(row=>[row.created,row.date]).filter(value=>validDay(value)&&value<=today);
+  return dates.sort().at(-1)||null;
+}
 export function weeklyPeriod(anchor, today = reportDay()) {
   if (!validDay(anchor)) anchor = today;
   const weekday = new Date(anchor+'T12:00:00Z').getUTCDay();
