@@ -12,7 +12,8 @@ export function filterStaffTeam(rows, team = '', roster = STAFF_ROSTER) {
 
 export function overdueContracts(rows, asOf) {
   if (!validDay(asOf)) return [];
-  return unique(rows).filter(row => validDay(row.created) && row.created <= asOf && (!row.date || row.date > asOf))
+  // Use the latest NET row's source status, never the historical cancellation archive or follow-up result.
+  return unique(rows).filter(row => row.type === 'Internet' && String(row.status || '').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('vi-VN') === 'bình thường' && validDay(row.created) && row.created <= asOf && (!row.date || row.date > asOf))
     .map(row => ({ ...row, age: Math.floor((Date.parse(asOf+'T00:00:00Z')-Date.parse(row.created+'T00:00:00Z'))/86400000) }))
     .filter(row => row.age > 5).sort((a,b) => b.age-a.age || a.id.localeCompare(b.id));
 }

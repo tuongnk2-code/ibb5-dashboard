@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { overdueContracts, monthlyStaffChannels, SALES_CHANNELS, filterStaffTeam } from '../js/analyticsDetails.js';
+import { mergeNetSnapshot } from '../js/dashboardStateModel.js';
+
+test('overdue list and total use the latest NET status, regardless of creation month', () => {
+  const old = ['2026-09-01','2026-10-01','2026-11-01'].map((created,i)=>({id:'NET'+i,type:'Internet',created,date:'',status:'Bình thường'}));
+  const latest = old.map(row=>({...row,status:' ĐÃ CHẤM DỨT   HỢP ĐỒNG '}));
+  const merged = mergeNetSnapshot({data:old},{data:latest});
+  assert.equal(overdueContracts(old,'2026-11-16').length,3);
+  assert.deepEqual(overdueContracts(merged.data,'2026-11-16'),[]);
+  const restored = mergeNetSnapshot(merged,{data:[{...old[2],status:'Bình thường'}]});
+  assert.deepEqual(overdueContracts(restored.data,'2026-11-16').map(row=>row.id),['NET2']);
+});
 
 test('overdue detail matches the >5-day cutoff and actual online date', () => {
   const rows = [
@@ -8,9 +19,16 @@ test('overdue detail matches the >5-day cutoff and actual online date', () => {
     {id:'B',created:'2026-10-30',date:''}, {id:'C',created:'2026-10-25',date:'2026-11-04'},
     {id:'D',created:'2026-10-20',date:'2026-11-05'}, {id:'E',created:'2026-11-05',date:''},
     {id:'F',created:'invalid',date:''},
-  ];
+  ].map(row=>({...row,type:'Internet',status:'Bình thường'}));
   assert.deepEqual(overdueContracts(rows,'2026-11-04').map(row=>[row.id,row.age]),[['D',15],['A',6]]);
   assert.deepEqual(overdueContracts(rows,''),[]);
+});
+
+test('overdue list accepts only normal NET source status, independent of staff follow-up results',()=>{
+  const row={id:'NET',type:'Internet',created:'2026-11-01',date:''};
+  for(const status of ['Bình thường','  BÌNH   THƯỜNG  ','Bình thường'.normalize('NFD')])assert.equal(overdueContracts([{...row,status}],'2026-11-16').length,1);
+  for(const status of ['Đã chấm dứt hợp đồng','Hủy','Tạm ngưng','Chưa Bình thường','',null])assert.equal(overdueContracts([{...row,status}],'2026-11-16').length,0);
+  assert.equal(overdueContracts([{...row,type:'Camera',status:'Bình thường'}],'2026-11-16').length,0);
 });
 
 test('monthly channels show the full roster, fixed channels, source aliases and conserved totals', () => {

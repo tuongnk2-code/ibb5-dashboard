@@ -5,7 +5,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  const server=await createServer({server:{host:'127.0.0.1',port:5244,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
  try{
-  const data=Array.from({length:90},(_,i)=>({id:'OLD'+i,type:'Internet',staff:i%2?'DNG.Vypv':'DNG.ManLM3',room:'IBB5',created:i%4?'2026-11-08':'2026-11-04',date:''}));
+  const data=Array.from({length:90},(_,i)=>({id:'OLD'+i,type:'Internet',status:'Bình thường',staff:i%2?'DNG.Vypv':'DNG.ManLM3',room:'IBB5',created:i%4?'2026-11-08':'2026-11-04',date:''}));
   data.push(...STAFF_ROSTER.map((person,i)=>({id:'ONLINE'+i,type:'Internet',staff:person.acc,room:'IBB5',created:'2026-11-01',date:'2026-11-15'})));
   const notes=Object.fromEntries(data.filter(row=>row.id.startsWith('OLD')).map((row,i)=>[row.id,{action:i%3?'KH muốn hẹn ngày đó':'Khác',expected:'2026-11-20',result:'Chưa Online'}]));notes.OLD2.action='<img src=x onerror=alert(1)>';
   for(const role of ['manager','staff']){
@@ -27,6 +27,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await card.locator('[data-field="id"]').selectOption('OLD12');assert.equal(await rows.count(),1);assert.equal(await rows.first().getAttribute('data-overdue-id'),'OLD12');assert.match(await page.locator('#anaOldScope').textContent(),/1 \/ (90|45)/);
    await page.evaluate(()=>{window.IBB5_PENDING_NOTES.OLD12.action='Đã đổi nguyên nhân';window.dispatchEvent(new Event('storage'));});assert.equal(await rows.count(),0);
    await page.locator('#anaOldReset').click();assert.equal(await rows.count(),role==='manager'?90:45);assert.equal(await page.locator('#anaOld').textContent(),'90');
+   await page.evaluate(()=>{window.IBB5_IMPORTED_DATA.find(row=>row.id==='OLD88').status='Đã chấm dứt hợp đồng';window.dispatchEvent(new Event('storage'));});assert.equal(await rows.count(),role==='manager'?89:44);assert.equal(await page.locator('#anaOld').textContent(),'89');assert.equal(await card.locator('[data-overdue-id="OLD88"]').count(),0);assert.equal(await card.locator('[data-field="id"] option[value="OLD88"]').count(),0);
+   await page.evaluate(()=>{window.IBB5_IMPORTED_DATA.find(row=>row.id==='OLD86').status='Tạm ngưng';window.dispatchEvent(new Event('storage'));});assert.equal(await rows.count(),role==='manager'?88:43);assert.equal(await page.locator('#anaOld').textContent(),'88');assert.equal(await card.locator('[data-overdue-id="OLD86"]').count(),0);
    await list.scrollIntoViewIfNeeded();await list.evaluate(el=>{el.scrollTop=0;});await page.evaluate(()=>new Promise(requestAnimationFrame));const top=await card.locator('thead th').first().evaluate(el=>el.getBoundingClientRect().top);await list.evaluate(el=>{el.scrollTop=300;});await page.evaluate(()=>new Promise(requestAnimationFrame));const after=await card.locator('thead th').first().evaluate(el=>el.getBoundingClientRect().top);assert.ok(Math.abs(after-top)<2,JSON.stringify({role,top,after}));
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
    if(process.env.ANALYTICS_SCREENSHOT_DIR)await card.screenshot({path:process.env.ANALYTICS_SCREENSHOT_DIR+'/analytics-overdue-'+role+'.png'});
