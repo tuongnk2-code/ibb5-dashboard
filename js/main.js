@@ -1,4 +1,5 @@
 import { renderWeeklyReports } from './weeklyReports.js';
+import { installDashboardAssistant } from './dashboardAssistant.js';
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
@@ -1007,3 +1008,5 @@ window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??n
 renderQuoteBuilder(document.getElementById('pricing'),window.IBB5_CURRENT_PROFILE);
 
 renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
+
+installDashboardAssistant({getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getProfile:()=>window.IBB5_CURRENT_PROFILE,getCommitments:()=>window.IBB5_SHARED_STATE?.commitments||commitDB});
