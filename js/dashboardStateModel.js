@@ -65,6 +65,7 @@ export function mergeNetSnapshot(previous, incoming) {
 }
 export const isCancellationResult = value => ['hủy', 'huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN'));
 export const skipsOnlineAppointment = value => isCancellationResult(value) || ['dự kiến hủy', 'dự kiến huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN').replace(/\s+/g, ' '));
+export const requiresCancellationReason = value => skipsOnlineAppointment(value);
 export function validateNote(value) {
   if (!value || typeof value !== 'object') throw new Error('Nội dung cập nhật không hợp lệ.');
   const skipAppointment = skipsOnlineAppointment(value.result), expected = value.expected ?? '';
@@ -77,6 +78,6 @@ export function validateNote(value) {
   }
   if (value.cancelReason != null && (typeof value.cancelReason !== 'string' || value.cancelReason.length > 1000)) throw new Error('Lý do hủy tối đa 1.000 ký tự.');
   result.cancelReason = String(value.cancelReason || '').trim();
-  if (isCancellationResult(result.result) && !result.cancelReason) throw new Error('Vui lòng nhập lý do hủy hợp đồng.');
+  if (requiresCancellationReason(result.result) && !result.cancelReason) throw new Error('Vui lòng nhập lý do hủy hoặc dự kiến hủy hợp đồng.');
   return result;
 }

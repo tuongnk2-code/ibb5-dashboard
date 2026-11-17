@@ -17,7 +17,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.exposeFunction('validateSavedNote',(id,value)=>{const clean=validateNote(value);saved.push({id,...clean});return {...clean,updated:new Date().toISOString()};});
    await page.goto('http://127.0.0.1:5188/#pendingContracts');await page.locator('#pendRows tr[data-id="C1"]').waitFor();
    await page.evaluate(()=>{window.IBB5_SYNC={pending:async(id,value)=>{const entry=await window.validateSavedNote(id,value);window.IBB5_PENDING_NOTES[id]=entry;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:'+id]}}));return entry;}};});
-   assert.deepEqual((await page.locator('.pending-table thead .ph-label').allTextContents()).slice(0,7),['Mã HĐ','Nhân viên bán','Tên Khách Hàng','Ngày Tạo HĐ','Kết Quả','Lý do hủy','Ngày Online dự kiến']);
+   assert.deepEqual((await page.locator('.pending-table thead .ph-label').allTextContents()).slice(0,7),['Mã HĐ','Nhân viên bán','Tên Khách Hàng','Ngày Tạo HĐ','Kết Quả','Lý do hủy/dự kiến hủy','Ngày Online dự kiến']);
    for(const [id,result] of [['C1','Dự Kiến Hủy'],['C2','Hủy']]){
     const row=page.locator('#pendRows tr[data-id="'+id+'"]');
     if(mobile){
@@ -25,17 +25,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      await form.locator('[name="result"]').selectOption(result);
      assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),false);assert.equal(await form.locator('[name="timeSlot"]').evaluate(el=>el.required),false);assert.equal(await form.locator('[name="expected"]').isVisible(),false);assert.equal(await form.locator('[name="timeSlot"]').isVisible(),false);
      await form.locator('[name="result"]').selectOption('Chưa Online');assert.equal(await form.locator('[name="expected"]').evaluate(el=>el.required),true);assert.equal(await form.locator('[name="expected"]').isVisible(),true);assert.equal(await form.locator('[name="timeSlot"]').isVisible(),true);await form.locator('[name="result"]').selectOption(result);
-     await form.locator('[name="action"]').selectOption('Khác');if(result==='Hủy')await form.locator('[name="cancelReason"]').fill('Khách yêu cầu');
+     await form.locator('[name="action"]').selectOption('Khác');assert.equal(await form.locator('[name="cancelReason"]').isVisible(),true);assert.equal(await form.locator('[name="cancelReason"]').evaluate(el=>el.required),true);
      assert.equal(await form.evaluate(el=>el.checkValidity()),false);assert.equal(saved.length,id==='C1'?0:1);
-     await form.locator('[name="source"]').selectOption('Web');assert.equal(await form.evaluate(el=>el.checkValidity()),true);await form.locator('[type="submit"]').click();await page.locator('#pendingMobileEditor').waitFor({state:'hidden'});
+     await form.locator('[name="source"]').selectOption('Web');assert.equal(await form.evaluate(el=>el.checkValidity()),false);await form.locator('[name="cancelReason"]').fill('Khách yêu cầu');assert.equal(await form.evaluate(el=>el.checkValidity()),true);await form.locator('[type="submit"]').click();await page.locator('#pendingMobileEditor').waitFor({state:'hidden'});
     }else{
      await row.locator('.p-result').selectOption(result);
      assert.equal(await row.locator('td').nth(4).locator('.p-result').count(),1);assert.equal(await row.locator('.p-date').isVisible(),false);assert.equal(await row.locator('.p-time-slot').isVisible(),false);await row.locator('.p-result').selectOption('Chưa Online');assert.equal(await row.locator('.p-date').evaluate(el=>el.hidden),false);assert.equal(await row.locator('.p-time-slot').evaluate(el=>el.hidden),false);await row.locator('.p-result').selectOption(result);
-     await row.locator('.p-note').selectOption('Khác');if(result==='Hủy')await row.locator('.p-cancel-reason').fill('Khách yêu cầu');
+     await row.locator('.p-note').selectOption('Khác');assert.equal(await row.locator('.p-cancel-reason').isVisible(),true);assert.equal(await row.locator('.p-cancel-reason').evaluate(el=>el.required),true);
      await row.locator('.p-save').click();assert.equal(saved.length,id==='C1'?0:1);assert.match(await row.locator('.pending-validation-message').textContent(),/Nguồn thông tin/);
-     await row.locator('.p-source').selectOption('Web');await row.locator('.p-save').click();await row.locator('.p-save').filter({hasText:'Đã lưu'}).waitFor();
+     await row.locator('.p-source').selectOption('Web');await row.locator('.p-save').click();assert.equal(saved.length,id==='C1'?0:1);assert.match(await row.locator('.pending-validation-message').textContent(),/Lý do hủy\/dự kiến hủy/);await row.locator('.p-cancel-reason').fill('Khách yêu cầu');await row.locator('.p-save').click();await row.locator('.p-save').filter({hasText:'Đã lưu'}).waitFor();
     }
-    const last=saved.at(-1);assert.equal(last.id,id);assert.equal(last.expected,'');assert.equal(last.timeSlot,'');assert.equal(last.action,'Khác');assert.equal(last.source,'Web');
+    const last=saved.at(-1);assert.equal(last.id,id);assert.equal(last.expected,'');assert.equal(last.timeSlot,'');assert.equal(last.action,'Khác');assert.equal(last.source,'Web');assert.equal(last.cancelReason,'Khách yêu cầu');
    }
    assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await ctx.close();
   }

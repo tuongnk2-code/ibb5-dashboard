@@ -11,7 +11,7 @@ const same = (a,b) => normalize(a) === normalize(b);
 const unique = rows => [...new Map(rows.map(row=>[row.type+':'+String(row.id).toUpperCase(),row])).values()];
 const between = (day,start,end) => validDay(day) && day >= start && day <= end;
 export const NOTE_FIELDS = ['expected','timeSlot','action','result','source','cancelReason'];
-export const NOTE_LABELS = {expected:'Ngày Online dự kiến',timeSlot:'Mốc hẹn Online',action:'Nguyên nhân hẹn',result:'Kết quả nhân viên cập nhật',source:'Nguồn thông tin',cancelReason:'Lý do hủy'};
+export const NOTE_LABELS = {expected:'Ngày Online dự kiến',timeSlot:'Mốc hẹn Online',action:'Nguyên nhân hẹn',result:'Kết quả nhân viên cập nhật',source:'Nguồn thông tin',cancelReason:'Lý do hủy/dự kiến hủy'};
 export function assistantScope(question, scope = {}, today = reportDay()) {
   const q=normalize(question), result={period:scope.period||'month',anchor:validDay(scope.anchor)?scope.anchor:today,team:scope.team||'',staff:scope.staff||''};
   if (/hom nay/.test(q)) Object.assign(result,{period:'day',anchor:today});

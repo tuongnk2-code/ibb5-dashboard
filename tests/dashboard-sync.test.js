@@ -174,13 +174,14 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 
-test('cancellation requires a reason only for the final Hủy result',()=>{
+test('final and planned cancellations both require a reason',()=>{
   const note={expected:'2026-11-05',timeSlot:'8h - 10h',action:'Khác',source:'Web',result:'Hủy'};
   assert.throws(()=>validateNote(note),/lý do hủy/);
   assert.throws(()=>validateNote({...note,cancelReason:'  '}),/lý do hủy/);
   assert.throws(()=>validateNote({...note,cancelReason:'x'.repeat(1001)}),/1.000/);
   assert.equal(validateNote({...note,cancelReason:' Khách không còn nhu cầu '}).cancelReason,'Khách không còn nhu cầu');
-  assert.equal(validateNote({...note,result:'Dự Kiến Hủy'}).cancelReason,'');
+  assert.throws(()=>validateNote({...note,result:'Dự Kiến Hủy'}),/lý do hủy/);
+  assert.equal(validateNote({...note,result:'Dự Kiến Hủy',cancelReason:'Đang trao đổi với khách'}).cancelReason,'Đang trao đổi với khách');
   assert.equal(validateNote({...note,result:'Chưa Online'}).cancelReason,'');
 });
 
