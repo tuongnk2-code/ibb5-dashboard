@@ -22,16 +22,21 @@ export function renderMarketReports(root, me) {
   const badge = report => `<span class="mk-badge mk-${state(report)}">${STATE_LABEL[state(report)]}</span>`;
   const eligible = (profile, day) => !profile.created_at || reportDay(new Date(profile.created_at)) <= day;
   const profiles = () => (snapshot?.profiles || []).filter(p => (!$('#mkTeam').value || String(p.team) === $('#mkTeam').value) && reportIdentity(p).toLowerCase().includes($('#mkSearch').value.trim().toLowerCase()));
-  async function api(method = 'GET', body) {
+  let formBaseline = null;
+  const formSignature = () => JSON.stringify([...$('#mkForm').querySelectorAll('[name]')].map(c => [c.name, c.value]));
+  const hasEdits = () => dirty || (formBaseline !== null && formSignature() !== formBaseline);
+  const focusedFormField = () => !$('#mkFields').disabled && $('#mkForm').contains(document.activeElement) && document.activeElement.matches('input, select, textarea');
+  $('#mkFields').disabled = true;
+  async function api(method = 'GET', body, requestDate = date) {
     const session = await getSession(); if (!session) throw new Error('Phiên đăng nhập đã hết hạn.');
-    const response = await fetch('/api/market-reports' + (method === 'GET' ? '?date=' + date : ''), { method, cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: method === 'POST' ? JSON.stringify({ date, ...body }) : undefined });
+    const response = await fetch('/api/market-reports' + (method === 'GET' ? '?date=' + requestDate : ''), { method, cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: method === 'POST' ? JSON.stringify({ date: requestDate, ...body }) : undefined });
     const value = await response.json().catch(() => ({})); if (!response.ok) throw new Error(value.error || 'Không kết nối được báo cáo thị trường.'); return value;
   }
   function message(text, error = false) { $('#mkMessage').hidden = !text; $('#mkMessage').textContent = text; $('#mkMessage').className = error ? 'mk-error' : 'mk-success'; }
   function fill() {
     const report = own(), data = report?.data || {};
     for (const control of $('#mkForm').querySelectorAll('[name]')) control.value = data[control.name] ?? (control.type === 'number' ? 0 : '');
-    editRevision = report?.revision || 0; dirty = false;
+    editRevision = report?.revision || 0; dirty = false; formBaseline = formSignature();
   }
   function detail(userId, day) {
     const person = snapshot.profiles.find(p => p.id === userId); if (!person) return;
@@ -97,13 +102,14 @@ export function renderMarketReports(root, me) {
     for (let i = 0; i < 5; i++) pin(head[1].cells[i], i + 1, i === 4);
   }
   new ResizeObserver(pinMonthSummary).observe(root.querySelector('.mk-matrix'));
-  async function load(refreshForm = false) {
-    const token = ++generation;
+  async function load() {
+    const token = ++generation, requestDate = date;
     try {
-      const value = await api(); if (token !== generation) return;
+      const value = await api('GET', undefined, requestDate); if (token !== generation || requestDate !== date) return false;
       snapshot = value; offset = Date.parse(value.serverTime) - Date.now();
-      if (refreshForm || !dirty) fill(); board();
-    } catch (e) { if (token === generation) message(e.message, true); }
+      // Refresh the tables without overwriting edits or a field currently in use.
+      if (!hasEdits() && !focusedFormField()) fill(); board(); return true;
+    } catch (e) { if (token === generation) message(e.message, true); return false; }
   }
   async function save(action, personId) {
     if (busy || !snapshot) return;
@@ -115,21 +121,25 @@ export function renderMarketReports(root, me) {
       data = validateMarketReport(data);
     } catch (e) { return message(e.message, true); }
     const previous = snapshot.reports.find(r => r.user_id === personId && r.report_date === date);
-    busy = true; board();
+    busy = true; ++generation; board();
     try {
-      await api('POST', { action, user_id: personId, data, reason, revision: personId ? previous?.revision || 0 : editRevision });
-      dirty = false; await load(true); message(action === 'draft' ? 'Đã lưu nháp. Chưa tính vào kết quả tháng.' : 'Đã lưu báo cáo thị trường trên hệ thống.');
+      const { report } = await api('POST', { action, user_id: personId, data, reason, revision: personId ? previous?.revision || 0 : editRevision });
+      snapshot.reports = snapshot.reports.filter(r => r.user_id !== report.user_id || r.report_date !== report.report_date).concat(report);
+      // Accept the saved revision even if the following refresh loses connection.
+      if (!personId || personId === me.id) fill();
+      const refreshed = await load();
+      message((action === 'draft' ? 'Đã lưu nháp. Chưa tính vào kết quả tháng.' : 'Đã lưu báo cáo thị trường trên hệ thống.') + (refreshed ? '' : ' Chưa tải lại được bảng; hệ thống sẽ thử đồng bộ lại.'), !refreshed);
     } catch (e) { message(e.message, true); }
     finally { busy = false; board(); }
   }
   $('#mkForm').onsubmit = e => { e.preventDefault(); save('submit'); };
-  $('#mkForm').oninput = () => { dirty = true; message('Nội dung đang sửa chưa được lưu.'); };
+  $('#mkForm').oninput = $('#mkForm').onchange = () => { dirty = true; message('Nội dung đang sửa chưa được lưu.'); };
   $('#mkDraft').onclick = () => save('draft');
-  $('#mkReload').onclick = () => { if (!dirty || confirm('Tải lại sẽ thay nội dung chưa lưu. Tiếp tục?')) load(true); };
+  $('#mkReload').onclick = () => { if (!hasEdits() || confirm('Tải lại sẽ thay nội dung chưa lưu. Tiếp tục?')) { dirty = false; formBaseline = formSignature(); load(); } };
   $('#mkDate').onchange = () => {
-    if (dirty && !confirm('Đổi ngày sẽ bỏ nội dung chưa lưu. Tiếp tục?')) { $('#mkDate').value = date; return; }
+    if (hasEdits() && !confirm('Đổi ngày sẽ bỏ nội dung chưa lưu. Tiếp tục?')) { $('#mkDate').value = date; return; }
     if (!$('#mkDate').value || $('#mkDate').value > reportDay()) { $('#mkDate').value = date; return; }
-    date = $('#mkDate').value; dirty = false; snapshot = null; $('#mkFields').disabled = true; message(''); load(true);
+    date = $('#mkDate').value; dirty = false; formBaseline = null; snapshot = null; $('#mkFields').disabled = true; message(''); load();
   };
   for (const id of ['mkTeam', 'mkFilter', 'mkView']) $('#' + id).onchange = board;
   $('#mkSearch').oninput = board;
@@ -144,9 +154,9 @@ export function renderMarketReports(root, me) {
     const url = URL.createObjectURL(new Blob(['\ufeff' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'IBB5_Thi_Truong_' + date + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (hasEdits()) { e.preventDefault(); e.returnValue = ''; } });
   let loading = false;
   async function sync() { if (loading || busy || document.hidden || !root.closest('.panel').classList.contains('page-active')) return; loading = true; try { await load(); } finally { loading = false; } }
   setInterval(sync, 5000); window.addEventListener('focus', sync); window.addEventListener('online', sync); document.addEventListener('visibilitychange', sync); window.addEventListener('hashchange', sync);
-  load(true);
+  load();
 }
