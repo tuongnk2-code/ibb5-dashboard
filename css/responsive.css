@@ -372,6 +372,9 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts .pending-table :is(th,td):nth-child(12) { width: 96px!important; min-width: 96px!important; max-width: 96px!important; text-align:center; }
 #pendingContracts button.p-cancel-approve { background: #fff0f0; border-color: #f0baba; color: #b42323; font-size: 12px; white-space: nowrap; }
 #pendingContracts button.p-cancel-approve:disabled { opacity: .55; cursor: wait; }
+#pendingContracts .pending-table .p-manager-decision{width:100%;min-width:0;padding:7px 2px;font-size:11px;background:#fff7ef;color:#8d4219;border:1px solid #f0c8a3;border-radius:8px}
+#pendingContracts .p-continue-status{display:inline-block;white-space:normal;color:#175590;background:#eaf4ff;border-radius:6px;padding:5px;font-size:11px;font-weight:700}
+#pendingContracts .p-manager-decision:disabled{opacity:.55;cursor:default}
 #pendingContracts .p-manager-only { font-size: 11px; color: #677c94; }
 #pendingContracts .p-save.is-saved:disabled { color: #087653; background: #e9f7ef; border-color: #b7dfca; opacity: 1; cursor: default; }
 #pendingMobileEditor .p-cancel-approve { margin-top: 12px; width: 100%; min-height: 42px; }

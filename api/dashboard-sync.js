@@ -1,7 +1,8 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
 import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData } from '../js/dashboardStateModel.js';
-import { canSeeReport, validDay } from '../js/dailyReportModel.js';
+import { canSeeReport, validDay, reportDay } from '../js/dailyReportModel.js';
+import { isTerminatedNetContract } from '../js/cancellationArchive.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
 const int = v => { if (!Number.isInteger(v) || v < 0 || v > 100000) throw new Error('Cam kết phải là số nguyên từ 0 đến 100.000.'); return v; };
@@ -54,20 +55,24 @@ export default async function handler(req, res) {
       const previous = await sharedRow(admin, key);
       data = mergeNetSnapshot(previous?.data, body.snapshot);
       data.meta = importAudit(previous?.data.meta, data.meta, body.types || [], caller, now, data.data);
-    } else if (body.kind === 'pending' || body.kind === 'cancelPending') {
-      if (body.kind === 'cancelPending' && caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được duyệt hủy hợp đồng.');
+    } else if (['pending','cancelPending','continuePending'].includes(body.kind)) {
+      if (body.kind !== 'pending' && caller.role !== 'manager') return bad(res, 403, 'Chỉ Trưởng phòng được duyệt hủy hoặc yêu cầu xử lý tiếp hợp đồng.');
       if (typeof body.id !== 'string' || !/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(body.id)) return bad(res, 400, 'Mã hợp đồng không hợp lệ.');
       const snapshot = await sharedRow(admin, 'snapshot');
       let contracts = snapshot?.data.data.filter(r => r.type === 'Internet' && r.id === body.id);
-      if (!contracts) { const result = await admin.from('contracts').select('id,staff').eq('type', 'Internet').eq('id', body.id); if (result.error) throw result.error; contracts = result.data; }
+      if (!contracts) { const result = await admin.from('contracts').select('id,type,staff,date,status').eq('type', 'Internet').eq('id', body.id); if (result.error) throw result.error; contracts = result.data; }
       if (!contracts.some(r => canSeeReport(caller, { id: normAcc(r.staff)===normAcc(caller.acc)&&caller.acc?caller.id:null, acc: r.staff, role: 'staff' }))) return bad(res, 403, 'Không có quyền cập nhật hợp đồng này.');
       key = 'pending:' + body.id;
       const existing = await sharedRow(admin, key);
       if (existing?.data.cancellationApproved) return bad(res, 409, 'Hợp đồng đã được Trưởng phòng duyệt hủy. Bấm Đồng bộ để cập nhật danh sách.');
-      if (body.kind === 'cancelPending' && (!isCancellationResult(existing?.data.result) || !existing?.data.cancelReason?.trim())) return bad(res, 400, 'Hợp đồng cần lưu Kết quả Hủy và lý do hủy trước khi TP duyệt.');
+      if (body.kind !== 'pending' && (!isCancellationResult(existing?.data.result) || !existing?.data.cancelReason?.trim())) return bad(res, 400, 'Hợp đồng cần lưu Kết quả Hủy và lý do hủy trước khi TP duyệt.');
+      if(body.kind==='continuePending'&&contracts.some(isTerminatedNetContract))return bad(res,409,'HĐ đã chấm dứt trong nguồn NET; không thể yêu cầu xử lý tiếp.');
+      const followup=existing?.data.processingRequestedAt?{processingRequestedAt:existing.data.processingRequestedAt,processingRequestedBy:existing.data.processingRequestedBy,processingCancelReason:existing.data.processingCancelReason,processingRespondedAt:now}:{};
       data = body.kind === 'cancelPending'
         ? { ...existing?.data, cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
-        : { ...validateNote({ ...body.value, cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' }), updated: now, updatedBy: caller.acc || caller.id };
+        : body.kind==='continuePending'
+        ? {...existing.data,result:contracts.some(row=>validDay(row.date)&&row.date<=reportDay())?'Đã Online':'Chưa Online',processingRequestedAt:now,processingRequestedBy:caller.acc||caller.id,processingCancelReason:existing.data.cancelReason,processingRespondedAt:null,updated:now,updatedBy:caller.acc||caller.id}
+        : { ...validateNote({ ...body.value, cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' }),...followup, updated: now, updatedBy: caller.acc || caller.id };
     } else if (body.kind === 'commit') {
       key = monthKey(body.month, body.room || '__ALL__');
       const manager = caller.role === 'manager';

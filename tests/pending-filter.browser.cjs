@@ -109,7 +109,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.evaluate(result=>{window.IBB5_PENDING_NOTES.LATE.result=result;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LATE']}}));},result);
     assert.deepEqual(await ids(),[]);
     await page.locator('#pendStatus').selectOption('awaiting-cancellation');assert.deepEqual(await ids(),['LATE']);
-    assert.equal(await page.locator('#pendRows .p-cancel-approve').count(),role==='manager'?1:0);
+    assert.equal(await page.locator('#pendRows .p-manager-decision').count(),role==='manager'?1:0);
     const approvalDownload=page.waitForEvent('download');await page.locator('#pendExport').click();const approvalCsv=fs.readFileSync(await (await approvalDownload).path(),'utf8');assert.match(approvalCsv,/LATE/);assert.doesNotMatch(approvalCsv,/CANCEL|ONLINE|OUTSIDE/);
     await page.locator('#pendStatus').selectOption('due');assert.ok(!(await ids()).includes('LATE'));
     await page.locator('#pendStatus').selectOption('overdue-active');assert.deepEqual(await ids(),[]);

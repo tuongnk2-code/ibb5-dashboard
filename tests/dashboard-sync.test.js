@@ -146,6 +146,28 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal(mayState.snapshot.data.length,historyBeforeMay.snapshot.data.length+3);
     assert.deepEqual(mayState.notes,historyBeforeMay.notes);
     assert.deepEqual(mayState.snapshot.cancelledNet,historyBeforeMay.snapshot.cancelledNet);
+    // Manager can return a saved cancellation request to processing, with audit and conflict checks.
+    rows.get('snapshot').data.data.push({id:'RETURN',type:'Internet',staff:'DNG.ManLM3',created:'2026-11-01',date:'',status:'Bình thường'});
+    caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
+    const cancel={...note,result:'Hủy',expected:'',timeSlot:'',cancelReason:'Khách cần trao đổi lại'};
+    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:0,value:{...cancel,processingRequestedAt:'forged'}})).code,200);
+    assert.equal((await invoke('GET')).body.notes.RETURN.processingRequestedAt,undefined);
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:1})).code,403);
+    caller={id:'lead',role:'lead',acc:'DNG.HoaNTB6'};assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:1})).code,403);
+    caller={id:'manager',role:'manager'};
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:0})).code,409);
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'MISSING',revision:0})).code,403);
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:1})).code,200);
+    const returned=(await invoke('GET')).body.notes.RETURN;
+    assert.equal(returned.result,'Chưa Online');assert.equal(returned.cancelReason,cancel.cancelReason);assert.equal(returned.processingCancelReason,cancel.cancelReason);assert.equal(returned.processingRequestedBy,'manager');assert.ok(Date.parse(returned.processingRequestedAt));assert.equal(returned.cancellationApproved,undefined);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:2})).code,400);
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'NET1',revision:5})).code,409);
+    caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
+    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:2,value:{...note,result:'Chưa Online',processingRequestedBy:'forged'}})).code,200);
+    const responded=(await invoke('GET')).body.notes.RETURN;assert.equal(responded.processingRequestedBy,'manager');assert.equal(responded.processingRequestedAt,returned.processingRequestedAt);assert.ok(Date.parse(responded.processingRespondedAt));
+    caller={id:'manager',role:'manager'};
+    assert.equal((await invoke('POST',{kind:'pending',id:'NOV',revision:0,value:cancel})).code,200);
+    assert.equal((await invoke('POST',{kind:'continuePending',id:'NOV',revision:1})).code,409);
 
 
 
