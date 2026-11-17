@@ -319,6 +319,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts .pending-schedule-list th:first-child { width: 14% !important; }
 #pendingContracts .pending-schedule-list th:nth-child(2) { width: 6% !important; }
 #pendingContracts #psRows .ps-id { max-width: 100%; font-size: 12px !important; white-space: normal !important; overflow-wrap: anywhere; }
+#pendingContracts #psRows .ps-id.ps-overdue{background:#fff0f0!important;border-color:#eeaaa6!important;color:#b42318!important;font-weight:850!important}
+#pendingContracts #psRows .ps-id.ps-awaiting-refresh{border-style:dashed}
 @media(max-width:600px) {
   #pendingContracts .pending-schedule-list table,#pendingContracts .pending-schedule-list tbody { display: block; }
   #pendingContracts .pending-schedule-list thead { display: none; }

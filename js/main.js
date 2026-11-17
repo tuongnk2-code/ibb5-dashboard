@@ -3,7 +3,7 @@ import { installDashboardAssistant } from './dashboardAssistant.js';
 import { PERF_FIELDS, matchesPerformanceFilters, performanceFilterOptions, sortPerformancePeople } from './performanceFilters.js';
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
-import { scheduledOnlineContracts } from './pendingScheduleModel.js';
+import { scheduledOnlineContracts, scheduledAppointmentStatus, latestNetUpdate } from './pendingScheduleModel.js';
 import { dailyPerformanceContracts } from './dailyPerformanceModel.js';
 import { installAgedContractDetails } from './agedContractDetails.js';
 import { performanceContractRows } from './performanceContractDetails.js';
@@ -345,7 +345,7 @@ function cancellationApproval(id,result){
 }
 function updateSaveButton(row){const button=row.querySelector('.p-save');if(isCancelled(row.dataset.id)){button.textContent='Đã ẩn';button.disabled=true;return;}const saved=!!notes[row.dataset.id]?.updated&&!pendingDrafts.has(row.dataset.id);button.textContent=saved?'Đã lưu':'Lưu';button.classList.toggle('is-saved',saved);button.disabled=saved;}
 function updateCancellationRow(row){const result=row.querySelector('.p-result').value,cancelled=isCancellationResult(result),reason=row.querySelector('.p-cancel-reason');for(const selector of ['.p-date','.p-time-slot']){const input=row.querySelector(selector);input.required=!skipsOnlineAppointment(result);input.hidden=!input.required;let placeholder=input.parentElement.querySelector('.p-appointment-na');if(!placeholder){placeholder=document.createElement('span');placeholder.className='p-appointment-na';placeholder.textContent='—';input.after(placeholder);}placeholder.hidden=input.required;if(!input.required){input.classList.remove('pending-required-error');input.removeAttribute('aria-invalid');}}reason.closest('label').hidden=!cancelled;reason.required=cancelled;row.querySelector('.p-cancel-cell').innerHTML=cancellationApproval(row.dataset.id,row.querySelector('.p-result').value);if(isCancelled(row.dataset.id)){row.querySelectorAll('input,select,textarea').forEach(input=>input.disabled=true);row.querySelector('.p-mobile-edit').textContent='Xem';}}
-function render(){const restoreFocus=rememberFocus(el('pendRows'));const all=pending(),realPending=unresolved(),asof=el('pendAsOf').value;el('pendTotal').textContent=realPending.length;const selectedDay=el('pendDailyDate').value;el('pendDue').textContent=selectedDay?scheduledOnlineContracts(distinct,notes,asof,selectedDay).length:'—';el('pendDailyDescription').textContent=selectedDay?'Số HĐ tồn dự kiến Online ngày '+selectedDay.split('-').reverse().join('/'):'Vui lòng chọn ngày để thống kê';el('pendMissing').textContent=realPending.filter(x=>status(x)==='missing').length;el('pendOld').textContent=realPending.filter(x=>x.created.slice(0,7)<asof.slice(0,7)).length;
+function render(){const restoreFocus=rememberFocus(el('pendRows'));const all=pending(),realPending=unresolved(),asof=el('pendAsOf').value;el('pendTotal').textContent=realPending.length;const selectedDay=el('pendDailyDate').value;el('pendDue').textContent=selectedDay?scheduledOnlineContracts(distinct,notes,asof,selectedDay,{netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)}).length:'—';el('pendDailyDescription').textContent=selectedDay?'HĐ còn theo dõi, không gồm HĐ quá hẹn đã xác nhận · '+selectedDay.split('-').reverse().join('/'):'Vui lòng chọn ngày để thống kê';el('pendMissing').textContent=realPending.filter(x=>status(x)==='missing').length;el('pendOld').textContent=realPending.filter(x=>x.created.slice(0,7)<asof.slice(0,7)).length;
 // Month offsets use the tracking month, including year rollover.
 const baseMonth=new Date(Number(asof.slice(0,4)),Number(asof.slice(5,7))-1,1);
 // Age of pending contracts is based on creation month, not expected online date.
@@ -419,7 +419,7 @@ let metricSelection='pendTotal';
 const metricMonth=offset=>{const date=new Date(el('pendAsOf').value+'T12:00:00Z');date.setUTCDate(1);date.setUTCMonth(date.getUTCMonth()+offset);return date.toISOString().slice(0,7);};
 const metricGroups={
  pendTotal:{title:()=> 'Chưa Online (PTTB đang có)',rows:unresolved},
- pendDue:{title:()=> 'HĐ dự kiến Online ngày '+el('pendDailyDate').value.split('-').reverse().join('/'),rows:()=>scheduledOnlineContracts(distinct,notes,el('pendAsOf').value,el('pendDailyDate').value)},
+ pendDue:{title:()=> 'HĐ dự kiến Online ngày '+el('pendDailyDate').value.split('-').reverse().join('/'),rows:()=>scheduledOnlineContracts(distinct,notes,el('pendAsOf').value,el('pendDailyDate').value,{netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)})},
  pendMissing:{title:()=> 'HĐ thiếu ngày Online dự kiến',rows:()=>unresolved().filter(row=>status(row)==='missing')},
  pendOld:{title:()=> 'Tồn chuyển từ tháng cũ',rows:()=>unresolved().filter(row=>row.created.slice(0,7)<el('pendAsOf').value.slice(0,7))},
  pendForwardTotal:{title:()=> 'HĐ tích hẹn qua tháng',rows:()=>unresolved().filter(row=>[1,2,3].some(offset=>String(notes[row.id]?.expected||'').slice(0,7)===metricMonth(offset)))}
@@ -562,22 +562,29 @@ const cutoff=$('pendAsOf')?.value||day;
 const ns=readNotes();
 const net=typeof DATA==='undefined'?[]:operationalData().filter(x=>x.type==='Internet'&&x.id);
 const distinct=[...new Map(net.map(x=>[x.id,x])).values()];
-const rows=scheduledOnlineContracts(distinct,ns,cutoff,day);
+const netUpdatedAt=latestNetUpdate(window.IBB5_IMPORT_META),now=Date.now();
+const rows=scheduledOnlineContracts(distinct,ns,cutoff,day,{netUpdatedAt,now,includeOverdue:true});
+const states=new Map(rows.map(row=>[row.id,scheduledAppointmentStatus(ns[row.id],day,netUpdatedAt,now)]));
+const overdue=new Set(rows.filter(row=>states.get(row.id).overdue).map(row=>row.id));
+const remaining=ids=>ids.filter(id=>!overdue.has(id)).length;
+const appointmentTag=id=>'<span class="ps-id'+(overdue.has(id)?' ps-overdue':states.get(id).awaitingRefresh?' ps-awaiting-refresh':'')+'" data-schedule-id="'+esc(id)+'" title="'+(overdue.has(id)?'Quá mốc hẹn; NET cập nhật sau mốc vẫn chưa Online. Chỉ hiển thị, không tính vào số còn theo dõi.':states.get(id).awaitingRefresh?'Đã qua mốc hẹn; đang chờ nguồn NET cập nhật sau mốc để xác nhận.':'HĐ còn theo dõi')+'">'+esc(id)+'</span>';
 const counts=Array(5).fill(0);const grouped=new Map();
-for(const x of rows){const person=people[canonical(x.staff)]||{team:0,name:x.staff||'Chưa xác định',acc:x.staff||'—'};const key=canonical(x.staff)||'unknown';if(!grouped.has(key))grouped.set(key,{...person,values:Array.from({length:5},()=>[])});let idx=slots.indexOf(ns[x.id]?.timeSlot);if(idx<0)idx=4;grouped.get(key).values[idx].push(x.id);counts[idx]++;}
-$('psSummary').textContent='Ngày '+day.split('-').reverse().join('/')+' · '+rows.length+' HĐ dự kiến Online · '+counts[4]+' HĐ chưa có mốc hẹn';
+for(const x of rows){const person=people[canonical(x.staff)]||{team:0,name:x.staff||'Chưa xác định',acc:x.staff||'—'};const key=canonical(x.staff)||'unknown';if(!grouped.has(key))grouped.set(key,{...person,values:Array.from({length:5},()=>[])});let idx=slots.indexOf(ns[x.id]?.timeSlot);if(idx<0)idx=4;grouped.get(key).values[idx].push(x.id);if(!overdue.has(x.id))counts[idx]++;}
+const awaiting=[...states.values()].filter(state=>state.awaitingRefresh).length;
+$('psSummary').textContent='Ngày '+day.split('-').reverse().join('/')+' · '+(rows.length-overdue.size)+' HĐ còn theo dõi · '+overdue.size+' HĐ quá hẹn chỉ hiển thị · '+counts[4]+' HĐ chưa có mốc hẹn'+(awaiting?' · '+awaiting+' HĐ qua mốc, chờ NET cập nhật':'');
+const scheduleNote=$('pendingSchedule').querySelector('.ps-note');if(scheduleNote)scheduleNote.textContent='Đỏ: đã quá giờ kết thúc mốc hẹn và nguồn NET cập nhật sau mốc vẫn chưa Online tại ngày chốt. HĐ đỏ vẫn hiển thị để đối chiếu, không tính vào tổng còn theo dõi. Giờ Việt Nam; HĐ chưa chọn mốc vẫn tính vào tổng.';
 
 let html='';const sum=Array(5).fill(0);
 for(let team=1;team<=3;team++){
  const members=[...grouped.values()].filter(p=>p.team===team).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
  const subtot=Array(5).fill(0);
- for(const p of members){p.values.forEach((v,i)=>subtot[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
+ for(const p of members){p.values.forEach((v,i)=>subtot[i]+=remaining(v));html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(appointmentTag).join(''):'—')+'</td>').join('')+'</tr>';}
  subtot.forEach((v,i)=>sum[i]+=v);
  html+='<tr class="ps-team"><td>TỔNG BẦY '+team+'</td><td>'+subtot.reduce((a,b)=>a+b,0)+'</td>'+subtot.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
 }
 const unknown=[...grouped.values()].filter(p=>!p.team);
-for(const p of unknown){p.values.forEach((v,i)=>sum[i]+=v.length);html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(id=>'<span class="ps-id">'+esc(id)+'</span>').join(''):'—')+'</td>').join('')+'</tr>';}
-html+='<tr class="ps-total"><td>TỔNG PHÒNG</td><td>'+rows.length+'</td>'+sum.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
+for(const p of unknown){p.values.forEach((v,i)=>sum[i]+=remaining(v));html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(appointmentTag).join(''):'—')+'</td>').join('')+'</tr>';}
+html+='<tr class="ps-total"><td>TỔNG PHÒNG</td><td>'+(rows.length-overdue.size)+'</td>'+sum.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
 $('psRows').innerHTML=html;
 const labels=['Mã Acc / Bầy','Số HĐ',...slots,'Chưa chọn mốc'];$('psRows').querySelectorAll('tr').forEach(row=>[...row.cells].forEach((cell,i)=>{cell.dataset.label=labels[i]}));
 }
@@ -589,6 +596,8 @@ document.addEventListener('ibb5-shared-updated',()=>queueMicrotask(render));
 document.addEventListener('ibb5-snapshot-updated',()=>queueMicrotask(render));
 window.addEventListener('storage',render);
 window.addEventListener('hashchange',render);
+setInterval(()=>{if(document.getElementById('pendingContracts').classList.contains('page-active')){render();$('pendDailyDate')?.dispatchEvent(new Event('change'));}},30000);
+window.addEventListener('focus',()=>{render();$('pendDailyDate')?.dispatchEvent(new Event('change'));});
 render();
 })();
 
