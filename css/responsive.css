@@ -271,6 +271,8 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
 #performance .perf-table { min-width: var(--perf-table-width,1500px) !important; table-layout: fixed !important; }
 #performance .perf-table thead th { font-size: calc(var(--perf-font-size,20px) - 3px) !important; line-height: 1.35 !important; padding: 12px 7px !important; white-space: normal !important; overflow-wrap: normal !important; width: auto !important; }
 #performance .perf-column-title{display:block}
+#performance th[aria-sort="ascending"] .perf-column-title::after,#perfStickyClone th[aria-sort="ascending"] .perf-column-title::after{content:' ↑';color:#0871ca}
+#performance th[aria-sort="descending"] .perf-column-title::after,#perfStickyClone th[aria-sort="descending"] .perf-column-title::after{content:' ↓';color:#0871ca}
 #performance .perf-column-filter,#perfStickyClone .perf-column-filter{display:block;width:100%;min-width:0;box-sizing:border-box;margin-top:9px;padding:6px 3px;border:1px solid #bed1e7;border-radius:7px;background:white;color:#254e79;font:inherit;font-size:12px;pointer-events:auto}
 #perfFilterStatus{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 12px;color:#476b92;font-size:13px}
 #perfFilterStatus[hidden]{display:none}

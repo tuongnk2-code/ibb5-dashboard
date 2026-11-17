@@ -1,6 +1,6 @@
 import { renderWeeklyReports } from './weeklyReports.js';
 import { installDashboardAssistant } from './dashboardAssistant.js';
-import { PERF_FIELDS, matchesPerformanceFilters, performanceFilterOptions } from './performanceFilters.js';
+import { PERF_FIELDS, matchesPerformanceFilters, performanceFilterOptions, sortPerformancePeople } from './performanceFilters.js';
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
@@ -26,6 +26,7 @@ import { overdueContracts, monthlyStaffChannels, filterStaffTeam, isTerminatedNe
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
 const perfColumnFilters={};
+let perfColumnSort={};
 
 const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_LATEST, CONTACT_DATA } = await fetchDashboardData();
 
@@ -189,10 +190,12 @@ function perfRender(){
   select.setAttribute('aria-label','Lọc '+label.textContent);select.innerHTML=performanceFilterOptions(field,[...records.values()].map(record=>record.fields)).map(([value,text])=>'<option value="'+esc(value)+'">'+esc(text)+'</option>').join('');
   // Keep active criteria when upstream filters/data change, even if they currently match no rows.
   const selected=perfColumnFilters[field]||'';if(selected&&![...select.options].some(option=>option.value===selected))select.add(new Option(selected.startsWith('eq:')?selected.slice(3):selected,selected));select.value=selected;
+  header.setAttribute('aria-sort',perfColumnSort.field===field?(perfColumnSort.direction==='asc'?'ascending':'descending'):'none');
  });
  const beforeCount=list.length;list=list.filter(p=>matchesPerformanceFilters(records.get(p.acc).fields,perfColumnFilters));
- let filterStatus=$('perfFilterStatus');if(!filterStatus){filterStatus=document.createElement('div');filterStatus.id='perfFilterStatus';filterStatus.setAttribute('data-capture-ui','');filterStatus.innerHTML='<span role="status"></span><button type="button" id="perfClearFilters">Bỏ lọc cột</button>';$('perfTableCapture').before(filterStatus);$('perfClearFilters').onclick=()=>{for(const field of PERF_FIELDS)delete perfColumnFilters[field];perfRender();};}
- const active=PERF_FIELDS.some(field=>perfColumnFilters[field]);filterStatus.hidden=!active;filterStatus.querySelector('span').textContent='Đang hiển thị '+list.length+' / '+beforeCount+' nhân sự · Tổng tính theo bộ lọc.';
+ list=sortPerformancePeople(list,records,perfColumnSort);
+ let filterStatus=$('perfFilterStatus');if(!filterStatus){filterStatus=document.createElement('div');filterStatus.id='perfFilterStatus';filterStatus.setAttribute('data-capture-ui','');filterStatus.innerHTML='<span role="status"></span><button type="button" id="perfClearFilters">Đặt lại cột</button>';$('perfTableCapture').before(filterStatus);$('perfClearFilters').onclick=()=>{for(const field of PERF_FIELDS)delete perfColumnFilters[field];perfColumnSort={};perfRender();};}
+ const active=PERF_FIELDS.some(field=>perfColumnFilters[field])||!!perfColumnSort.field;filterStatus.hidden=!active;filterStatus.querySelector('span').textContent='Đang hiển thị '+list.length+' / '+beforeCount+' nhân sự · Tổng tính theo bộ lọc.'+(perfColumnSort.field?' Sắp xếp '+headers[PERF_FIELDS.indexOf(perfColumnSort.field)].querySelector('.perf-column-title').textContent+' '+(perfColumnSort.direction==='asc'?'tăng':'giảm')+' dần trong từng bầy.':'');
  const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
  const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td></tr>'};
  for(const p of list){if(groupId!==p.team){if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));groupId=p.team;group=zero();}
@@ -219,7 +222,7 @@ function openPerformanceContracts(cell){
  performanceDetails.open();
 }
 document.getElementById('performance').addEventListener('click',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell)openPerformanceContracts(cell);});
-document.getElementById('performance').addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;perfColumnFilters[select.dataset.perfField]=select.value;perfRender();});
+document.getElementById('performance').addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;if(select.value.startsWith('sort:'))perfColumnSort=select.value==='sort:none'?{}:{field:select.dataset.perfField,direction:select.value.slice(5)};else perfColumnFilters[select.dataset.perfField]=select.value;perfRender();});
 document.getElementById('performance').addEventListener('keydown',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell&&['Enter',' '].includes(event.key)){event.preventDefault();openPerformanceContracts(cell);}});
 ['to','from','room','perfTeam'].forEach(id=>document.getElementById(id)?.addEventListener('change',perfRender));document.getElementById('perfSearch')?.addEventListener('input',perfRender);
 document.getElementById('perfExport')?.addEventListener('click',()=>{const rows=[...document.querySelectorAll('#performance .perf-table tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+(td.querySelector('.perf-column-title')?.textContent||td.innerText).replace(/"/g,'""').replace(/\n/g,' ')+'"').join(','));const u=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='hieu_suat_nhan_su.csv';a.click();URL.revokeObjectURL(u)});
