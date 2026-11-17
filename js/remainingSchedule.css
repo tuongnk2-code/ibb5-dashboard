@@ -6,13 +6,17 @@
 #remainingOnlineSchedule .rc-filters{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
 #remainingOnlineSchedule .rc-filters label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
 #remainingOnlineSchedule .rc-filters :is(input,select){min-height:36px;font-size:13px}
-#remainingOnlineSchedule .rc-scroll{position:relative;overflow:auto;max-height:65dvh;border:1px solid #c7d9ee;border-radius:10px;overscroll-behavior:contain;scroll-padding-inline-start:calc(var(--rc-person) + var(--rc-total))}
-#remainingOnlineSchedule .rc-table{table-layout:fixed;width:100%;min-width:calc(var(--rc-person) + var(--rc-total) + var(--rc-days)*var(--rc-day));border-collapse:separate;border-spacing:0;font-size:12px}
-#remainingOnlineSchedule .rc-table :is(th,td){box-sizing:border-box;white-space:nowrap;vertical-align:middle;text-align:center;padding:4px 5px;height:34px;border-right:1px solid #e1eaf5;border-bottom:1px solid #d6e2f0;background:white;overflow:hidden;text-overflow:ellipsis}
+#remainingOnlineSchedule .rc-scroll{position:relative;overflow:visible!important;max-height:none!important;height:auto;border:0}
+#remainingOnlineSchedule .rc-block{margin-bottom:14px}
+#remainingOnlineSchedule .rc-block:last-child{margin-bottom:0}
+#remainingOnlineSchedule .rc-block h4{font-size:12px;color:#305a83;margin:12px 0 6px}
+#remainingOnlineSchedule .rc-table{table-layout:fixed;width:100%;min-width:0!important;border-collapse:separate;border-spacing:0;border:1px solid #c7d9ee;border-radius:8px;font-size:12px}
+#remainingOnlineSchedule .rc-table :is(th,td){box-sizing:border-box;white-space:nowrap;vertical-align:middle;text-align:center;padding:4px 3px;height:34px;border-right:1px solid #e1eaf5;border-bottom:1px solid #d6e2f0;background:white;overflow:hidden;text-overflow:ellipsis}
 #remainingOnlineSchedule .rc-table :is(th,td):first-child{position:sticky;left:0;z-index:2;width:var(--rc-person);text-align:left;font-weight:700;background:#f2f7fd;color:#254d75}
 #remainingOnlineSchedule .rc-table :is(th,td):nth-child(2){position:sticky;left:var(--rc-person);z-index:2;width:var(--rc-total);background:#f2f7fd;box-shadow:2px 0 3px #24456a18}
 #remainingOnlineSchedule .rc-table thead th{position:sticky;top:0;z-index:3;background:#e8f1fc;color:#305a83;font-weight:800}
 #remainingOnlineSchedule .rc-table thead th:nth-child(-n+2){z-index:4;background:#e8f1fc}
+#remainingOnlineSchedule .rc-table thead th:nth-child(2){white-space:normal;text-overflow:clip;line-height:1.1;font-size:11px}
 #remainingOnlineSchedule .rc-table .rc-team :is(th,td){background:#fff1e3;color:#a14b05;font-weight:800}
 #remainingOnlineSchedule .rc-table tfoot :is(th,td){background:#193e63;color:white;font-weight:800}
 #remainingOnlineSchedule .rc-table tfoot :is(th,td):nth-child(-n+2){background:#193e63;color:white}
