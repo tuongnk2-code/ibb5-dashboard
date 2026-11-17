@@ -1,5 +1,6 @@
 import { renderWeeklyReports } from './weeklyReports.js';
 import { installDashboardAssistant } from './dashboardAssistant.js';
+import { PERF_FIELDS, matchesPerformanceFilters, performanceFilterOptions } from './performanceFilters.js';
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts } from './pendingScheduleModel.js';
@@ -24,6 +25,7 @@ import { prepaidShare } from './prepaidKpi.js';
 import { overdueContracts, monthlyStaffChannels, filterStaffTeam, isTerminatedNetContract, includeInOperationalReports } from './analyticsDetails.js';
 
 const formatPercent = value => Number.isFinite(value) ? value.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + '%' : '—';
+const perfColumnFilters={};
 
 const { mockDATA, mockIBB_NET_META, mockIBB_CAM_META, mockIBB_TV_META, mockNET_LATEST, CONTACT_DATA } = await fetchDashboardData();
 
@@ -166,19 +168,35 @@ function perfRender(){
  const month=($('to').value||reportDay()).slice(0,7),asof=$('to').value||reportDay(),start=month+'-01',last=IBB_CALC.monthEnd(month),elapsed=IBB_CALC.calendarDays(start,asof),remaining=IBB_CALC.calendarDays(IBB_CALC.next(asof),last),allDays=elapsed+remaining,calendarRemaining=Number(last.slice(-2))-Number(asof.slice(-2));
  const team=$('perfTeam').value,q=$('perfSearch').value.toLowerCase(),room=$('room').value;
  const ORDER=['DNG.Vypv','DNG.OanhLTH3','DNG.ChuongHM','DNG.NguyenTP10','DNG.TriNP','DNG.DatHX4','DNG.Hoantt','DNG.Nhannt137','DNG.Namnh170','DNG.HoaNTB6','DNG.ManLM3','DNG.Tienna2','DNG.HanNVN','DNG.BachND7','DNG.DoanLT4','DNG.LanMH2','DNG.DatBTH'];
- const list=PERSONNEL.filter(p=>(!team||p.team===team)&&(!q||(p.name+' '+p.acc).toLowerCase().includes(q))).sort((a,b)=>ORDER.findIndex(x=>x.toLowerCase()===a.acc.toLowerCase())-ORDER.findIndex(x=>x.toLowerCase()===b.acc.toLowerCase()));
+ let list=PERSONNEL.filter(p=>(!team||p.team===team)&&(!q||(p.name+' '+p.acc).toLowerCase().includes(q))).sort((a,b)=>ORDER.findIndex(x=>x.toLowerCase()===a.acc.toLowerCase())-ORDER.findIndex(x=>x.toLowerCase()===b.acc.toLowerCase()));
  const all=operationalData().filter(x=>x.type==='Internet'&&(!room||x.room===room)),cm=getCommit(month,room||'__ALL__').staff,prevCut=IBB_CALC.prior(month,+asof.slice(-2)),pm=prevCut.slice(0,7),havePrev=IBB_CALC.validPrev(all,pm);
- document.querySelectorAll('#perfPrevOnlineTitle').forEach(title=>{title.textContent='Online Tháng '+Number(pm.slice(5));title.title='Online từ '+pm+'-01 đến '+prevCut;});
+ document.querySelectorAll('#perfPrevOnlineTitle').forEach(title=>{(title.querySelector('.perf-column-title')||title).textContent='Online Tháng '+Number(pm.slice(5));title.title='Online từ '+pm+'-01 đến '+prevCut;});
  const trackingSuffix=' T'+Number(month.slice(5));
  for(const [id,label] of [['perfGoalTitle','Cam kết'],['perfSoldTitle','Bán mới'],['perfOnlineTitle','Online tháng']]){
-  const title=$(id);if(title){title.textContent=label+trackingSuffix;title.title='Tháng theo dõi '+month;}
+  const title=$(id);if(title){(title.querySelector('.perf-column-title')||title).textContent=label+trackingSuffix;title.title='Tháng theo dõi '+month;}
  }
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
+ const records=new Map(list.map(p=>{
+  const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()),sold=unique(a.filter(x=>x.created>=start&&x.created<=asof)),online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0,pend=a.filter(x=>IBB_CALC.pending(x,asof)),pending=unique(pend),aged=unique(pend.filter(x=>(Date.parse(asof+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7)),goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null,missing=goal===null?null:Math.max(0,goal-online);
+  const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged];
+  const fields=Object.fromEntries(PERF_FIELDS.map((field,index)=>[field,{raw:values[index],display:index===6?periodGrowth(online,havePrev?prev:null):[7,8].includes(index)?values[index]===null?'—':formatPercent(values[index]):typeof values[index]==='number'?fmt(values[index]):values[index]??'—'}]));
+  return [p.acc,{sold,online,prev,pending,aged,goal,fields}];
+ }));
+ const headers=[...document.querySelectorAll('#performance .perf-table thead th')];
+ headers.forEach((header,index)=>{
+  const field=PERF_FIELDS[index];let label=header.querySelector('.perf-column-title'),select=header.querySelector('select');
+  if(!label){label=document.createElement('span');label.className='perf-column-title';label.textContent=header.textContent;header.replaceChildren(label);select=document.createElement('select');select.className='perf-column-filter';select.dataset.perfField=field;select.setAttribute('data-capture-ui','');header.append(select);}
+  select.setAttribute('aria-label','Lọc '+label.textContent);select.innerHTML=performanceFilterOptions(field,[...records.values()].map(record=>record.fields)).map(([value,text])=>'<option value="'+esc(value)+'">'+esc(text)+'</option>').join('');
+  // Keep active criteria when upstream filters/data change, even if they currently match no rows.
+  const selected=perfColumnFilters[field]||'';if(selected&&![...select.options].some(option=>option.value===selected))select.add(new Option(selected.startsWith('eq:')?selected.slice(3):selected,selected));select.value=selected;
+ });
+ const beforeCount=list.length;list=list.filter(p=>matchesPerformanceFilters(records.get(p.acc).fields,perfColumnFilters));
+ let filterStatus=$('perfFilterStatus');if(!filterStatus){filterStatus=document.createElement('div');filterStatus.id='perfFilterStatus';filterStatus.setAttribute('data-capture-ui','');filterStatus.innerHTML='<span role="status"></span><button type="button" id="perfClearFilters">Bỏ lọc cột</button>';$('perfTableCapture').before(filterStatus);$('perfClearFilters').onclick=()=>{for(const field of PERF_FIELDS)delete perfColumnFilters[field];perfRender();};}
+ const active=PERF_FIELDS.some(field=>perfColumnFilters[field]);filterStatus.hidden=!active;filterStatus.querySelector('span').textContent='Đang hiển thị '+list.length+' / '+beforeCount+' nhân sự · Tổng tính theo bộ lọc.';
  const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
  const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td></tr>'};
  for(const p of list){if(groupId!==p.team){if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));groupId=p.team;group=zero();}
-  const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase());const sold=unique(a.filter(x=>x.created>=start&&x.created<=asof)),online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0;
-  const pend=a.filter(x=>IBB_CALC.pending(x,asof)),pending=unique(pend),aged=unique(pend.filter(x=>(Date.parse(asof+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7));const goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null;
+  const {sold,online,prev,pending,aged,goal}=records.get(p.acc);
   for(const s of [overall,group]){s.sold+=sold;s.online+=online;s.prev+=prev;s.pending+=pending;s.aged+=aged;if(goal!==null){s.goal+=goal;s.approved++;}}
   const growth=periodGrowth(online,havePrev?prev:null),pct=goal>0?formatPercent(online/goal*100):'—',projected=goal>0&&elapsed?formatPercent((online/elapsed*allDays)/goal*100):'—';const missing=goal===null?null:Math.max(0,goal-online),need=missing!==null&&calendarRemaining?fmt(missing/calendarRemaining):'—';
   out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td></tr>');
@@ -201,9 +219,10 @@ function openPerformanceContracts(cell){
  performanceDetails.open();
 }
 document.getElementById('performance').addEventListener('click',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell)openPerformanceContracts(cell);});
+document.getElementById('performance').addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;perfColumnFilters[select.dataset.perfField]=select.value;perfRender();});
 document.getElementById('performance').addEventListener('keydown',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell&&['Enter',' '].includes(event.key)){event.preventDefault();openPerformanceContracts(cell);}});
 ['to','from','room','perfTeam'].forEach(id=>document.getElementById(id)?.addEventListener('change',perfRender));document.getElementById('perfSearch')?.addEventListener('input',perfRender);
-document.getElementById('perfExport')?.addEventListener('click',()=>{const rows=[...document.querySelectorAll('#performance table tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+td.innerText.replace(/"/g,'""').replace(/\n/g,' ')+'"').join(','));const u=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='hieu_suat_nhan_su.csv';a.click();URL.revokeObjectURL(u)});
+document.getElementById('perfExport')?.addEventListener('click',()=>{const rows=[...document.querySelectorAll('#performance .perf-table tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+(td.querySelector('.perf-column-title')?.textContent||td.innerText).replace(/"/g,'""').replace(/\n/g,' ')+'"').join(','));const u=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='hieu_suat_nhan_su.csv';a.click();URL.revokeObjectURL(u)});
 try{perfRender()}catch(e){console.error('perfRender',e)}
 
 
@@ -558,25 +577,31 @@ render();
 // ---- Original script 11  ----
 
 (function(){
-let overlay,copyTable,scrollBox;
+let overlay,copyTable,scrollBox,headSignature='';
 function init(){
  const source=document.querySelector('#performance .perf-table');if(!source)return;
- overlay=document.createElement('div');overlay.id='perfStickyClone';overlay.setAttribute('aria-hidden','true');
+ overlay=document.createElement('div');overlay.id='perfStickyClone';overlay.setAttribute('aria-label','Bộ lọc tiêu đề bảng nhân sự');
  copyTable=document.createElement('table');copyTable.appendChild(source.tHead.cloneNode(true));overlay.appendChild(copyTable);document.body.appendChild(overlay);
  scrollBox=source.closest('.tablewrap');
  function sync(){
   const section=document.getElementById('performance');const header=source.tHead;
+  if(headSignature!==header.innerHTML){headSignature=header.innerHTML;copyTable.replaceChildren(header.cloneNode(true));copyTable.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));}
+  copyTable.querySelectorAll('.perf-column-filter').forEach(select=>{select.value=header.querySelector('[data-perf-field="'+select.dataset.perfField+'"]').value;});
   if(!section.classList.contains('page-active')){overlay.style.display='none';return}
   const rect=source.getBoundingClientRect(),headRect=header.getBoundingClientRect();
   const visible=headRect.top<0 && rect.bottom>headRect.height && rect.right>0 && rect.left<innerWidth;
   if(!visible){overlay.style.display='none';return}
   const cells=[...header.rows[0].cells],clones=[...copyTable.tHead.rows[0].cells];
-  overlay.style.display='block';overlay.style.left=Math.max(0,rect.left)+'px';overlay.style.width=Math.min(rect.width,innerWidth-Math.max(0,rect.left))+'px';
+  const viewport=scrollBox.getBoundingClientRect(),left=Math.max(0,viewport.left);
+  overlay.style.display='block';overlay.style.left=left+'px';overlay.style.width=Math.min(scrollBox.clientWidth,innerWidth-left)+'px';
   copyTable.style.width=rect.width+'px';
   cells.forEach((c,i)=>{const w=c.getBoundingClientRect().width;clones[i].style.width=w+'px';clones[i].style.minWidth=w+'px';clones[i].style.maxWidth=w+'px'});
   overlay.style.height=headRect.height+'px';copyTable.style.transform='translateX('+(-(scrollBox?.scrollLeft||0))+'px)';
+  if(clones[0]){clones[0].style.transform='translateX('+(scrollBox.scrollLeft||0)+'px)';clones[0].style.position='relative';clones[0].style.zIndex='2';}
  }
  addEventListener('scroll',sync,{passive:true});addEventListener('resize',sync,{passive:true});scrollBox?.addEventListener('scroll',sync,{passive:true});
+ overlay.addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;const original=source.tHead.querySelector('[data-perf-field="'+select.dataset.perfField+'"]');original.value=select.value;original.dispatchEvent(new Event('change',{bubbles:true}));});
+ new MutationObserver(sync).observe(source.tHead,{childList:true,subtree:true,characterData:true});
  const observer=new MutationObserver(sync);observer.observe(document.getElementById('performance'),{attributes:true,attributeFilter:['class']});sync();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
