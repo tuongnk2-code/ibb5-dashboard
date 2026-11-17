@@ -1,3 +1,4 @@
+import { renderChannelShareChart } from './channelShareChart.js';
 import { renderWeeklyReports } from './weeklyReports.js';
 import { installDashboardAssistant } from './dashboardAssistant.js';
 import { installRemainingSchedule } from './remainingSchedule.js';
@@ -532,7 +533,7 @@ $('anaShareScope').textContent='HĐ Internet Online thực tế trong tháng · 
 const departmentOnline=all.filter(x=>x.date?.slice(0,7)===m).length,departmentShare=departmentOnline?formatPercent(onlineMonth.length/departmentOnline*100):'—';
 $('anaShareTotal').textContent=shareLabel+' · Tổng Online: '+fmt(onlineMonth.length)+' HĐ · Đóng góp phòng: '+departmentShare;
 $('anaShareTotal').title=fmt(onlineMonth.length)+' / '+fmt(departmentOnline)+' HĐ NET Online toàn phòng trong tháng';
-const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source){annotated++;chan.set(source,1+(chan.get(source)||0))}});barRows('anaChannelBars',[...chan].sort((a,b)=>b[1]-a[1]),annotated,true,'HĐ có nguồn');$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Tỷ trọng = HĐ từng kênh / tổng HĐ có nguồn. Chưa cập nhật nguồn không được tự gán vào kênh.';
+const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source){annotated++;chan.set(source,1+(chan.get(source)||0))}});renderChannelShareChart($('anaChannelBars'),[...chan]);$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Tỷ trọng = HĐ từng kênh / tổng HĐ có nguồn. Chưa cập nhật nguồn không được tự gán vào kênh.';
 $('anaChannelMonth').value=m;
 const channelTeam=$('anaChannelTeam').value,channelLabel=channelTeam?'Bầy '+channelTeam:'Toàn phòng';
 const monthly=monthlyStaffChannels(all,ns,m,staff,STAFF_ROSTER,channelTeam),channels=monthly.channels,cellCount=channels.length+2;
