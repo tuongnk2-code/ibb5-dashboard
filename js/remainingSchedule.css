@@ -1,4 +1,4 @@
-#remainingOnlineSchedule{margin-top:20px;color:#1b436c}
+#remainingOnlineSchedule{--rc-person:165px;--rc-total:56px;--rc-day:56px;margin-top:20px;color:#1b436c}
 #remainingOnlineSchedule .rc-heading{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
 #remainingOnlineSchedule h3{font-size:20px;margin:0 0 8px}
 #remainingOnlineSchedule .rc-summary,#remainingOnlineSchedule .rc-note{font-size:12px;color:#6f89aa;line-height:1.6;margin:0}
@@ -6,18 +6,20 @@
 #remainingOnlineSchedule .rc-filters{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
 #remainingOnlineSchedule .rc-filters label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
 #remainingOnlineSchedule .rc-filters :is(input,select){min-height:36px;font-size:13px}
-#remainingOnlineSchedule .rc-scroll{position:relative;overflow:auto;max-height:65dvh;border:1px solid #c7d9ee;border-radius:10px;overscroll-behavior:contain;scroll-padding-inline-start:260px}
-#remainingOnlineSchedule .rc-table{table-layout:fixed;width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
-#remainingOnlineSchedule .rc-table :is(th,td){box-sizing:border-box;white-space:normal;vertical-align:top;text-align:center;padding:9px 7px;border-right:1px solid #c7d9ee;border-bottom:1px solid #c7d9ee;background:white;overflow-wrap:anywhere}
-#remainingOnlineSchedule .rc-table :is(th,td):first-child{position:sticky;left:0;z-index:2;width:185px;text-align:left;font-weight:800;background:#f2f7fd}
-#remainingOnlineSchedule .rc-table :is(th,td):nth-child(2){position:sticky;left:185px;z-index:2;width:75px;background:#f2f7fd;box-shadow:2px 0 3px #24456a18}
+#remainingOnlineSchedule .rc-scroll{position:relative;overflow:auto;max-height:65dvh;border:1px solid #c7d9ee;border-radius:10px;overscroll-behavior:contain;scroll-padding-inline-start:calc(var(--rc-person) + var(--rc-total))}
+#remainingOnlineSchedule .rc-table{table-layout:fixed;width:100%;min-width:calc(var(--rc-person) + var(--rc-total) + var(--rc-days)*var(--rc-day));border-collapse:separate;border-spacing:0;font-size:12px}
+#remainingOnlineSchedule .rc-table :is(th,td){box-sizing:border-box;white-space:nowrap;vertical-align:middle;text-align:center;padding:4px 5px;height:34px;border-right:1px solid #e1eaf5;border-bottom:1px solid #d6e2f0;background:white;overflow:hidden;text-overflow:ellipsis}
+#remainingOnlineSchedule .rc-table :is(th,td):first-child{position:sticky;left:0;z-index:2;width:var(--rc-person);text-align:left;font-weight:700;background:#f2f7fd;color:#254d75}
+#remainingOnlineSchedule .rc-table :is(th,td):nth-child(2){position:sticky;left:var(--rc-person);z-index:2;width:var(--rc-total);background:#f2f7fd;box-shadow:2px 0 3px #24456a18}
 #remainingOnlineSchedule .rc-table thead th{position:sticky;top:0;z-index:3;background:#e8f1fc;color:#305a83;font-weight:800}
 #remainingOnlineSchedule .rc-table thead th:nth-child(-n+2){z-index:4;background:#e8f1fc}
 #remainingOnlineSchedule .rc-table .rc-team :is(th,td){background:#fff1e3;color:#a14b05;font-weight:800}
 #remainingOnlineSchedule .rc-table tfoot :is(th,td){background:#193e63;color:white;font-weight:800}
 #remainingOnlineSchedule .rc-table tfoot :is(th,td):nth-child(-n+2){background:#193e63;color:white}
-#remainingOnlineSchedule .rc-count{font-size:13px;padding:3px 8px;min-width:30px;border:1px solid #b7d1ed;background:#edf6ff;color:#174c80;border-radius:6px;font-weight:800;cursor:pointer}
-#remainingOnlineSchedule .rc-zero{color:#8198b2}
-#remainingOnlineSchedule .rc-contracts{display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:7px}
-#remainingOnlineSchedule .rc-id{max-width:100%;padding:3px 5px;border:1px solid #c4dcf6;border-radius:4px;color:#164c82;background:#eaf4ff;font-size:11px;font-weight:650;cursor:pointer;overflow-wrap:anywhere;white-space:normal}
-@media(max-width:600px){#remainingOnlineSchedule h3{font-size:18px}#remainingOnlineSchedule .rc-table :is(th,td):first-child{width:125px}#remainingOnlineSchedule .rc-table :is(th,td):nth-child(2){left:125px;width:55px}#remainingOnlineSchedule .rc-scroll{scroll-padding-inline-start:180px}#remainingOnlineSchedule .rc-filters :is(input,select){font-size:16px;max-width:100%}}
+#remainingOnlineSchedule .rc-count{font-size:13px;padding:2px 6px;min-width:26px;min-height:24px;line-height:1.2;border:1px solid transparent;background:#edf6ff;color:#174c80;border-radius:5px;font-weight:750;cursor:pointer}
+#remainingOnlineSchedule .rc-count:hover{border-color:#92b9e2;background:#dcecff}
+#remainingOnlineSchedule .rc-count:focus-visible{outline:2px solid #1677cb;outline-offset:1px}
+#remainingOnlineSchedule .rc-zero{color:#a4b5c8}
+#remainingOnlineSchedule .rc-filters .rc-only-scheduled{flex-direction:row;align-items:center;align-self:center;gap:6px;white-space:nowrap;font-weight:500}
+#remainingOnlineSchedule .rc-only-scheduled input{width:16px;height:16px;min-height:0;margin:0}
+@media(max-width:600px){#remainingOnlineSchedule{--rc-person:125px;--rc-total:48px;--rc-day:48px}#remainingOnlineSchedule h3{font-size:18px}#remainingOnlineSchedule .rc-filters :is(input[type="search"],select){font-size:16px;max-width:100%}#remainingOnlineSchedule .rc-table{font-size:11px}}
