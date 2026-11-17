@@ -1064,4 +1064,4 @@ renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>d
 
 installDashboardAssistant({getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getProfile:()=>window.IBB5_CURRENT_PROFILE,getCommitments:()=>window.IBB5_SHARED_STATE?.commitments||commitDB});
 
-installRemainingSchedule({after:document.getElementById('pendRows').closest('.pending-box'),getData:dashboardData,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
+installRemainingSchedule({after:document.getElementById('pendRows').closest('.pending-box'),getData:dashboardData,getNotes:()=>IBB_CALC.notes(),canView:()=>!!window.IBB5_CURRENT_PROFILE});

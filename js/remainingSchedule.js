@@ -11,12 +11,12 @@ export function installRemainingSchedule({after,getData,getNotes,canView}){
  after.after(root);let current,selection=null,queued=false;
  const $=selector=>root.querySelector(selector),team=$('select'),query=$('input[type="search"]'),onlyScheduled=$('[data-rc-only-scheduled]'),scroll=$('.rc-scroll');
  const selectedRows=()=>{if(!current||!selection)return [];return current.rows.filter(row=>(!selection.accs||selection.accs.some(acc=>String(acc).trim().toLowerCase()===String(row.staff||'Chưa gán Acc').trim().toLowerCase()))&&(!selection.day||row.expected===selection.day));};
- const details=installAgedContractDetails({button:null,id:'remainingScheduleDialog',getRows:selectedRows,getAsOf:()=>document.getElementById('pendAsOf').value||reportDay(),canView,getTitle:()=>selection?.title||'HĐ Online dự kiến',getDescription:()=>selection?.day?'Ngày hẹn Online dự kiến '+date(selection.day):'Ngày hẹn Online dự kiến từ '+date(current.start)+' đến '+date(current.end)});
+ const details=installAgedContractDetails({button:null,id:'remainingScheduleDialog',showAppointment:true,getRows:selectedRows,getAsOf:()=>document.getElementById('pendAsOf').value||reportDay(),canView,getTitle:()=>selection?.title||'HĐ Online dự kiến',getDescription:()=>selection?.day?'Ngày hẹn Online dự kiến '+date(selection.day):'Ngày hẹn Online dự kiến từ '+date(current.start)+' đến '+date(current.end)});
  function count(rows,attributes,title){return rows.length?'<button type="button" class="rc-count" '+attributes+' aria-label="'+esc(title+' · '+rows.length+' HĐ')+'" title="'+esc(rows.slice(0,5).map(row=>row.id).join(', ')+(rows.length>5?'…':'')+' · Bấm để xem danh sách')+'">'+rows.length+'</button>':'<span class="rc-zero">—</span>';}
  function render(){
   current=remainingOnlineSchedule(getData(),{cutoff:document.getElementById('pendAsOf').value||reportDay(),notes:getNotes(),canView,team:team.value,query:query.value.trim()});
   const {days,groups}=current,left=scroll.scrollLeft,top=scroll.scrollTop;
-  $('.rc-summary').textContent=days.length?date(current.start)+' – '+date(current.end)+' · '+current.total+' HĐ đã có lịch hẹn · '+(team.value?'Bầy '+team.value:'Trong quyền tài khoản'):'Tháng đang chọn không còn ngày sau ngày chốt. Anh chọn lại ngày chốt để xem lịch.';
+  $('.rc-summary').textContent=days.length?date(current.start)+' – '+date(current.end)+' · '+current.total+' HĐ đã có lịch hẹn · '+(team.value?'Bầy '+team.value:'Toàn phòng'):'Tháng đang chọn không còn ngày sau ngày chốt. Anh chọn lại ngày chốt để xem lịch.';
   $('thead').innerHTML='<tr><th scope="col">Nhân sự / Bầy</th><th scope="col">Tổng</th>'+days.map(day=>'<th scope="col" title="'+date(day)+'">'+date(day).slice(0,5)+'</th>').join('')+'</tr>';
   let html='';
   for(const group of groups){
