@@ -303,18 +303,20 @@ header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+esca
 const filterControls=document.createElement('div');filterControls.className='pending-header-filters';
 const statusFilter=el('pendStatus');statusFilter.replaceWith(filterControls);
 statusFilter.querySelector('option[value="hidden"]').textContent='HĐ OL đã ẩn';statusFilter.add(new Option('HĐ hủy đã ẩn','hidden-cancelled'));
+statusFilter.add(new Option('Y/C xử lý tiếp','continue-processing'),statusFilter.querySelector('option[value="hidden"]'));
 const statusLabel=document.createElement('label');statusLabel.className='pending-status-label';statusLabel.textContent='Tình trạng HĐ';statusLabel.append(statusFilter);filterControls.append(statusLabel);
 filterControls.insertAdjacentHTML('beforeend','<label class="pending-created-month-label">Tháng tạo HĐ<select id="pendCreatedMonth" aria-label="Lọc tháng tạo HĐ"><option value="">Tất cả tháng</option></select></label>');
 filterControls.insertAdjacentHTML('beforeend','<label>Bầy<select id="pendTeam" aria-label="Lọc HĐ theo Bầy"><option value="">Tất cả Bầy</option><option value="1">Bầy 1</option><option value="2">Bầy 2</option><option value="3">Bầy 3</option></select></label>');
 const opts=(arr,selected)=>'<option value="">Chọn...</option>'+[...new Set([...arr,...(selected?[selected]:[])])].map(v=>'<option value="'+escapeHTML(v)+'"'+(selected===v?' selected':'')+'>'+escapeHTML(v)+'</option>').join('');
 const customer=x=>x.customer||x.customerName||x.customer_name||x.tenKhachHang||x.ten_khach_hang||'';
 function cellValue(x,f){const n=notes[x.id]||{};return f==='customer'?customer(x):f==='expected'?n.expected||'':f==='timeSlot'?n.timeSlot||'':f==='status'?status(x)==='due'?'Đến hạn':status(x)==='overdue'?'Quá hạn':status(x)==='missing'?'Thiếu ngày dự kiến':'Chờ đến hạn':f==='action'?n.action||'':f==='result'?n.result||'Chưa Online':f==='source'?n.source||'':f==='cancelReason'?n.cancelReason||'':x[f]||''}
-function filtered(){const mode=el('pendStatus').value,hidden=isHiddenMode(mode),q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),asof=el('pendAsOf').value;let a=(hidden?hiddenContracts(mode):q?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
+function filtered(){const mode=el('pendStatus').value,hidden=isHiddenMode(mode),q=el('pendQuery').value.trim().toLocaleLowerCase('vi'),asof=el('pendAsOf').value;let a=(hidden?hiddenContracts(mode):q||mode==='continue-processing'?distinct.slice():[...new Map([...pending(),...distinct.filter(row=>pendingDrafts.has(row.id))].map(row=>[row.id,row])).values()]).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
 a=a.filter(x=>{
  if(isHiddenMode(mode))return true;
  if(mode==='all')return true;
  if(mode==='unupdated')return !!x.created&&x.created<=asof&&!String(notes[x.id]?.result||'').trim();
  if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
+ if(mode==='continue-processing')return !!x.created&&x.created<=asof&&!!notes[x.id]?.processingRequestedAt&&!notes[x.id]?.processingRespondedAt&&!isCancellationResult(notes[x.id]?.result);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
  if(mode==='notonline')return !String(x.date||'').trim();
@@ -330,7 +332,7 @@ const createdMonth=el('pendCreatedMonth').value;if(createdMonth)a=a.filter(x=>St
 a=filterStaffTeam(a,el('pendTeam').value);
 header.querySelectorAll('.ph-filter').forEach(sel=>{if(sel.value && !sel.value.startsWith('__SORT_'))a=a.filter(x=>pendingDrafts.has(x.id)||String(cellValue(x,sel.dataset.field))===sel.value)});
 a.sort((x,y)=>(notes[x.id]?.expected||'9999-12-31').localeCompare(notes[y.id]?.expected||'9999-12-31'));if(columnSortField){const dir=columnSortDirection==='az'?1:-1;a.sort((x,y)=>String(cellValue(x,columnSortField)).localeCompare(String(cellValue(y,columnSortField)),'vi',{numeric:true,sensitivity:'base'})*dir)}return a}
-function populateFilters(){const mode=el('pendStatus').value,hidden=isHiddenMode(mode),all=(hidden?hiddenContracts(mode):el('pendQuery').value.trim()?distinct:pending()).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
+function populateFilters(){const mode=el('pendStatus').value,hidden=isHiddenMode(mode),all=(hidden?hiddenContracts(mode):el('pendQuery').value.trim()||mode==='continue-processing'?distinct:pending()).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
 const monthSelect=el('pendCreatedMonth'),selectedMonth=monthSelect.value,months=[...new Set([...all.map(x=>String(x.created||'').slice(0,7)),selectedMonth].filter(m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m)))].sort().reverse();
 monthSelect.innerHTML='<option value="">Tất cả tháng</option>'+months.map(m=>'<option value="'+m+'">'+m.slice(5)+'/'+m.slice(0,4)+'</option>').join('');monthSelect.value=selectedMonth;
 header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;const vals=[...new Set([...all.map(x=>cellValue(x,sel.dataset.field)).filter(Boolean),...(previous&&!previous.startsWith('__SORT_')?[previous]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'vi'));sel.innerHTML='<option value="">Tất cả</option><option value="__SORT_AZ__">↑ Từ A-Z</option><option value="__SORT_ZA__">↓ Từ Z-A</option>'+vals.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');sel.value=previous;});}

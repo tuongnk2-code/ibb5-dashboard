@@ -1,4 +1,5 @@
 const assert=require('node:assert/strict');
+const fs=require('node:fs/promises');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const {createServer}=await import('../node_modules/vite/dist/node/index.js');const server=await createServer({server:{host:'127.0.0.1',port:5244,strictPort:true}});await server.listen();
@@ -23,6 +24,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    if(width===390){await row('APPROVE').locator('.p-mobile-edit').click();await page.locator('#pendingMobileEditor .p-manager-decision').selectOption('cancel');}else await row('APPROVE').locator('.p-manager-decision').selectOption('cancel');await page.waitForFunction(()=>window.reviewCalls.length===2);assert.deepEqual(await page.evaluate(()=>window.reviewCalls[1]),{kind:'cancelPending',id:'APPROVE',revision:1});assert.equal(await row('APPROVE').count(),0);
    if(process.env.REVIEW_SCREENSHOT_DIR){await row('RETURN').locator('.p-cancel-cell').scrollIntoViewIfNeeded();await page.locator('#pendingContracts .pending-scroll').screenshot({path:process.env.REVIEW_SCREENSHOT_DIR+'/pending-review-'+width+'.png'});}
   }else {assert.equal(await page.locator('#pendRows .p-manager-decision').count(),0);await row('RETURN').locator('.p-mobile-edit').click();assert.equal(await page.locator('#pendingMobileEditor .p-manager-decision').count(),0);await page.locator('#pendingMobileEditor .pm-close').first().click();}
+  if(role!=='manager')await page.evaluate(()=>{Object.assign(window.IBB5_PENDING_NOTES.RETURN,{result:'Chưa Online',processingRequestedAt:new Date().toISOString(),processingRespondedAt:null});document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:RETURN']}}));});
+  await page.locator('#pendStatus').selectOption('continue-processing');assert.deepEqual(await page.locator('#pendRows tr[data-id]').evaluateAll(rows=>rows.map(row=>row.dataset.id)),['RETURN']);assert.equal(await page.locator('#pendStatus option[value="continue-processing"]').textContent(),'Y/C xử lý tiếp');
+  await page.locator('#pendQuery').fill('APPROVE');assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);await page.locator('#pendQuery').fill('');await page.locator('#pendTeam').selectOption('1');assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);await page.locator('#pendTeam').selectOption('3');assert.equal(await row('RETURN').count(),1);
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#pendExport').click()]);const csv=await fs.readFile(await download.path(),'utf8');assert.match(csv,/RETURN/);assert.doesNotMatch(csv,/APPROVE/);
+  await page.evaluate(()=>{window.IBB5_PENDING_NOTES.RETURN.processingRespondedAt=new Date().toISOString();document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:RETURN']}}));});assert.equal(await page.locator('#pendRows tr[data-id]').count(),0);
   assert.deepEqual(errors,[]);await page.close();
  }console.log('PASS: one existing-cell dropdown with two decisions, manager-only review, return badge, approval, draft blocking and mobile editor');}
  finally{await browser.close();await server.close();}
