@@ -36,6 +36,11 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
   const own = () => snapshot?.reports.find(r => r.user_id === me.id);
   const state = r => reportState(r, date, new Date(Date.now() + serverOffset));
   const badge = r => `<span class="dr-badge dr-${state(r)}">${STATE_LABEL[state(r)]}</span>`;
+  let formBaseline = null;
+  // Compare raw values as well as input events: native number controls/autofill may emit change only.
+  const formSignature = () => JSON.stringify({fields:['actual','commitment','tomorrowPttb','tomorrowOnline','focus','difficulty','support'].map(name=>$(`[name="${name}"]`).value),sources:[...root.querySelectorAll('.dr-source-row')].map(row=>[row.querySelector('.dr-source-name').value,row.querySelector('.dr-leads').value,row.querySelector('.dr-closed').value])});
+  const hasEdits = () => dirty || (formBaseline !== null && formSignature() !== formBaseline);
+  const focusedFormField = () => !$('#drFields').disabled && $('#drForm').contains(document.activeElement) && document.activeElement.matches('input,select,textarea');
   async function api(method, body, query) {
     const session = await getSession();
     if (!session) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -84,13 +89,16 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     $('#drSources').innerHTML = (d.sources || REPORT_SOURCES.map(name => ({ name, leads: 0, closed: 0 }))).map(sourceRow).join('');
     $('#drPriorHint').textContent = prior ? 'Cam kết từ báo cáo hôm trước: ' + prior.tomorrowPttb + ' PTTB · ' + prior.tomorrowOnline + ' HĐ Online.' : 'Chưa có cam kết từ báo cáo hôm trước. Điền cam kết hôm nay để đối chiếu.';
     $('#drTomorrowLabel').textContent = '03 · CAM KẾT NGÀY ' + shiftDay(date, 1).split('-').reverse().join('/');
-    const metric = snapshot.metrics[me.id] || { online: 0, monthlyOnline: 0 };
-    const target = d.monthlyTarget ?? getMonthlyTarget(date.slice(0, 7), me.acc);
-    $('#drAuto').innerHTML = `<div><span>HĐ Online hôm nay</span><b>${number(metric.online)}</b><small>Tự lấy theo ngày Online</small></div><div><span>Online lũy kế / Cam kết tháng</span><b>${number(metric.monthlyOnline)} / ${target == null ? '—' : number(target)}</b><small>${target == null ? 'Chưa có cam kết tháng đã duyệt trên thiết bị này' : 'Theo cam kết tháng đã duyệt'}</small></div>`;
     $('#drFields').disabled = !snapshot.profiles.some(p => p.id === me.id) || report?.status === 'exempt';
     $('#drDraft').hidden = report?.status === 'submitted';
     $('#drSubmit').textContent = report?.status === 'submitted' ? 'Cập nhật báo cáo' : 'Gửi báo cáo';
-    dirty = false; totals();
+    dirty = false; formBaseline = formSignature(); totals();
+  }
+  function drawAuto() {
+    if(manager || !snapshot)return;
+    const metric = snapshot.metrics[me.id] || { online: 0, monthlyOnline: 0 };
+    const target = own()?.data.monthlyTarget ?? getMonthlyTarget(date.slice(0, 7), me.acc);
+    $('#drAuto').innerHTML = `<div><span>HĐ Online hôm nay</span><b>${number(metric.online)}</b><small>Tự lấy theo ngày Online</small></div><div><span>Online lũy kế / Cam kết tháng</span><b>${number(metric.monthlyOnline)} / ${target == null ? '—' : number(target)}</b><small>${target == null ? 'Chưa có cam kết tháng đã duyệt trên thiết bị này' : 'Theo cam kết tháng đã duyệt'}</small></div>`;
   }
   function drawBoard() {
     if (!snapshot) return;
@@ -118,14 +126,16 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       const next = await api('GET');
       if (version !== generation) return;
       serverOffset = new Date(next.serverTime).getTime() - Date.now();
-      // Keep the revision that the user is editing; the server detects conflicts.
-      if (!fill && dirty && snapshot) {
-        const editing = own(); next.reports = next.reports.filter(r => r.user_id !== me.id); if (editing) next.reports.push(editing);
+      const protectForm = hasEdits() || focusedFormField(), editing = own(), incoming = next.reports.find(r=>r.user_id===me.id);
+      // Retain both the draft and its revision, even when a forced reload finishes after typing.
+      // A lagging GET after a successful save must not roll the report back either.
+      if (snapshot && (protectForm || (editing && (!incoming || incoming.revision < editing.revision)))) {
+        next.reports = next.reports.filter(r => r.user_id !== me.id); if (editing) next.reports.push(editing);
       }
       snapshot = next; initialized = true;
       const changed = before !== JSON.stringify([own(), snapshot.metrics[me.id], getMonthlyTarget(date.slice(0,7),me.acc)]);
-      if (fill || (!dirty && changed)) fillForm(); drawBoard();
-    } catch (err) { message(err.message, true); if (fill) { $('#drFields').disabled = true; $('#drRows').innerHTML = '<tr><td colspan="8">Chưa tải được báo cáo. Bấm Tải lại để thử lại.</td></tr>'; } }
+      if (!protectForm && (fill || changed)) fillForm(); drawAuto(); drawBoard();
+    } catch (err) { message(err.message, true); if (fill && !snapshot) { $('#drFields').disabled = true; $('#drRows').innerHTML = '<tr><td colspan="8">Chưa tải được báo cáo. Bấm Tải lại để thử lại.</td></tr>'; } }
   }
   function formData() {
     const form = $('#drForm'), d = Object.fromEntries(new FormData(form));
@@ -143,7 +153,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       snapshot.reports.push(saved.report);
       document.dispatchEvent(new CustomEvent('ibb5-daily-report-updated'));
       drawBoard();
-      dirty = false; await load();
+      dirty = false; formBaseline = formSignature(); await load();
       if (saved.report.status === 'submitted') { $('#drHistoryMonth').value = date.slice(0, 7); await loadHistory(); }
       message(action === 'draft' ? 'Đã lưu nháp trên hệ thống.' : 'Đã gửi báo cáo.');
     } catch (err) { message(err.message, true); }
@@ -151,16 +161,17 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
   }
   $('#drForm').addEventListener('submit', e => { e.preventDefault(); save('submit'); });
   $('#drDraft').onclick = () => save('draft');
-  $('#drForm').addEventListener('input', () => { dirty = true; totals(); });
+  const markEdited = () => { dirty = true; totals(); };
+  $('#drForm').addEventListener('input', markEdited);$('#drForm').addEventListener('change', markEdited);
   $('#drAddSource').onclick = () => { if (root.querySelectorAll('.dr-source-row').length >= 20) return message('Tối đa 20 nguồn.', true); $('#drSources').insertAdjacentHTML('beforeend', sourceRow({ name: '', leads: 0, closed: 0 })); dirty = true; };
   $('#drSources').onclick = e => { if (e.target.closest('.dr-remove')) { e.target.closest('.dr-source-row').remove(); dirty = true; totals(); } };
   $('#drDate').onchange = e => {
-    if (busy || (dirty && !confirm('Báo cáo có thay đổi chưa lưu. Chuyển ngày và bỏ các thay đổi này?'))) { e.target.value = date; return; }
-    date = e.target.value; snapshot = null; dirty = false; $('#drFields').disabled = true;
+    if (busy || (hasEdits() && !confirm('Báo cáo có thay đổi chưa lưu. Chuyển ngày và bỏ các thay đổi này?'))) { e.target.value = date; return; }
+    date = e.target.value; snapshot = null; dirty = false; formBaseline = null; $('#drFields').disabled = true;
     $('#drSummary').innerHTML = ''; $('#drAlerts').hidden = true; $('#drOwnStatus').textContent = 'Đang tải…'; $('#drViewOwn').hidden = true;
     $('#drRows').innerHTML = '<tr><td colspan="8">Đang tải…</td></tr>'; load();
   };
-  $('#drReload').onclick = () => { if (!busy && (!dirty || confirm('Tải lại sẽ bỏ thay đổi chưa lưu. Tiếp tục?'))) load(); };
+  $('#drReload').onclick = () => { if (!busy && (!hasEdits() || confirm('Tải lại sẽ bỏ thay đổi chưa lưu. Tiếp tục?'))) {dirty = false; formBaseline = formSignature(); load();} };
   $('#drFilter').onchange = e => { filter = e.target.value; drawBoard(); };
   $('#drSummary').onclick = e => { const button = e.target.closest('[data-dr-filter]'); if (button) { filter = button.dataset.drFilter; $('#drFilter').value = filter; drawBoard(); } };
   $('#drCopy').onclick = async () => {
@@ -176,7 +187,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     if (exempt && snapshot && !busy) {
       const r = snapshot.reports.find(r => r.user_id === exempt.dataset.drExempt), undo = r?.status === 'exempt';
       const reason = undo ? '' : prompt('Lý do nghỉ / miễn báo cáo:'); if (!undo && !reason?.trim()) return;
-      try { busy = true; await api('POST', { date, action: undo ? 'unexempt' : 'exempt', user_id: exempt.dataset.drExempt, revision: r?.revision || 0, reason }); await load(false); if (!dirty) fillForm(); message(undo ? 'Đã bỏ đánh dấu nghỉ.' : 'Đã đánh dấu nghỉ; nhân sự không còn bị cảnh báo.'); }
+      try { busy = true; await api('POST', { date, action: undo ? 'unexempt' : 'exempt', user_id: exempt.dataset.drExempt, revision: r?.revision || 0, reason }); await load(false); if (!hasEdits() && !focusedFormField()) fillForm(); message(undo ? 'Đã bỏ đánh dấu nghỉ.' : 'Đã đánh dấu nghỉ; nhân sự không còn bị cảnh báo.'); }
       catch (err) { message(err.message, true); } finally { busy = false; }
     }
   });
@@ -189,7 +200,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     const report = button && history.find(r => r.report_date === button.dataset.drHistory);
     if (report) showDetail(me, report, report.report_date);
   };
-  window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (hasEdits()) { e.preventDefault(); e.returnValue = ''; } });
   // Refresh other people's reports without replacing the report currently being edited.
   let autoLoading = false;
   async function autoRefresh() {
