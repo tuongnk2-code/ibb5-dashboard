@@ -279,6 +279,7 @@ const pendingUpdatedText=(note,compact=false)=>{
 };
 const pendingUpdateIsStale=value=>Number.isFinite(Date.parse(value))&&Date.now()-Date.parse(value)>3*86400000;
 const pendingUpdatedHtml=note=>{const value=pendingUpdatedDate(note);return value?'<time class="p-updated'+(pendingUpdateIsStale(value)?' p-updated-stale':'')+'" datetime="'+escapeHTML(value)+'" title="Lưu gần nhất · Giờ Việt Nam'+(pendingUpdateIsStale(value)?' · Quá 3 ngày chưa cập nhật':'')+'">'+escapeHTML(pendingUpdatedText(note,true))+'</time>':'<small class="p-updated">Chưa ghi nhận</small>';};
+const processingRequestedTime=note=>{const value=note?.processingRequestedAt;return value&&Number.isFinite(Date.parse(value))?'<time class="p-processing-time" datetime="'+escapeHTML(value)+'" title="Thời gian TP yêu cầu xử lý tiếp · Giờ Việt Nam">'+escapeHTML(pendingUpdatedText({updated:value},true))+'</time>':'';};
 function refreshPendingTimestampWarnings(){el('pendingContracts').querySelectorAll('time.p-updated').forEach(time=>{const stale=pendingUpdateIsStale(time.dateTime);time.classList.toggle('p-updated-stale',stale);time.title='Lưu gần nhất · Giờ Việt Nam'+(stale?' · Quá 3 ngày chưa cập nhật':'');});}
 setInterval(refreshPendingTimestampWarnings,60000);window.addEventListener('focus',refreshPendingTimestampWarnings);document.addEventListener('visibilitychange',refreshPendingTimestampWarnings);
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
@@ -340,7 +341,7 @@ monthSelect.innerHTML='<option value="">Tất cả tháng</option>'+months.map(m
 header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;const vals=[...new Set([...all.map(x=>cellValue(x,sel.dataset.field)).filter(Boolean),...(previous&&!previous.startsWith('__SORT_')?[previous]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'vi'));sel.innerHTML='<option value="">Tất cả</option><option value="__SORT_AZ__">↑ Từ A-Z</option><option value="__SORT_ZA__">↓ Từ Z-A</option>'+vals.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');sel.value=previous;});}
 function cancellationApproval(id,result){
  if(isCancelled(id))return '<span class="p-manager-only">Đã duyệt hủy</span>';
- if(!isCancellationResult(result))return notes[id]?.processingRequestedAt&&!notes[id]?.processingRespondedAt?'<span class="p-continue-status" title="Trưởng phòng yêu cầu nhân viên cập nhật lại lịch hẹn và tình trạng HĐ">Y/C xử lý tiếp</span>':'';
+ if(!isCancellationResult(result))return notes[id]?.processingRequestedAt&&!notes[id]?.processingRespondedAt?'<span class="p-continue-status" title="Trưởng phòng yêu cầu nhân viên cập nhật lại lịch hẹn và tình trạng HĐ">Y/C xử lý tiếp</span>'+processingRequestedTime(notes[id]):'';
  if(!isManager())return '<span class="p-manager-only">Chỉ Trưởng phòng</span>';
  const disabled=pendingDrafts.has(id)||!notes[id]?.cancelReason?.trim();
  return '<select class="p-manager-decision" aria-label="TP xử lý '+escapeHTML(id)+'" '+(disabled?'disabled title="Lưu kết quả và lý do hủy trước khi TP xử lý"':'')+'><option value="">Chọn xử lý</option><option value="cancel">Duyệt hủy</option><option value="continue">Y/C xử lý tiếp</option></select>';
@@ -382,7 +383,7 @@ function openPendingEditor(id){
  const n=notes[id]||{},editorRevision=window.IBB5_SHARED_STATE?.revisions['pending:'+id]??0;
  mobileEditor.innerHTML='<div class="pm-head"><div><h3>'+(isCancelled(id)?'Xem HĐ đã ẩn ':'Cập nhật ')+escapeHTML(id)+'</h3><p>'+escapeHTML(contract.staff||'—')+'</p></div><button type="button" class="pm-close" aria-label="Đóng cập nhật hợp đồng">✕</button></div>'+
  '<dl class="pm-info"><dt>Khách hàng</dt><dd>'+escapeHTML(customer(contract)||'—')+'</dd><dt>Ngày tạo HĐ</dt><dd>'+escapeHTML(contract.created||'—')+'</dd><dt>Online thực tế</dt><dd>'+escapeHTML(contract.date||'Chưa Online')+'</dd><dt>Lưu gần nhất (giờ VN)</dt><dd>'+pendingUpdatedHtml(n)+'</dd></dl>'+
- (n.processingRequestedAt&&!n.processingRespondedAt?'<p class="p-continue-status">Trưởng phòng Y/C xử lý tiếp. Cần cập nhật lại lịch hẹn và tình trạng HĐ.</p>':'')+'<form id="pendingMobileForm">'+
+ (n.processingRequestedAt&&!n.processingRespondedAt?'<p class="p-continue-status">Trưởng phòng Y/C xử lý tiếp. Cần cập nhật lại lịch hẹn và tình trạng HĐ.'+processingRequestedTime(n)+'</p>':'')+'<form id="pendingMobileForm">'+
  '<label>Kết quả<select name="result" required>'+opts(RESULTS,n.result||'')+'</select></label>'+
  '<label class="pm-cancel-reason" '+(requiresCancellationReason(n.result)?'':'hidden')+'>Lý do hủy/dự kiến hủy<textarea name="cancelReason" maxlength="1000" rows="3" '+(requiresCancellationReason(n.result)?'required':'')+' placeholder="Nhập lý do hủy...">'+escapeHTML(n.cancelReason||'')+'</textarea></label>'+
  '<label>Ngày Online dự kiến<input name="expected" type="date" required value="'+escapeHTML(n.expected||'')+'"></label>'+
