@@ -1080,6 +1080,16 @@ document.addEventListener('ibb5-shared-updated',()=>{commitDB=window.IBB5_SHARED
 window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??null;
 
 renderQuoteBuilder(document.getElementById('pricing'),window.IBB5_CURRENT_PROFILE);
+let salesPlaybookLoad;
+function loadSalesPlaybook(){
+ if(location.hash!=='#scripts'||salesPlaybookLoad)return;
+ const root=document.getElementById('scripts');
+ root.innerHTML='<p class="note" role="status">Đang mở sổ tay kịch bản…</p>';
+ salesPlaybookLoad=import('./salesPlaybook.js').then(({renderSalesPlaybook})=>renderSalesPlaybook(root)).catch(()=>{
+  salesPlaybookLoad=null;root.innerHTML='<p class="note" role="status">Chưa tải được kịch bản. Anh kiểm tra kết nối rồi thử lại nhé.</p><button type="button">Thử lại</button>';root.querySelector('button').onclick=loadSalesPlaybook;
+ });
+}
+window.addEventListener('hashchange',loadSalesPlaybook);loadSalesPlaybook();
 
 renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
 
