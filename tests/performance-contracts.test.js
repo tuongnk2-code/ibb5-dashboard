@@ -7,7 +7,7 @@ test('performance details match current/previous periods, pending and over-seven
  const data=[row('SOLD','2026-11-10',''),row('BOTH','2026-11-02','2026-11-08'),row('OLD','2026-10-01',''),row('SEVEN','2026-11-03',''),row('PREV','2026-10-01','2026-10-10'),row('LATEPREV','2026-10-01','2026-10-11'),row('FUTURE','2026-11-11',''),row('OTHER','2026-11-01','','DNG.B')];data.push({...data[0]});
  const ids=kind=>performanceContractRows(data,{...selection,kind}).map(r=>r.id);
  assert.deepEqual(ids('sold'),['SOLD','BOTH','SEVEN']);assert.deepEqual(ids('online'),['BOTH']);assert.deepEqual(ids('previous'),['PREV']);
- assert.deepEqual(ids('pending'),['SOLD','BOTH','OLD','SEVEN','PREV','LATEPREV']);assert.deepEqual(ids('aged'),['OLD']);
+ assert.deepEqual(ids('pending'),['SOLD','BOTH','OLD','SEVEN','PREV','LATEPREV']);assert.deepEqual(ids('aged'),['BOTH','OLD','PREV','LATEPREV']);
  const filled={expected:'2026-11-10',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'};
  assert.deepEqual(performanceContractRows(data,{...selection,kind:'pending'},{BOTH:filled,PREV:filled,LATEPREV:filled,OLD:{cancellationApproved:true}}).map(row=>row.id),['SOLD','SEVEN']);
  assert.equal(performanceContractRows(data,{...selection,kind:'sold',accs:['DNG.A','DNG.B']}).length,4);

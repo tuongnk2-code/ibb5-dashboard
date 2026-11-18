@@ -15,3 +15,8 @@ export function pendingFollowupContracts(rows, notes, asOf) {
       && ((!row.date || row.date > asOf) || !pendingFollowupFilled(note) || isCancellationResult(note.result));
   });
 }
+
+export function agedFollowupContracts(rows, notes, asOf) {
+  return pendingFollowupContracts(rows, notes, asOf).filter(row =>
+    (Date.parse(asOf + 'T00:00:00Z') - Date.parse(row.created + 'T00:00:00Z')) / 86400000 > 7);
+}

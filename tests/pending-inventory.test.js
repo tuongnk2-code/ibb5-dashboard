@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pendingFollowupContracts } from '../js/pendingInventory.js';
+import { pendingFollowupContracts, agedFollowupContracts } from '../js/pendingInventory.js';
 
 test('follow-up inventory includes Online missing updates and excludes approved cancellations', () => {
   const row = (id, fields = {}) => ({id, type:'Internet', created:'2026-11-01', date:'', ...fields});
@@ -11,4 +11,11 @@ test('follow-up inventory includes Online missing updates and excludes approved 
   const filled={expected:'2026-11-18',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'};
   assert.equal(pendingFollowupContracts([row('WAIT'),row('WAIT',{date:'2026-11-18'})],{WAIT:filled},'2026-11-18').length,0);
   assert.equal(pendingFollowupContracts(rows, notes, '').length,0);
+});
+
+test('aged follow-up uses strictly more than seven calendar days and the same eligibility', () => {
+ const row=(id,created,date='')=>({id,created,date,type:'Internet'});
+ const rows=[row('SEVEN','2026-11-11'),row('EIGHT','2026-11-10'),row('APPROVED','2026-11-01'),row('INCOMPLETE','2026-11-01','2026-11-18'),row('COMPLETE','2026-11-01','2026-11-18')];
+ const notes={APPROVED:{cancellationApproved:true},COMPLETE:{expected:'2026-11-18',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'}};
+ assert.deepEqual(agedFollowupContracts(rows,notes,'2026-11-18').map(row=>row.id),['EIGHT','INCOMPLETE']);
 });
