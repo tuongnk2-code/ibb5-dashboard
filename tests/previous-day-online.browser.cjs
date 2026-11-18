@@ -19,11 +19,18 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await setDate('2026-11-18');assert.equal(await page.locator('#previousDayOnline').textContent(),'3');assert.match(await page.locator('#previousDayOnlineNote').textContent(),/18\/10\/2026/);
   await page.locator('#room').selectOption('IBB5');assert.equal(await page.locator('#previousDayOnline').textContent(),'2');
   await page.locator('#previousDayOnline').click();assert.match(await page.locator('#overviewMetricDialogTitle').innerText(),/18\/10\/2026 · 2 HĐ/);assert.deepEqual(await page.locator('#overviewMetricDialog tbody tr').evaluateAll(rows=>rows.map(r=>r.dataset.agedId)),['OCT1','OCT2']);await page.locator('#overviewMetricDialog [data-aged-close]').click();
+  const pickDay=date=>page.locator('#previousDayDate').evaluate((el,date)=>{el.value=date;el.dispatchEvent(new Event('change',{bubbles:true}));},date);
+  assert.equal(await page.locator('#previousDayDate').inputValue(),'2026-10-18');assert.equal(await page.locator('#previousDayDate').getAttribute('min'),'2026-10-01');assert.equal(await page.locator('#previousDayDate').getAttribute('max'),'2026-10-31');
+  const currentOnline=await page.locator('#online').textContent(),growth=await page.locator('#growthNote').textContent();
+  await pickDay('2026-10-19');assert.equal(await page.locator('#previousDayOnline').textContent(),'1');assert.equal(await page.locator('#to').inputValue(),'2026-11-18');assert.equal(await page.locator('#online').textContent(),currentOnline);assert.equal(await page.locator('#growthNote').textContent(),growth);
+  await page.locator('#previousDayOnline').click();assert.match(await page.locator('#overviewMetricDialogTitle').innerText(),/19\/10\/2026 · 1 HĐ/);assert.deepEqual(await page.locator('#overviewMetricDialog tbody tr').evaluateAll(rows=>rows.map(r=>r.dataset.agedId)),['LATER']);await page.locator('#overviewMetricDialog [data-aged-close]').click();
+  await page.locator('#room').selectOption('');assert.equal(await page.locator('#previousDayDate').inputValue(),'2026-10-19');await page.locator('#room').selectOption('IBB5');
+  await pickDay('2026-10-16');assert.equal(await page.locator('#previousDayOnline').textContent(),'0');await pickDay('2026-11-19');assert.equal(await page.locator('#previousDayDate').inputValue(),'2026-10-18');
   await setDate('2026-11-16');assert.equal(await page.locator('#previousDayOnline').textContent(),'0');
   await setDate('2026-01-18');assert.equal(await page.locator('#previousDayOnline').textContent(),'—');assert.match(await page.locator('#previousDayOnlineNote').textContent(),/2025-12/);
   await setDate('2026-03-31');assert.equal(await page.locator('#previousDayOnline').textContent(),'1');assert.match(await page.locator('#previousDayOnlineNote').textContent(),/28\/02\/2026/);
   await setDate('2026-11-18');
-  for(const width of [1440,390]){await page.setViewportSize({width,height:1000});await page.locator('#previousDayOnline').scrollIntoViewIfNeeded();const fit=await page.locator('#previousDayOnline').evaluate(el=>{const card=el.closest('.mini'),r=card.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&card.scrollWidth<=card.clientWidth+1;});assert.ok(fit);}
+  for(const width of [1440,390]){await page.setViewportSize({width,height:1000});await page.locator('#previousDayOnline').scrollIntoViewIfNeeded();const fit=await page.locator('#previousDayOnline').evaluate(el=>{const card=el.closest('.mini'),r=card.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&card.scrollWidth<=card.clientWidth+1;});assert.ok(fit);await pickDay('2026-10-17');assert.equal(await page.locator('#previousDayOnline').textContent(),'1');}
   assert.deepEqual(errors,[]);console.log('PASS: exact previous-month day, unique NET contracts, room filter, details, zero/missing data, month-end clamp and mobile fit');
  }finally{await browser.close();await server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
