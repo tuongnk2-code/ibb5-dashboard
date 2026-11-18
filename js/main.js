@@ -1,4 +1,5 @@
 import { renderChannelShareChart } from './channelShareChart.js';
+import { pendingFollowupContracts, pendingFollowupFilled } from './pendingInventory.js';
 import { renderWeeklyReports } from './weeklyReports.js';
 import { installDashboardAssistant } from './dashboardAssistant.js';
 import { installRemainingSchedule } from './remainingSchedule.js';
@@ -68,7 +69,7 @@ const performanceDetails=installAgedContractDetails({button:null,id:'performance
 document.querySelector('#overview .overview-support').insertAdjacentHTML('beforeend','<div class="mini"><div class="name">HĐ Online cùng ngày tháng trước</div><label class="previous-day-picker">Ngày xem<input id="previousDayDate" type="date"></label><div class="value blue" id="previousDayOnline">—</div><div class="detail" id="previousDayOnlineNote">Số HĐ NET Online trong ngày đối chiếu</div></div>');
 let selectedPreviousDay='';
 let overviewMetricSelection='pending';
-const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[],previousDayOnline:[]},overviewMetricTitles={pending:'HĐ tồn chưa Online',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng',previousDayOnline:'HĐ NET Online cùng ngày tháng trước'};
+const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[],previousDayOnline:[]},overviewMetricTitles={pending:'HĐ tồn cần theo dõi',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng',previousDayOnline:'HĐ NET Online cùng ngày tháng trước'};
 const overviewMetricDetails=installAgedContractDetails({button:null,id:'overviewMetricDialog',showOnline:true,hideFollowup:()=>overviewMetricSelection==='online',sourceOnly:()=>['vvip','cameraKpi'].includes(overviewMetricSelection),getSourceLabel:()=>overviewMetricSelection==='vvip'?'Truyền hình':'Camera',getRows:()=>overviewMetricRows[overviewMetricSelection],getAsOf:()=>$('to').value,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>overviewMetricTitles[overviewMetricSelection],getDescription:asOf=>'Tháng '+asOf.slice(0,7)+' · Ngày theo dõi '+asOf.split('-').reverse().join('/')+($('room').value?' · '+$('room').value:' · Toàn phòng')});
 for(const id of Object.keys(overviewMetricRows)){
  const trigger=$(id);trigger.setAttribute('role','button');trigger.tabIndex=0;trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','overviewMetricDialog');trigger.setAttribute('aria-label','Xem danh sách '+overviewMetricTitles[id]);
@@ -112,7 +113,7 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('forecast').textContent=forecast===null?'—':fmt(forecast)+' HĐ';$('forecastNote').textContent=target===null?'Chưa có cam kết để đối chiếu':forecast===null?'Chưa có ngày lịch':forecast<target?'Dự kiến thiếu '+fmt(target-forecast)+' HĐ':'Dự kiến đạt/vượt '+fmt(forecast-target)+' HĐ';$('forecastBar').style.width=target>0&&forecast!==null?Math.min(100,forecast/target*100)+'%':'0%';
  $('forecastRatio').textContent=target===null?'Tỷ lệ dự phóng: chưa ký cam kết':target===0?'Cam kết tháng bằng 0 — không tính tỷ lệ':forecast===null?'—':('Dự phóng đạt '+formatPercent(forecast/target*100)+' / '+fmt(target)+' HĐ cam kết');
  $('forecastPace7').textContent='Pace 7 ngày ('+windowStart.split('-').reverse().join('/')+' – '+asOf.split('-').reverse().join('/')+'): '+fmt(online7)+' HĐ / '+calendarDays7+' ngày lịch = '+show(pace7)+' HĐ/ngày · còn '+remaining+' ngày';
- const pend=netRows.filter(x=>IBB_CALC.pending(x,asOf));$('pending').textContent=fmt(IBB_CALC.unique(pend));agedContracts=[...new Map(pend.filter(x=>(Date.parse(asOf+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7).map(row=>[row.id,row])).values()];$('aged').textContent=fmt(agedContracts.length);agedDetails.refresh();
+ const pend=pendingFollowupContracts(netRows,IBB_CALC.notes(),asOf).filter(row=>window.IBB5_ROLE?.canView(row)??true);$('pending').textContent=fmt(pend.length);$('pending').closest('.mini').querySelector('.detail').textContent='HĐ cần theo dõi, gồm HĐ đã Online thiếu cập nhật · Theo danh sách hồ sơ HĐ tồn';agedContracts=[...new Map(netRows.filter(x=>IBB_CALC.pending(x,asOf)).filter(x=>(Date.parse(asOf+'T12:00:00')-Date.parse(x.created+'T12:00:00'))/86400000>7).map(row=>[row.id,row])).values()];$('aged').textContent=fmt(agedContracts.length);agedDetails.refresh();
  const tvOnline=dashboardData().filter(x=>x.type==='Truyền hình'&&(!room||x.room===room)&&x.id&&/^[A-Z0-9]+$/.test(x.id)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')&&x.date>=start&&x.date<=asOf);
  const tvVvipOnline=tvOnline.filter(x=>x.vvip===true||(x.vvip==null&&IBB_TV_META[x.id]?.vvip===true));
  const vvipCount=IBB_CALC.unique(tvVvipOnline);
@@ -307,10 +308,10 @@ const hiddenContracts=(mode='')=>[...new Map([...(mode==='hidden'?[]:dashboardDa
 const isHiddenMode=mode=>mode==='hidden'||mode==='hidden-cancelled';
 const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-slot',action:'.p-note',result:'.p-result',source:'.p-source',cancelReason:'.p-cancel-reason'};
 
-function isFilled(id){const n=notes[id]||{};return ['action','result','source',...(skipsOnlineAppointment(n.result)?[]:['expected','timeSlot'])].every(k=>String(n[k]||'').trim())&&(!requiresCancellationReason(n.result)||!!n.cancelReason?.trim())}
+function isFilled(id){return pendingFollowupFilled(notes[id]);}
 function isAutoHidden(row){const asof=el('pendAsOf').value;return !isCancelled(row.id)&&validDay(row.created)&&row.created<=asof&&validDay(row.date)&&row.date<=asof&&isFilled(row.id)&&!isCancellationResult(notes[row.id]?.result);}
 function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&(!x.date||x.date>asof))}
-function pending(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&((!x.date||x.date>asof)||!isFilled(x.id)||isCancellationResult(notes[x.id]?.result)))}
+function pending(){return pendingFollowupContracts(distinct,notes,el('pendAsOf').value);}
 function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d===asof?'due':d<asof?'overdue':'waiting'}
 const RESULTS=['Chưa Online','Đã Online','Dự Kiến Hủy','Hủy'];
 const REASONS=['chưa thống nhất với người nhà','Nhà KH đang xây dựng chưa xong','Kh muốn hẹn ngày đó','Đang còn cước đối thủ','Kh chưa chuyển vào ở','Không có lịch tích hẹn sớm hơn','Not hạ tầng','Chờ đầu tư hạ tầng','KH chưa đồng ý PHM','KH chưa đồng ý cước','Hủy lên lại','Khác'];
