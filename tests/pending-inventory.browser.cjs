@@ -19,9 +19,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.locator('#pendAsOf').evaluate(el=>{el.value='2026-11-18';el.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.locator('#pending').innerText(),'87');assert.match(await page.locator('#pendCount').textContent(),/87 \/ 87/);
   const list=await page.locator('#pendRows tr[data-id]').evaluateAll(rows=>rows.map(r=>r.dataset.id).sort());assert.equal(list.length,87);assert.ok(list.includes('INCOMPLETE'));assert.ok(!list.includes('APPROVED'));
+  const person=page.locator('#perfRows tr').filter({has:page.locator('.person',{hasText:'DNG.ManLM3'})}),pendingCell=person.locator('[data-perf-contracts="pending"]');
+  assert.equal(await pendingCell.innerText(),'87');assert.equal(await page.locator('#perfFoot [data-perf-contracts="pending"]').innerText(),'87');
+  await page.evaluate(()=>{location.hash='performance';});await pendingCell.click();assert.deepEqual(await page.locator('#performanceContractDialog tbody tr').evaluateAll(rows=>rows.map(r=>r.dataset.agedId).sort()),list);await page.locator('#performanceContractDialog [data-aged-close]').click();
+  await page.locator('#perfFoot [data-perf-contracts="pending"]').click();assert.equal(await page.locator('#performanceContractDialog tbody tr').count(),87);await page.locator('#performanceContractDialog [data-aged-close]').click();await page.evaluate(()=>{location.hash='overview';});
   await page.locator('#pending').click();const detail=await page.locator('#overviewMetricDialog tbody tr').evaluateAll(rows=>rows.map(r=>r.dataset.agedId).sort());assert.deepEqual(detail,list);await page.locator('#overviewMetricDialog [data-aged-close]').click();
   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.INCOMPLETE={...window.IBB5_PENDING_NOTES.COMPLETE};document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:INCOMPLETE']}}));});assert.equal(await page.locator('#pending').innerText(),'86');assert.match(await page.locator('#pendCount').textContent(),/86 \/ 86/);
   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.WAIT1={cancellationApproved:true};document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:WAIT1']}}));});assert.equal(await page.locator('#pending').innerText(),'85');assert.match(await page.locator('#pendCount').textContent(),/85 \/ 85/);
+  assert.equal(await pendingCell.innerText(),'85');assert.equal(await page.locator('#perfFoot [data-perf-contracts="pending"]').innerText(),'85');
   assert.deepEqual(errors,[]);console.log('PASS: overview inventory equals follow-up list and drill-down (87), live completion and cancellation update both');
  }finally{await browser.close();await server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
