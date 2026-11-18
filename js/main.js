@@ -65,8 +65,9 @@ const agedDetails=installAgedContractDetails({button:$('aged'),getRows:()=>agedC
 let performanceSelection=null;
 const performanceTitles={sold:'HĐ bán mới',online:'HĐ Online trong tháng',previous:'HĐ Online cùng kỳ tháng trước',pending:'HĐ tồn',aged:'HĐ tồn trên 7 ngày'};
 const performanceDetails=installAgedContractDetails({button:null,id:'performanceContractDialog',showOnline:true,hideFollowup:()=>['online','previous'].includes(performanceSelection?.kind),getRows:()=>performanceContractRows(operationalData(),performanceSelection),getAsOf:()=>performanceSelection?.kind==='previous'?performanceSelection.previousCut:performanceSelection?.asOf,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>performanceTitles[performanceSelection.kind]+' · '+performanceSelection.label,getDescription:()=>performanceSelection.kind==='previous'?'Online từ '+performanceSelection.previousMonth+'-01 đến '+performanceSelection.previousCut:'Tháng '+performanceSelection.asOf.slice(0,7)+' · Ngày theo dõi '+performanceSelection.asOf.split('-').reverse().join('/')});
+document.querySelector('#overview .overview-support').insertAdjacentHTML('beforeend','<div class="mini"><div class="name">HĐ Online cùng ngày tháng trước</div><div class="value blue" id="previousDayOnline">—</div><div class="detail" id="previousDayOnlineNote">Số HĐ NET Online trong ngày đối chiếu</div></div>');
 let overviewMetricSelection='pending';
-const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[]},overviewMetricTitles={pending:'HĐ tồn chưa Online',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng'};
+const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[],previousDayOnline:[]},overviewMetricTitles={pending:'HĐ tồn chưa Online',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng',previousDayOnline:'HĐ NET Online cùng ngày tháng trước'};
 const overviewMetricDetails=installAgedContractDetails({button:null,id:'overviewMetricDialog',showOnline:true,hideFollowup:()=>overviewMetricSelection==='online',sourceOnly:()=>['vvip','cameraKpi'].includes(overviewMetricSelection),getSourceLabel:()=>overviewMetricSelection==='vvip'?'Truyền hình':'Camera',getRows:()=>overviewMetricRows[overviewMetricSelection],getAsOf:()=>$('to').value,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>overviewMetricTitles[overviewMetricSelection],getDescription:asOf=>'Tháng '+asOf.slice(0,7)+' · Ngày theo dõi '+asOf.split('-').reverse().join('/')+($('room').value?' · '+$('room').value:' · Toàn phòng')});
 for(const id of Object.keys(overviewMetricRows)){
  const trigger=$(id);trigger.setAttribute('role','button');trigger.tabIndex=0;trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','overviewMetricDialog');trigger.setAttribute('aria-label','Xem danh sách '+overviewMetricTitles[id]);
@@ -112,6 +113,13 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';
  const priorCut=IBB_CALC.prior(month,+asOf.slice(-2)),priorMonth=priorCut.slice(0,7),priorRows=netRows.filter(x=>x.date&&x.date.slice(0,7)===priorMonth);
  const previous=IBB_CALC.validPrev(netRows,priorMonth)?IBB_CALC.unique(priorRows.filter(x=>x.date<=priorCut)):null;
+ const previousDayRows=priorRows.filter(x=>x.date===priorCut&&x.id&&/^[A-Z0-9]+$/.test(x.id));
+ $('previousDayOnline').textContent=previous===null?'—':fmt(IBB_CALC.unique(previousDayRows));
+ $('previousDayOnlineNote').textContent=previous===null?'Chưa có dữ liệu NET tháng '+priorMonth+' để đối chiếu.':'Online riêng ngày '+priorCut.split('-').reverse().join('/')+' · Đối chiếu ngày '+asOf.split('-').reverse().join('/');
+ $('previousDayOnline').title=$('previousDayOnlineNote').textContent;
+ overviewMetricRows.previousDayOnline=[...new Map(previousDayRows.map(row=>[row.id,row])).values()];
+ overviewMetricTitles.previousDayOnline='HĐ NET Online ngày '+priorCut.split('-').reverse().join('/');
+ overviewMetricDetails.refresh();
  $('growth').textContent=previous===null?'—':(previous===0?'—':formatPercent((totalOnline-previous)/previous*100));$('growth').title=previous===null?'Chưa có dữ liệu NET tháng trước':('Tháng trước cùng kỳ '+previous+' HĐ; tăng/giảm '+(totalOnline-previous)+' HĐ');
  const growthChange=previous===null?null:totalOnline-previous,priorRange=('01/'+priorMonth.slice(5))+'–'+priorCut.slice(8)+'/'+priorMonth.slice(5);
  $('growthNote').textContent=previous===null?'Chưa có dữ liệu NET tháng '+priorMonth+' để đối chiếu.':'Cùng kỳ '+priorRange+': '+fmt(previous)+' HĐ · '+(growthChange===0?'Không đổi':(growthChange>0?'Tăng ':'Giảm ')+fmt(Math.abs(growthChange))+' HĐ')+(previous===0?' · Chưa tính tỷ lệ vì kỳ trước bằng 0.':'');
