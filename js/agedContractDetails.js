@@ -1,7 +1,7 @@
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const day = value => value ? value.split('-').reverse().join('/') : '—';
 
-export function installAgedContractDetails({button, getRows, getAsOf, canView, showAppointment=false, id='agedContractDialog', getTitle=()=> 'HĐ tồn từ 7 ngày', getDescription=asOf=>'Ngày theo dõi '+day(asOf)+' · Chưa Online tại ngày chốt, quá 7 ngày theo ngày tạo'}) {
+export function installAgedContractDetails({button, getRows, getAsOf, canView, getNotes=()=>({}), showPending=false, showAppointment=false, id='agedContractDialog', getTitle=()=> 'HĐ tồn từ 7 ngày', getDescription=asOf=>'Ngày theo dõi '+day(asOf)+' · Chưa Online tại ngày chốt, quá 7 ngày theo ngày tạo'}) {
   const dialog = document.createElement('dialog');
   dialog.id = id; dialog.className = 'aged-contract-dialog';
   dialog.setAttribute('aria-labelledby',id+'Title');
@@ -36,12 +36,17 @@ export function installAgedContractDetails({button, getRows, getAsOf, canView, s
     }
   }
   function draw() {
-    const all = getRows(), rows = all.filter(canView), asOf = getAsOf();
+    const all = getRows(), rows = all.filter(canView), asOf = getAsOf(), notes=getNotes()||{};
+    const pending=!showAppointment&&(typeof showPending==='function'?showPending():showPending);
+    const extraHead=showAppointment?'<th>Ngày hẹn</th><th>Mốc hẹn</th>':pending?'<th>Nguyên nhân chưa OL</th><th>Ngày dự kiến OL</th>':'<th>Ngày Online thực tế</th>';
+    dialog.querySelector('thead tr').innerHTML='<th>Mã HĐ</th><th>Acc</th><th>Khách hàng</th><th>Ngày tạo</th>'+extraHead;
     dialog.querySelector('h3').textContent = getTitle() + ' · ' + rows.length + ' HĐ';
     dialog.querySelector('[data-aged-scope]').textContent = getDescription(asOf) + (rows.length !== all.length ? ' · Hiển thị ' + rows.length + '/' + all.length + ' HĐ theo quyền tài khoản' : '');
-    dialog.querySelector('tbody').innerHTML = rows.map(row =>
-      '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td>'+(showAppointment?'<td>'+esc(day(row.expected))+'</td><td>'+esc(row.timeSlot||'—')+'</td>':'<td>'+esc(day(row.date))+'</td>')+'</tr>'
-    ).join('') || '<tr><td colspan="'+(showAppointment?6:5)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
+    dialog.querySelector('tbody').innerHTML = rows.map(row => {
+      const note=notes[row.id]||{};
+      const extra=showAppointment?'<td>'+esc(day(row.expected))+'</td><td>'+esc(row.timeSlot||'—')+'</td>':pending?'<td class="aged-pending-reason">'+esc(note.action||note.reason||'—')+'</td><td>'+esc(day(note.expected))+'</td>':'<td>'+esc(day(row.date))+'</td>';
+      return '<tr data-aged-id="'+esc(row.id)+'"><td><b>'+esc(row.id)+'</b></td><td>'+esc(row.staff || '—')+'</td><td>'+esc(row.customer || '—')+'</td><td>'+esc(day(row.created))+'</td>'+extra+'</tr>';
+    }).join('') || '<tr><td colspan="'+(showAppointment||pending?6:5)+'">Không có hợp đồng phù hợp trong phạm vi tài khoản.</td></tr>';
     pinColumns();
   }
   function open() { draw(); dialog.showModal();document.body.classList.add('contract-details-open'); pinColumns(); }
