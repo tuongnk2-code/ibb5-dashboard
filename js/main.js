@@ -929,6 +929,7 @@ function renderContracts(v){
 }
 function render(){
  const v=calculate();current=v;const {m,day,mode,team,search,days,rows,metric}=v,kinds=metricKinds(metric);
+ root.classList.toggle('dp-single-metric',metric!=='both');root.classList.toggle('dp-single-day',metric!=='both'&&mode==='day');
  el('dpDateWrap').style.display=mode==='day'?'':'none';
  const idx=+day.slice(-2)-1,which=mode==='day'?[idx]:days.map((_,i)=>i);
  const sum=(p,k)=>which.reduce((n,i)=>n+(p[k][i]||0),0);
@@ -944,7 +945,7 @@ function render(){
  el('dpScope').textContent=(team?'Bầy '+team:'Toàn phòng')+(search?' · đang lọc nhân sự':'')+' · '+period+' · '+(metric==='both'?'Bán & Online':metric==='sold'?'Chỉ HĐ bán':'Chỉ HĐ Online');
  // Only the Acc column is fixed; daily columns scroll horizontally.
  el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th>'+
-  (mode==='day'?`<th colspan="${kinds.length}">NGÀY ${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="${kinds.length}">Ngày ${String(n).padStart(2,'0')}</th>`).join(''))+'</tr><tr>'+
+  (mode==='day'?`<th colspan="${kinds.length}">${metric==='both'?'NGÀY ':''}${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="${kinds.length}" title="Ngày ${String(n).padStart(2,'0')}/${m.slice(5)}/${m.slice(0,4)}">${metric==='both'?'Ngày '+String(n).padStart(2,'0'):String(n).padStart(2,'0')+'/'+m.slice(5)}</th>`).join(''))+'</tr><tr>'+
   (mode==='day'?kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join(''):days.map(()=>kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')).join(''))+'</tr>';
  let body='';const person=p=>`<td class="dp-staff dp-staff-acc-only"><strong>${esc(p.acc||p.name)}</strong></td>`;
  for(const t of team?[team]:['1','2','3']){
@@ -954,7 +955,7 @@ function render(){
  body+=`<tr class="dp-grand"><td class="dp-staff">${team?'TỔNG BẦY '+team:'TỔNG PHÒNG'} (${rows.length} NS)</td>`+rowHtml(total(rows,days),mode,idx,days)+'</tr>';
  el('dpTableBody').innerHTML=body;renderContracts(v);
  // VISUAL ONLY: explicit column grid prevents browser/zoom from stretching the pinned Mã Acc column.
- const baseDay=mode==='day'?70:50,cols=mode==='day'?kinds.length:days.length*kinds.length,tableW=146+cols*baseDay;
+ const baseDay=mode==='day'?(metric==='both'?70:110):(metric==='both'?50:64),cols=mode==='day'?kinds.length:days.length*kinds.length,tableW=146+cols*baseDay;
  el('dpColGroup').innerHTML='<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
  el('dpTable').style.width=tableW+'px'; el('dpTable').style.minWidth=tableW+'px';
  el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
