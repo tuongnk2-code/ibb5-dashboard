@@ -24,8 +24,9 @@ const aliases = new Map(SALES_CHANNELS.map(channel=>[normalized(channel),channel
 for (const [alias,channel] of [['facebookads','Face Book'],['fb','Face Book'],['fbads','Face Book'],['website','Web'],['zalo','Top Zalo'],['khachhangcu','KH cũ'],['nguoiquen','Người Quen + Thân'],['nguoithan','Người Quen + Thân'],['telesales','Telesale'],['ibb','IBB']]) aliases.set(alias,channel);
 
 // Creation month and source priority are unchanged. Unknown sources retain their own columns.
-export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '') {
-  const sourceRows = unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month);
+export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '', cutoff = '') {
+  const monthRows = unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month);
+  const sourceRows = monthRows.filter(row=>!cutoff||row.created<=cutoff);
   const sourceOf = row => {
     const source = String(notes[row.id]?.source || row.sourceExcel || '').trim();
     return source ? aliases.get(normalized(source)) || source : 'Chưa cập nhật';
@@ -47,7 +48,7 @@ export function monthlyStaffChannels(rows, notes, month, staff = '', roster = ST
     return {team,rows:members,counts:totalCounts(members),total:members.reduce((sum,person)=>sum+person.total,0)};
   }).filter(group=>group.rows.length);
   const all=groups.flatMap(group=>group.rows);
-  return {channels,groups,counts:totalCounts(all),total:all.reduce((sum,person)=>sum+person.total,0),missing,available:sourceRows.length>0};
+  return {channels,groups,counts:totalCounts(all),total:all.reduce((sum,person)=>sum+person.total,0),missing,available:monthRows.length>0};
 }
 
 // NET source status, independent of the pending-follow-up cancellation workflow.

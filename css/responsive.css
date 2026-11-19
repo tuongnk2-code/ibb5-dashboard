@@ -346,6 +346,15 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #ibb5Analytics .ana-monthly-table .ana-channel-grand :is(th,td) { background: #193d64; color: white; font-weight: 850; }
 #ibb5Analytics .ana-monthly-table .ana-channel-ratio :is(th,td) { background: #e4f2ff; color: #185d96; font-weight: 850; }
 #ibb5Analytics .ana-monthly-table tr > :last-child { width: 84px; font-weight: 850; }
+#ibb5Analytics .ana-monthly-table{min-width:1550px}
+#ibb5Analytics .ana-source-count{display:block;font-weight:650}
+#ibb5Analytics .ana-source-change{display:block;margin-top:4px;font-size:11px;font-weight:600;white-space:nowrap}
+#ibb5Analytics .ana-monthly-table .ana-source-up{color:#087854}
+#ibb5Analytics .ana-monthly-table .ana-source-down{color:#c53535}
+#ibb5Analytics .ana-monthly-table .ana-source-flat{color:#70859c}
+#ibb5Analytics .ana-channel-grand .ana-source-change{color:#cfe3f6}
+#ibb5Analytics .ana-channel-grand [data-source-metric]{color:#fff}
+#ibb5Analytics .ana-monthly-table [data-source-metric]{font-weight:800;white-space:nowrap}
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }

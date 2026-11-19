@@ -23,7 +23,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.match(await page.locator('#anaMonthlyTotal').textContent(),/Toàn phòng.*4 HĐ/);
   await page.locator('#anaChannelTeam').selectOption('2');
   assert.equal(await page.locator('#anaMonthlyRows tr[data-acc]').count(),3);
-  assert.match(await page.locator('#anaMonthlyTotal').textContent(),/Bầy 2.*2 HĐ/);assert.equal(await page.locator('#anaMonthlyFoot .ana-channel-grand td').last().textContent(),'2');
+  assert.match(await page.locator('#anaMonthlyTotal').textContent(),/Bầy 2.*2 HĐ/);assert.equal(await page.locator('#anaMonthlyFoot .ana-channel-grand [data-source-metric="current"]').textContent(),'2');
   await page.locator('#anaStaff').selectOption('DNG.Vypv');assert.equal(await page.locator('#anaMonthlyRows tr[data-acc]').count(),0);assert.match(await page.locator('#anaMonthlyTotal').textContent(),/0 HĐ/);
   await page.locator('#anaStaff').selectOption('');
   await page.locator('#anaChannelMonth').fill('2026-12');await page.locator('#anaChannelMonth').dispatchEvent('change');assert.match(await page.locator('#anaMonthlyTotal').textContent(),/— HĐ/);assert.match(await page.locator('#anaShareTotal').textContent(),/0 HĐ/);
