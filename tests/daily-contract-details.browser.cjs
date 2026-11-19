@@ -25,6 +25,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    assert.match(await page.locator('.dp-contract-sold').textContent(),/Khách <A>/);assert.equal(await page.locator('.dp-contract-details img').count(),0);
    if(role==='staff')assert.match(await page.locator('.dp-contract-sold').textContent(),/1\/2 HĐ theo quyền/);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+   assert.deepEqual(await page.locator('#dpMetric option').allTextContents(),['Bán & Online','Chỉ HĐ bán','Chỉ HĐ Online']);
+   await page.locator('#dpMetric').selectOption('sold');assert.deepEqual(await page.locator('#dpTableHead tr').nth(1).locator('th').allTextContents(),['Bán']);assert.equal(await page.locator('#dpTableBody td.dp-online').count(),0);assert.equal(await page.locator('.dp-contract-online').count(),0);assert.deepEqual(await ids('sold'),role==='staff'?['A']:['A','B']);assert.deepEqual(await page.locator('#dpKpis strong').allTextContents(),['2 HĐ','2 NV']);
+   let filteredDownload=page.waitForEvent('download');await page.locator('#dpExport').click();let filteredCsv=fs.readFileSync(await (await filteredDownload).path(),'utf8');assert.match(filteredCsv,/Mã HĐ đã lên/);assert.doesNotMatch(filteredCsv,/Online/);
+   await page.locator('#dpMetric').selectOption('online');assert.deepEqual(await page.locator('#dpTableHead tr').nth(1).locator('th').allTextContents(),['Online']);assert.equal(await page.locator('#dpTableBody td.dp-sold').count(),0);assert.equal(await page.locator('.dp-contract-sold').count(),0);assert.deepEqual(await page.locator('#dpKpis strong').allTextContents(),['3 HĐ','3 NV']);
+   await page.locator('#dpView').selectOption('month');assert.equal(await page.locator('#dpMetric').inputValue(),'online');assert.equal(await page.locator('#dpTableBody tr').first().locator('td').count(),31);assert.equal(await page.locator('#dpTableHead tr').first().locator('th').nth(1).getAttribute('colspan'),'1');assert.equal(await page.locator('#dpContractDetails').isVisible(),false);
+   filteredDownload=page.waitForEvent('download');await page.locator('#dpExport').click();filteredCsv=fs.readFileSync(await (await filteredDownload).path(),'utf8');assert.match(filteredCsv,/1 Online/);assert.doesNotMatch(filteredCsv,/Bán/);
+   await page.locator('#dpMetric').selectOption('sold');assert.equal(await page.locator('#dpTableBody tr').first().locator('td').count(),31);assert.equal(await page.locator('#dpTableBody td.dp-online').count(),0);
+   await page.locator('#dpMetric').selectOption('both');assert.equal(await page.locator('#dpTableBody tr').first().locator('td').count(),61);await page.locator('#dpView').selectOption('day');assert.deepEqual(await page.locator('#dpTableHead tr').nth(1).locator('th').allTextContents(),['Bán','Online']);
    if(process.env.DAILY_DETAILS_SCREENSHOT_DIR)await page.locator('#ibbDayPerf').screenshot({path:process.env.DAILY_DETAILS_SCREENSHOT_DIR+'/daily-contracts-'+role+'.png'});
    if(role==='manager'){
     await page.locator('#dpTeam').selectOption('');
@@ -45,11 +53,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     assert.match(await page.locator('#psRows').textContent(),/DNG.Hoantt/);
     for(const result of ['Hủy',' huỷ ','Dự Kiến Hủy',' dự   kiến huỷ ']){
      await page.evaluate(result=>{window.IBB5_PENDING_NOTES.A.result=result;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:A']}}));},result);
-     assert.doesNotMatch(await page.locator('#psRows').textContent(),/DNG.Hoantt/);assert.match(await page.locator('#psSummary').textContent(),/0 HĐ dự kiến Online/);
+     assert.doesNotMatch(await page.locator('#psRows').textContent(),/DNG.Hoantt/);assert.match(await page.locator('#psSummary').textContent(),/0 HĐ còn theo dõi/);
      assert.deepEqual(await page.locator('#psRows .ps-total td').allTextContents(),['TỔNG PHÒNG','0','0','0','0','0','0']);
     }
     await page.evaluate(()=>{window.IBB5_PENDING_NOTES.A.result='Chưa Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:A']}}));});
-    assert.match(await page.locator('#psRows').textContent(),/DNG.Hoantt/);assert.match(await page.locator('#psSummary').textContent(),/1 HĐ dự kiến Online/);
+    assert.match(await page.locator('#psRows').textContent(),/DNG.Hoantt/);assert.match(await page.locator('#psSummary').textContent(),/1 HĐ còn theo dõi/);
 
     const scheduleDownload=page.waitForEvent('download');await page.locator('#psShot').click();const scheduleImage=await scheduleDownload;
     assert.match(scheduleImage.suggestedFilename(),/IBB5_HD_Online_Du_Kien_2026-11-06\.png$/);

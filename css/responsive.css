@@ -533,6 +533,8 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #performance .dp-day-layout #dpTableCapture .dp-scroll{min-width:0;max-width:100%;margin:0}
 #performance .dp-contract-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;min-width:0;align-items:start}
 #performance .dp-contract-details[hidden]{display:none!important}
+#performance .dp-contract-details.dp-single-kind{grid-template-columns:minmax(0,1fr)}
+#performance .dp-legend span[hidden]{display:none!important}
 #performance .dp-contract-card{border:1px solid #d8e5f3;border-radius:10px;overflow:hidden;background:white;min-width:0}
 #performance .dp-contract-head{padding:12px 14px;background:#f5f9ff;border-bottom:1px solid #dce7f3}
 #performance .dp-contract-head h4{font-size:15px;color:#173b60;margin:0 0 4px}
