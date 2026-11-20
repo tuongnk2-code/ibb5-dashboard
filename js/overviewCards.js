@@ -36,4 +36,15 @@ export function installOverviewCards() {
     symbol.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+icons[icon]+'</svg>';
     name.after(symbol);
   }
+  const focus=document.querySelector('#overview .overview-focus');
+  const support=document.querySelector('#overview .overview-support');
+  if(focus&&support){
+    const row=document.createElement('div');row.className='overview-five';
+    row.setAttribute('role','group');row.setAttribute('aria-label','Năm chỉ số theo dõi kinh doanh');
+    focus.before(row);
+    for(const group of [focus,support]){
+      row.append(...group.children);
+      group.remove();
+    }
+  }
 }
