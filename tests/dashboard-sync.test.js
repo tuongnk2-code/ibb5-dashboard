@@ -159,20 +159,16 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('POST',{kind:'continuePending',id:'MISSING',revision:0})).code,403);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:1})).code,200);
     const returned=(await invoke('GET')).body.notes.RETURN;
-    assert.equal(returned.result,'Hủy');assert.equal(returned.cancelReason,cancel.cancelReason);assert.equal(returned.processingCancelReason,cancel.cancelReason);assert.equal(returned.processingRequestedBy,'manager');assert.ok(Date.parse(returned.processingRequestedAt));assert.equal(returned.cancellationApproved,undefined);
+    assert.equal(returned.result,'Chưa Online');assert.equal(returned.cancelReason,cancel.cancelReason);assert.equal(returned.processingCancelReason,cancel.cancelReason);assert.equal(returned.processingRequestedBy,'manager');assert.ok(Date.parse(returned.processingRequestedAt));assert.equal(returned.cancellationApproved,undefined);
     assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:1})).code,409);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'NET1',revision:5})).code,409);
     caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
-    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:2,value:{...note,result:'Đã Online',processingUpdate:'  Đã liên hệ KH lần 2  ',processingRequestedBy:'forged',processingRequestedAt:null,cancellationApproved:true}})).code,200);
+    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:2,value:{...note,result:'Đã Online',processingRequestedBy:'forged',processingRequestedAt:null,cancellationApproved:true}})).code,200);
     const responded=(await invoke('GET')).body.notes.RETURN;assert.equal(responded.processingRequestedBy,'manager');assert.equal(responded.processingRequestedAt,returned.processingRequestedAt);assert.ok(Date.parse(responded.processingRespondedAt));
     assert.equal(responded.result,'Đã Online');assert.equal(responded.cancellationApproved,undefined);assert.equal(hasProcessingRequest(responded),true);
-    assert.equal(responded.processingUpdate,'Đã liên hệ KH lần 2');assert.equal(responded.expected,'');assert.equal(responded.timeSlot,'');
-    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:3,value:{...note,result:'Chưa Online',expected:'',timeSlot:''}})).code,400);
-    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:3,value:{...note,result:'Chưa Online'}})).code,200);
-    const rescheduled=(await invoke('GET')).body.notes.RETURN;assert.equal(rescheduled.processingUpdate,responded.processingUpdate);assert.equal(rescheduled.expected,note.expected);assert.equal(rescheduled.timeSlot,note.timeSlot);assert.equal(hasProcessingRequest(rescheduled),true);
-    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:4})).code,403);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:3})).code,403);
     caller={id:'manager',role:'manager'};
-    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:4})).code,200);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:3})).code,200);
     const approvedContinuation=(await invoke('GET')).body.notes.RETURN;assert.equal(hasProcessingRequest(approvedContinuation),false);assert.equal(approvedContinuation.result,'Hủy');assert.equal(approvedContinuation.cancelReason,cancel.cancelReason);assert.equal(approvedContinuation.cancellationApprovedBy,'manager');
     assert.equal((await invoke('POST',{kind:'pending',id:'NOV',revision:0,value:cancel})).code,200);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'NOV',revision:1})).code,409);
@@ -191,18 +187,6 @@ test('final and planned cancellations both require a reason',()=>{
   assert.throws(()=>validateNote({...note,result:'Dự Kiến Hủy'}),/lý do hủy/);
   assert.equal(validateNote({...note,result:'Dự Kiến Hủy',cancelReason:'Đang trao đổi với khách'}).cancelReason,'Đang trao đổi với khách');
   assert.equal(validateNote({...note,result:'Chưa Online'}).cancelReason,'');
-});
-
-test('second processing update uses trusted manager request and restores appointment validation',()=>{
-  const previous={processingRequestedAt:'2026-11-20T01:00:00Z',processingUpdate:'Nội dung đã lưu'};
-  const value={expected:'',timeSlot:'',action:'Khác',source:'Web',result:'Đã Online'};
-  assert.equal(validateNote(value,previous).processingUpdate,'Nội dung đã lưu');
-  assert.equal(validateNote({...value,processingUpdate:'  Đã liên hệ lại  '},previous).processingUpdate,'Đã liên hệ lại');
-  assert.throws(()=>validateNote({...value,processingUpdate:'x'.repeat(2001)},previous),/2.000/);
-  assert.throws(()=>validateNote({...value,result:'Chưa Online'},previous),/ngày Online/);
-  assert.throws(()=>validateNote({...value,result:'Chưa Online',expected:'2026-11-21'},previous),/đủ các trường/);
-  assert.equal(validateNote({...value,result:'Chưa Online',expected:'2026-11-21',timeSlot:'8h - 10h'},previous).processingUpdate,previous.processingUpdate);
-  assert.throws(()=>validateNote({...value,processingRequestedAt:previous.processingRequestedAt}),/ngày Online/);
 });
 
 test('only the two appointment fields are optional for final or planned cancellation',()=>{

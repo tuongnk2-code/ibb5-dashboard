@@ -1,7 +1,7 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData, hasProcessingRequest, usesProcessingUpdate } from '../js/dashboardStateModel.js';
-import { canSeeReport, validDay } from '../js/dailyReportModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData, hasProcessingRequest } from '../js/dashboardStateModel.js';
+import { canSeeReport, validDay, reportDay } from '../js/dailyReportModel.js';
 import { isTerminatedNetContract } from '../js/cancellationArchive.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
@@ -72,8 +72,8 @@ export default async function handler(req, res) {
       data = body.kind === 'cancelPending'
         ? { ...existing?.data, ...(continued?{result:'Hủy',cancelReason:existing.data.cancelReason?.trim()||existing.data.processingCancelReason||''}:{}), cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
         : body.kind==='continuePending'
-        ? {...existing.data,processingRequestedAt:now,processingRequestedBy:caller.acc||caller.id,processingCancelReason:existing.data.cancelReason,processingRespondedAt:null,updated:now,updatedBy:caller.acc||caller.id}
-        : { ...validateNote({ ...body.value, ...(usesProcessingUpdate(existing?.data,body.value?.result)?{expected:existing.data.expected||'',timeSlot:existing.data.timeSlot||''}:{}), cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' },existing?.data),...followup, updated: now, updatedBy: caller.acc || caller.id };
+        ? {...existing.data,result:contracts.some(row=>validDay(row.date)&&row.date<=reportDay())?'Đã Online':'Chưa Online',processingRequestedAt:now,processingRequestedBy:caller.acc||caller.id,processingCancelReason:existing.data.cancelReason,processingRespondedAt:null,updated:now,updatedBy:caller.acc||caller.id}
+        : { ...validateNote({ ...body.value, cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' }),...followup, updated: now, updatedBy: caller.acc || caller.id };
     } else if (body.kind === 'commit') {
       key = monthKey(body.month, body.room || '__ALL__');
       const manager = caller.role === 'manager';

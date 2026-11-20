@@ -4,7 +4,6 @@ export const LEGACY_KEYS = { snapshot: 'ibb5_three_source_snapshot_v1', commitme
 export const normAcc = v => String(v || '').trim().toLowerCase();
 export const canImportData = profile => ['manager', 'lead'].includes(profile?.role);
 export const hasProcessingRequest = (note = {}) => !!note?.processingRequestedAt && !note?.cancellationApproved;
-export const usesProcessingUpdate = (note = {}, result = note?.result) => hasProcessingRequest(note) && String(result||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN').replace(/\s+/g,' ') !== 'chưa online';
 export const monthKey = (month, room = '__ALL__') => {
   if (!validDay(month + '-01') || typeof room !== 'string' || room.length > 100) throw new Error('Tháng / phòng cam kết không hợp lệ.');
   return 'commit:' + month + ':' + room;
@@ -73,9 +72,9 @@ export function mergeNetSnapshot(previous, incoming) {
 export const isCancellationResult = value => ['hủy', 'huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN'));
 export const skipsOnlineAppointment = value => isCancellationResult(value) || ['dự kiến hủy', 'dự kiến huỷ'].includes(String(value || '').trim().toLocaleLowerCase('vi-VN').replace(/\s+/g, ' '));
 export const requiresCancellationReason = value => skipsOnlineAppointment(value);
-export function validateNote(value, previous = {}) {
+export function validateNote(value) {
   if (!value || typeof value !== 'object') throw new Error('Nội dung cập nhật không hợp lệ.');
-  const skipAppointment = usesProcessingUpdate(previous,value.result)||skipsOnlineAppointment(value.result), expected = value.expected ?? '';
+  const skipAppointment = skipsOnlineAppointment(value.result), expected = value.expected ?? '';
   if ((!skipAppointment || expected !== '') && !validDay(expected)) throw new Error('Cần chọn ngày Online dự kiến hợp lệ.');
   const result = { expected };
   for (const field of ['timeSlot', 'action', 'result', 'source']) {
@@ -86,10 +85,5 @@ export function validateNote(value, previous = {}) {
   if (value.cancelReason != null && (typeof value.cancelReason !== 'string' || value.cancelReason.length > 1000)) throw new Error('Lý do hủy tối đa 1.000 ký tự.');
   result.cancelReason = String(value.cancelReason || '').trim();
   if (requiresCancellationReason(result.result) && !result.cancelReason) throw new Error('Vui lòng nhập lý do hủy hoặc dự kiến hủy hợp đồng.');
-  if(hasProcessingRequest(previous)){
-    const text=value.processingUpdate??previous.processingUpdate??'';
-    if(typeof text!=='string'||text.length>2000)throw new Error('Nội dung xử lý lần 2 tối đa 2.000 ký tự.');
-    result.processingUpdate=text.trim();
-  }
   return result;
 }

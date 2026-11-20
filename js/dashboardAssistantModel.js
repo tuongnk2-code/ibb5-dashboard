@@ -70,7 +70,7 @@ export function draftAssistantUpdate(row,note,patch,revision=0){
 export function validateAssistantDraft(draft,latestNote,latestRevision){
   if(draft.revision!==latestRevision||NOTE_FIELDS.some(field=>String(latestNote?.[field]||'')!==draft.before[field]))throw new Error('HĐ đã được cập nhật ở nơi khác. Vui lòng tạo lại bản nháp từ dữ liệu mới.');
   if(latestNote?.cancellationApproved)throw new Error('HĐ đã được duyệt hủy.');
-  return validateNote(draft.after,latestNote);
+  return validateNote(draft.after);
 }
 export function parseAssistantPatch(text,today=reportDay()){
   const q=normalize(text),patch={};
