@@ -25,6 +25,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    if(process.env.REVIEW_SCREENSHOT_DIR){await row('RETURN').locator('.p-cancel-cell').scrollIntoViewIfNeeded();await page.locator('#pendingContracts .pending-scroll').screenshot({path:process.env.REVIEW_SCREENSHOT_DIR+'/pending-review-'+width+'.png'});}
   }else {assert.equal(await page.locator('#pendRows .p-manager-decision').count(),0);await row('RETURN').locator('.p-mobile-edit').click();assert.equal(await page.locator('#pendingMobileEditor .p-manager-decision').count(),0);await page.locator('#pendingMobileEditor .pm-close').first().click();}
   if(role!=='manager')await page.evaluate(()=>{Object.assign(window.IBB5_PENDING_NOTES.RETURN,{result:'Hủy',processingRequestedAt:new Date().toISOString(),processingRespondedAt:null});document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:RETURN']}}));});
+  const appointmentHeaders=page.locator('#pendRows').locator('xpath=../thead/tr/th');
+  assert.equal(await appointmentHeaders.nth(6).locator('.ph-label').innerText(),'Cập nhật tình trạng xử lý lần 2');
+  assert.equal(await appointmentHeaders.nth(6).getAttribute('colspan'),'2');assert.equal(await appointmentHeaders.nth(7).isVisible(),false);
   await page.locator('#pendStatus').selectOption('continue-processing');assert.deepEqual(await page.locator('#pendRows tr[data-id]').evaluateAll(rows=>rows.map(row=>row.dataset.id)),['RETURN']);assert.equal(await page.locator('#pendStatus option[value="continue-processing"]').textContent(),'Y/C xử lý tiếp');
   const requested=await page.evaluate(()=>window.IBB5_PENDING_NOTES.RETURN.processingRequestedAt);
   assert.equal(await row('RETURN').locator('.p-processing-time').getAttribute('datetime'),requested);

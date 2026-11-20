@@ -377,13 +377,13 @@ function updateCancellationRow(row){
  reason.closest('label').hidden=!cancelled;reason.required=cancelled;row.querySelector('.p-cancel-cell').innerHTML=cancellationApproval(row.dataset.id,result);if(isCancelled(row.dataset.id)){row.querySelectorAll('input,select,textarea').forEach(input=>input.disabled=true);row.querySelector('.p-mobile-edit').textContent='Xem';}
 }
 function configureProcessingHeaders(){
- const rows=[...el('pendRows').querySelectorAll('tr[data-id]')],processing=rows.filter(row=>usesProcessingUpdate(notes[row.dataset.id],row.querySelector('.p-result').value)),merged=rows.length>0&&processing.length===rows.length;
+ const rows=[...el('pendRows').querySelectorAll('tr[data-id]')],processing=rows.filter(row=>usesProcessingUpdate(notes[row.dataset.id],row.querySelector('.p-result').value)),merged=processing.length>0;
  const first=header.rows[0].cells[6],second=header.rows[0].cells[7],filter=first.querySelector('.ph-filter'),slotFilter=second.querySelector('.ph-filter'),field=merged?'processingUpdate':'expected';
  let refilter=false;const changed=filter.dataset.field!==field;
  if(changed){refilter=!!filter.value;filter.dataset.field=field;filter.value='';columnSortField='';columnSortDirection='';}
  if(merged&&slotFilter.value){slotFilter.value='';refilter=true;}
  first.colSpan=merged?2:1;first.classList.toggle('p-processing-heading',merged);second.hidden=merged;
- first.querySelector('.ph-label').textContent=merged?'Cập nhật tình trạng xử lý lần 2':processing.length?'Ngày Online dự kiến / Xử lý lần 2':'Ngày Online dự kiến';filter.setAttribute('aria-label',merged?'Lọc cập nhật tình trạng xử lý lần 2':'Lọc Ngày Online dự kiến');
+ first.querySelector('.ph-label').textContent=merged?'Cập nhật tình trạng xử lý lần 2':'Ngày Online dự kiến';filter.setAttribute('aria-label',merged?'Lọc cập nhật tình trạng xử lý lần 2':'Lọc Ngày Online dự kiến');
  if(changed)populateFilters();return refilter;
 }
 function pendingNetCancellationHtml(contract){
