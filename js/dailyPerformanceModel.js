@@ -14,3 +14,9 @@ export function dailyPerformanceContracts(data, notes = {}) {
     return !isTerminatedNetContract(row) && !isCancellationResult(status) && !['đã hủy', 'đã huỷ'].includes(status) && !note.cancellationApproved && !isCancellationResult(note.result);
   }).map(([, row]) => row);
 }
+
+// Overview and trend sales use the same eligible contracts and staff roster as the matrix.
+export function dailySoldContracts(data, notes, personnel) {
+  const staff=new Set(personnel.map(person=>String(person.acc||'').trim().toLowerCase()));
+  return dailyPerformanceContracts(data,notes).filter(row=>staff.has(String(row.staff||'').trim().toLowerCase()));
+}

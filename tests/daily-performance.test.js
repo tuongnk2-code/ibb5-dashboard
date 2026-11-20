@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dailyPerformanceContracts } from '../js/dailyPerformanceModel.js';
+import { dailyPerformanceContracts, dailySoldContracts } from '../js/dailyPerformanceModel.js';
 
 test('daily sold/online exclude source cancellations, staff cancellation and manager approval',()=>{
   const net=id=>({id,type:'Internet',created:'2026-11-09',date:'2026-11-09'});
@@ -16,4 +16,11 @@ test('deduplicated Internet retains actual Online and responds to saved status c
   assert.equal(dailyPerformanceContracts(data,notes)[0].date,'2026-11-09');
   notes.NET1={result:'Hủy'};assert.equal(dailyPerformanceContracts(data,notes).length,0);
   notes.NET1.result='Chưa Online';assert.equal(dailyPerformanceContracts(data,notes).length,1);
+});
+
+test('shared sales selection applies the matrix roster and cancellation rules together',()=>{
+  const row=(id,fields={})=>({id,type:'Internet',staff:'DNG.Hoantt',created:'2026-11-19',date:'',...fields});
+  const data=[row('ACTIVE'),row(' active '),row('PLANNED'),row('FINAL'),row('APPROVED'),row('TERMINATED',{status:'Đã chấm dứt hợp đồng'}),row('UNMAPPED',{staff:'DNG.Other'}),row('CAM',{type:'Camera'})];
+  const notes={PLANNED:{result:'Dự kiến hủy'},FINAL:{result:'Hủy'},APPROVED:{cancellationApproved:true}};
+  assert.deepEqual(dailySoldContracts(data,notes,[{acc:' dng.hoantt '}]).map(row=>row.id),['ACTIVE','PLANNED']);
 });
