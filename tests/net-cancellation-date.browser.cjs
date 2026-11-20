@@ -25,13 +25,31 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    await page.exposeFunction('validateImportedNet',snapshot=>validateSnapshot(snapshot));
    await page.evaluate(()=>{window.IBB5_SYNC={snapshot:async value=>{const snapshot=await window.validateImportedNet(value);window.importedNet=snapshot;window.IBB5_SHARED_STATE.snapshot=snapshot;window.IBB5_IMPORTED_DATA=snapshot.data;window.IBB5_CANCELLED_NET=snapshot.cancelledNet;window.IBB5_IMPORT_META=snapshot.meta;document.dispatchEvent(new Event('ibb5-snapshot-updated'));document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['snapshot']}}));}};location.hash='datahub';});
    const xlsx=await page.evaluate(async()=>{
-    const rows=[['Hợp đồng','Ngày tạo HĐ','Ngày Online','Acc nhân viên bán','Tình trạng','CLBH Net Thời điểm hiện tại','Ngày chấm dứt hợp đồng'],['IMPORTED','01/11/2026','','DNG.ManLM3','Đã chấm dứt hợp đồng','3T','19/11/2026 07:30'],['IMPNODATE','01/11/2026','','DNG.ManLM3','Đã chấm dứt hợp đồng','3T','']];
+    // Match the supplied NET layout: M=status, O=created, P=Online, Q=service cancellation, R=staff.
+    const headers=Array.from({length:18},(_,i)=>'Cột '+i);Object.assign(headers,{0:'Hợp đồng',1:'CLBH Net Thời điểm hiện tại',2:'Ngày hủy HĐ',12:'Tình trạng',13:'Tên khách hàng',14:'Ngày tạo HĐ',15:'Ngày Online',16:'Ngày hủy dịch vụ',17:'Acc nhân viên bán'});
+    const row=(id,date)=>{const values=Array(18).fill('');Object.assign(values,{0:id,1:'3T',2:'2026-11-01',12:'Đã chấm dứt hợp đồng',13:'Khách '+id,14:'01/11/2026',16:date,17:'DNG.ManLM3'});return values;};
+    const rows=[headers,row('IMPORTED','19/11/2026 07:30'),row('IMPNODATE','')];
     const xml='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((value,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr"><is><t>'+value+'</t></is></c>').join('')+'</row>').join('')+'</sheetData></worksheet>';
     return new JSZip().file('xl/worksheets/sheet1.xml',xml).generateAsync({type:'base64'});
    });
    await page.locator('#ibbUploadNet').setInputFiles({name:'net-cancellation.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(xlsx,'base64')});await page.locator('#ibbImportBtn').click();await page.waitForFunction(()=>!!window.importedNet);
    assert.equal(await page.evaluate(()=>window.importedNet.data.find(row=>row.id==='IMPORTED').netCancelledAt),'2026-11-19T07:30:00');assert.equal(await page.evaluate(()=>window.importedNet.cancelledNet.find(row=>row.id==='IMPORTED').netCancelledAt),'2026-11-19T07:30:00');
    await page.evaluate(()=>{location.hash='pendingContracts';});await page.locator('#pendStatus').selectOption('all');assert.equal(await badge('IMPORTED').innerText(),'Đã hủy · 19/11/2026');assert.match(await badge('IMPNODATE').innerText(),/Chưa có ngày hủy/);
+   if(process.env.NET_CANCELLATION_TEST_FILE){
+    const source=JSON.parse(require('node:fs').readFileSync(process.env.NET_CANCELLATION_SOURCE_JSON,'utf8'));
+    const terminated=source.rows.filter(row=>row.values.M==='Đã chấm dứt hợp đồng');
+    const expected=terminated.map(({values})=>{const serial=Number(values.Q),day=new Date(Date.UTC(1899,11,30)+Math.floor(serial)*86400000).toISOString().slice(0,10),seconds=Math.round((serial-Math.floor(serial))*86400);return {id:values.J,date:day+(seconds?'T'+new Date(seconds*1000).toISOString().slice(11,19):'')};});
+    assert.equal(expected.length,300);assert.ok(expected.every(row=>row.date));
+    await page.evaluate(()=>{delete window.importedNet;location.hash='datahub';});
+    await page.locator('#ibbUploadNet').setInputFiles(process.env.NET_CANCELLATION_TEST_FILE);await page.locator('#ibbImportBtn').click();await page.waitForFunction(()=>!!window.importedNet);
+    const actual=await page.evaluate(()=>window.importedNet.data);
+    for(const row of expected)assert.equal(actual.find(item=>item.id===row.id)?.netCancelledAt,row.date,row.id+' must match column Q in the latest NET file');
+    // A historical cancellation date must not override the latest NET source.
+    const sample=expected[0];await page.evaluate(sample=>{window.IBB5_PENDING_NOTES[sample.id]={cancellationApproved:true,result:'Hủy',cancelReason:'Test'};window.IBB5_CANCELLED_NET.find(row=>row.id===sample.id).netCancelledAt='2026-01-01';location.hash='pendingContracts';},sample);
+    await page.locator('#pendStatus').selectOption('hidden-cancelled');
+    assert.equal(await badge(sample.id).innerText(),'Đã hủy · '+sample.date.slice(0,10).split('-').reverse().join('/'));
+    console.log('PASS: all '+expected.length+' terminated contracts match cancellation dates in the supplied latest NET workbook');
+   }
   }
   assert.deepEqual(errors,[]);await page.close();
  }console.log('PASS: latest NET cancellation badges, actual/missing source date, approval date separation, reactivation, mobile and XLSX/shared-state round-trip');}
