@@ -1,4 +1,5 @@
 import { renderChannelShareChart } from './channelShareChart.js';
+import { installContactDirectory } from './contactDirectory.js';
 import { installOverviewCards } from './overviewCards.js';
 import { compareChannelSources } from './channelSourceComparison.js';
 import { pendingFollowupContracts, pendingFollowupFilled, agedFollowupContracts } from './pendingInventory.js';
@@ -1094,20 +1095,7 @@ window.IBB5_RENDER_CANCELLED_REPORT=render;
 })();
 
 
-// ---- Original script 18 id="ibb-contact-directory" ----
-(function(){'use strict';
-const DATA=CONTACT_DATA;
-const $=id=>document.getElementById(id),norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const phonelink=p=>{const digits=String(p||'').replace(/[^0-9+]/g,'');return /^\+?\d{9,13}$/.test(digits)?'<a href="tel:'+digits+'">'+esc(p)+'</a>':esc(p)};
-const maillink=m=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)?'<a href="mailto:'+encodeURIComponent(m)+'">'+esc(m)+'</a>':esc(m);
-if(!$('ctRows'))return;
-function render(){const q=norm($('ctSearch').value);const rows=DATA.filter(r=>!q||norm(r.group).includes(q));
-$('ctCount').textContent='Hiển thị '+rows.length.toLocaleString('vi-VN')+' / '+DATA.length.toLocaleString('vi-VN')+' liên hệ';
-$('ctRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.group)+'</td><td>'+esc(r.role)+'</td><td>'+phonelink(r.phone)+'</td><td>'+esc(r.ext)+'</td><td>'+maillink(r.email)+'</td><td>'+esc(r.note)+'</td></tr>').join('')||'<tr><td colspan="7">Không tìm thấy Phòng / Khu vực phù hợp.</td></tr>';
-}
-$('ctSearch').addEventListener('input',render);render();
-})();
+installContactDirectory(CONTACT_DATA);
 
 // Every device starts on today's Vietnamese calendar date, independent of data age.
 for(const id of ['from','to','ckMonth','anaMonth','anaDay','pendAsOf','pendDailyDate','psDay','dpMonth','dpDay']){const input=document.getElementById(id);if(!input)continue;input.value=input.type==='month'?reportDay().slice(0,7):id==='from'?reportDay().slice(0,7)+'-01':reportDay();input.dispatchEvent(new Event('change',{bubbles:true}));}
