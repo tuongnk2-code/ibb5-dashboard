@@ -125,3 +125,23 @@
   @media(max-width:700px){#overview .overview-five{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:480px){#overview .overview-five{grid-template-columns:minmax(0,1fr)}}
 }
+
+@layer overview-card-layout {
+  #overview .overview-efficiency {
+    display:grid !important;grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:10px !important;
+  }
+  #overview .overview-efficiency>.ov-metric {
+    min-width:0;min-height:228px !important;padding:16px 14px !important;
+    grid-template-rows:64px 64px minmax(60px,auto) !important;gap:8px 6px !important;
+  }
+  #overview .overview-efficiency>.ov-metric>.name {font-size:12px !important;line-height:1.45 !important}
+  #overview .overview-efficiency>.ov-metric>.value {font-size:36px !important}
+  #overview .overview-efficiency>.ov-metric>.detail {
+    font-size:11px !important;line-height:1.5 !important;align-self:center !important;text-align:center;
+  }
+  #overview .overview-efficiency>.ov-metric>.ov-metric-icon {width:26px;height:26px;border-radius:8px;align-self:center}
+  #overview .overview-efficiency>.ov-metric>.ov-metric-icon svg {width:18px;height:18px}
+  @media(max-width:1199px){#overview .overview-efficiency{grid-template-columns:repeat(3,minmax(0,1fr)) !important}}
+  @media(max-width:700px){#overview .overview-efficiency{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
+  @media(max-width:480px){#overview .overview-efficiency{grid-template-columns:minmax(0,1fr) !important}}
+}
