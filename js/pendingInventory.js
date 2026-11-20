@@ -1,7 +1,7 @@
-import { isCancellationResult, skipsOnlineAppointment, requiresCancellationReason, hasProcessingRequest } from './dashboardStateModel.js';
+import { isCancellationResult, skipsOnlineAppointment, requiresCancellationReason, hasProcessingRequest, usesProcessingUpdate } from './dashboardStateModel.js';
 
 export function pendingFollowupFilled(note = {}) {
-  return ['action', 'result', 'source', ...(skipsOnlineAppointment(note.result) ? [] : ['expected', 'timeSlot'])].every(key => String(note[key] || '').trim())
+  return ['action', 'result', 'source', ...(usesProcessingUpdate(note)||skipsOnlineAppointment(note.result) ? [] : ['expected', 'timeSlot'])].every(key => String(note[key] || '').trim())
     && (!requiresCancellationReason(note.result) || !!note.cancelReason?.trim());
 }
 

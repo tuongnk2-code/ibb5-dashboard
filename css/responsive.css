@@ -634,3 +634,9 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #pendingContracts .pending-table thead th{text-align:center}
 #pendingContracts .pending-table .ph-label{display:flex;align-items:center;justify-content:center;min-height:32px;line-height:1.35;text-align:center}
 #pendingContracts .pending-table .p-cancel-approve{padding:7px 8px;font-size:11px;line-height:1.3;min-height:32px}
+#pendingContracts .pending-table :is(th,td)[hidden],#pendingContracts .p-processing-update-wrap[hidden]{display:none!important}
+#pendingContracts .pending-table :is(.p-processing-cell,.p-processing-heading){width:248px!important;min-width:248px!important;max-width:248px!important}
+#pendingContracts .p-processing-update-wrap{display:block;min-width:0}
+#pendingContracts .p-processing-update-wrap>span{display:block;margin-bottom:5px;font-size:11px;font-weight:700;color:#476687}
+#pendingContracts .p-processing-update{box-sizing:border-box;width:100%;min-width:0;min-height:70px;max-height:160px;resize:vertical;border:1px solid #c8d9ed;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;line-height:1.5;white-space:pre-wrap}
+#pendingMobileEditor .pm-processing-update textarea{box-sizing:border-box;width:100%;border:1px solid #c8d9ed;border-radius:8px;padding:10px;font:inherit;resize:vertical}
