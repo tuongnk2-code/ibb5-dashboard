@@ -18,7 +18,7 @@ export function animateEncouragement(canvas,kind) {
     c.fillStyle='#205388';c.beginPath();c.roundRect(-24,82,48,13,4);c.fill();c.strokeStyle='#ffffff90';c.lineWidth=3;c.beginPath();c.moveTo(-27,-63);c.quadraticCurveTo(-37,-41,-34,-12);c.stroke();c.restore();
   }
   function draw(now){
-    if(stopped)return;const t=reduced?2:Math.min((now-started)/1000,5),width=canvas.clientWidth,height=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
+    if(stopped)return;const t=reduced?2:Math.min((now-started)/1000,7),width=canvas.clientWidth,height=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);
     if(canvas.width!==Math.round(width*dpr)||canvas.height!==Math.round(height*dpr)){canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);}
     const c=context;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,width,height);c.save();c.translate(width*.5,height*.44);const scale=Math.min(width/390,height/500);c.scale(scale,scale);
     c.strokeStyle='#d5eeff20';c.lineWidth=1;for(let i=0;i<3;i++){c.beginPath();c.ellipse(0,0,135+i*38,185+i*30,-.4,0,Math.PI*2);c.stroke();}
