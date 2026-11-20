@@ -1103,7 +1103,7 @@ const phonelink=p=>{const digits=String(p||'').replace(/[^0-9+]/g,'');return /^\
 const maillink=m=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)?'<a href="mailto:'+encodeURIComponent(m)+'">'+esc(m)+'</a>':esc(m);
 if(!$('ctRows'))return;
 function render(){const q=norm($('ctSearch').value);const rows=DATA.filter(r=>!q||norm(r.group).includes(q));
-$('ctCount').textContent='Hiển thị '+rows.length.toLocaleString('vi-VN')+' / '+DATA.length.toLocaleString('vi-VN')+' liên hệ TIN';
+$('ctCount').textContent='Hiển thị '+rows.length.toLocaleString('vi-VN')+' / '+DATA.length.toLocaleString('vi-VN')+' liên hệ';
 $('ctRows').innerHTML=rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.group)+'</td><td>'+esc(r.role)+'</td><td>'+phonelink(r.phone)+'</td><td>'+esc(r.ext)+'</td><td>'+maillink(r.email)+'</td><td>'+esc(r.note)+'</td></tr>').join('')||'<tr><td colspan="7">Không tìm thấy Phòng / Khu vực phù hợp.</td></tr>';
 }
 $('ctSearch').addEventListener('input',render);render();
