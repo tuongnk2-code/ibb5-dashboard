@@ -1,7 +1,6 @@
 import { monthlyStaffChannels } from './analyticsDetails.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { validDay } from './dailyReportModel.js';
-import { isTerminatedNetContract } from './cancellationArchive.js';
 
 const monthEnd=month=>new Date(Date.UTC(+month.slice(0,4),+month.slice(5),0)).toISOString().slice(0,10);
 const norm=acc=>String(acc||'').trim().toLowerCase();
@@ -9,28 +8,6 @@ export const sourcedCount=record=>record.total-(record.counts['Chưa cập nhậ
 export function sourceComparison(current,previous,available=true){
  const delta=available?current-previous:null;
  return {current,previous,delta,percent:available&&previous>0?delta/previous*100:null};
-}
-
-function netStatus(row,cutoff){
- if(isTerminatedNetContract(row))return 'cancelled';
- return validDay(row.date)&&row.date<=cutoff?'online':'pending';
-}
-
-function attachOnlineBreakdown(current,rows,notes,month,cutoff,staff,people,team){
- const statuses=['online','pending','cancelled'];
- // Match source-count deduplication before classifying the latest NET record.
- const unique=[...new Map(rows.filter(row=>row.id).map(row=>[row.id,row])).values()];
- const reports=Object.fromEntries(statuses.map(status=>[status,monthlyStaffChannels(unique.filter(row=>netStatus(row,cutoff)===status),notes,month,staff,people,team,cutoff)]));
- const apply=(record,records)=>{
-  record.netStatus=Object.fromEntries(statuses.map(status=>[status,records[status]?sourcedCount(records[status]):0]));
-  record.netOnlineCounts=records.online?.counts||{};
- };
- apply(current,reports);
- for(const group of current.groups){
-  const groups=Object.fromEntries(statuses.map(status=>[status,reports[status].groups.find(item=>item.team===group.team)]));
-  apply(group,groups);
-  for(const person of group.rows)apply(person,Object.fromEntries(statuses.map(status=>[status,groups[status]?.rows.find(item=>norm(item.acc)===norm(person.acc))])));
- }
 }
 
 // Source channels use contract creation dates, independent of actual Online dates.
@@ -49,7 +26,6 @@ export function compareChannelSources(rows,notes,month,anchor,staff='',roster=ST
  }
  const current=monthlyStaffChannels(rows,notes,month,staff,people,team,safeCutoff);
  const previous=monthlyStaffChannels(rows,notes,previousMonth,staff,people,team,previousCutoff);
- attachOnlineBreakdown(current,rows,notes,month,safeCutoff,staff,people,team);
  const available=current.available&&previous.available;
  const previousPeople=new Map(previous.groups.flatMap(group=>group.rows).map(person=>[norm(person.acc),person]));
  const previousGroups=new Map(previous.groups.map(group=>[group.team,group]));
