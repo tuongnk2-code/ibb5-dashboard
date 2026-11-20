@@ -7,4 +7,20 @@
   ) {
     border-top-width: 5px !important;
   }
+
+  /* Center only the KPI readouts; retain labels, filters and table alignment. */
+  #pendingContracts .pending-metrics>article>strong {
+    justify-self:center !important;
+    text-align:center !important;
+  }
+  #dailyReports .dr-stat>strong,
+  #marketReports .mk-summary button>strong,
+  #weeklyReports .wr-kpi>strong,
+  #weeklyReports .wr-summary>div>strong,
+  #cancelled .ibbc-stat>strong {
+    display:block !important;
+    width:100% !important;
+    text-align:center !important;
+    font-variant-numeric:tabular-nums;
+  }
 }
