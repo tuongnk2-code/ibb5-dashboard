@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData } from '../js/dashboardStateModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, isCancellationResult, monthKey, normAcc, canImportData, hasProcessingRequest } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay, reportDay } from '../js/dailyReportModel.js';
 import { isTerminatedNetContract } from '../js/cancellationArchive.js';
 
@@ -65,11 +65,12 @@ export default async function handler(req, res) {
       key = 'pending:' + body.id;
       const existing = await sharedRow(admin, key);
       if (existing?.data.cancellationApproved) return bad(res, 409, 'Hợp đồng đã được Trưởng phòng duyệt hủy. Bấm Đồng bộ để cập nhật danh sách.');
-      if (body.kind !== 'pending' && (!isCancellationResult(existing?.data.result) || !existing?.data.cancelReason?.trim())) return bad(res, 400, 'Hợp đồng cần lưu Kết quả Hủy và lý do hủy trước khi TP duyệt.');
+      const continued=hasProcessingRequest(existing?.data);
+      if (body.kind !== 'pending' && !(body.kind==='cancelPending'&&continued) && (!isCancellationResult(existing?.data.result) || !existing?.data.cancelReason?.trim())) return bad(res, 400, 'Hợp đồng cần lưu Kết quả Hủy và lý do hủy trước khi TP duyệt.');
       if(body.kind==='continuePending'&&contracts.some(isTerminatedNetContract))return bad(res,409,'HĐ đã chấm dứt trong nguồn NET; không thể yêu cầu xử lý tiếp.');
       const followup=existing?.data.processingRequestedAt?{processingRequestedAt:existing.data.processingRequestedAt,processingRequestedBy:existing.data.processingRequestedBy,processingCancelReason:existing.data.processingCancelReason,processingRespondedAt:now}:{};
       data = body.kind === 'cancelPending'
-        ? { ...existing?.data, cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
+        ? { ...existing?.data, ...(continued?{result:'Hủy',cancelReason:existing.data.cancelReason?.trim()||existing.data.processingCancelReason||''}:{}), cancellationApproved: true, cancellationApprovedAt: now, cancellationApprovedBy: caller.id }
         : body.kind==='continuePending'
         ? {...existing.data,result:contracts.some(row=>validDay(row.date)&&row.date<=reportDay())?'Đã Online':'Chưa Online',processingRequestedAt:now,processingRequestedBy:caller.acc||caller.id,processingCancelReason:existing.data.cancelReason,processingRespondedAt:null,updated:now,updatedBy:caller.acc||caller.id}
         : { ...validateNote({ ...body.value, cancelReason: body.value?.cancelReason ?? existing?.data.cancelReason ?? '' }),...followup, updated: now, updatedBy: caller.acc || caller.id };

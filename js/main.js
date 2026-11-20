@@ -19,7 +19,7 @@ import { fetchDashboardData } from './api.js';
 import './responsive.js';
 import './performanceView.js';
 import { rememberFocus } from './liveEdits.js';
-import { mergeNetSnapshot, isCancellationResult, skipsOnlineAppointment, requiresCancellationReason, canImportData } from './dashboardStateModel.js';
+import { mergeNetSnapshot, isCancellationResult, skipsOnlineAppointment, requiresCancellationReason, canImportData, hasProcessingRequest } from './dashboardStateModel.js';
 import { STAFF_ROSTER } from './staffRoster.js';
 import { managedShare } from './managedKpi.js';
 import { dailyPace } from './dailyPace.js';
@@ -116,7 +116,7 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  $('forecast').textContent=forecast===null?'—':fmt(forecast)+' HĐ';$('forecastNote').textContent=target===null?'Chưa có cam kết để đối chiếu':forecast===null?'Chưa có ngày lịch':forecast<target?'Dự kiến thiếu '+fmt(target-forecast)+' HĐ':'Dự kiến đạt/vượt '+fmt(forecast-target)+' HĐ';$('forecastBar').style.width=target>0&&forecast!==null?Math.min(100,forecast/target*100)+'%':'0%';
  $('forecastRatio').textContent=target===null?'Tỷ lệ dự phóng: chưa ký cam kết':target===0?'Cam kết tháng bằng 0 — không tính tỷ lệ':forecast===null?'—':('Dự phóng đạt '+formatPercent(forecast/target*100)+' / '+fmt(target)+' HĐ cam kết');
  $('forecastPace7').textContent='Pace 7 ngày ('+windowStart.split('-').reverse().join('/')+' – '+asOf.split('-').reverse().join('/')+'): '+fmt(online7)+' HĐ / '+calendarDays7+' ngày lịch = '+show(pace7)+' HĐ/ngày · còn '+remaining+' ngày';
- const pend=pendingFollowupContracts(netRows,IBB_CALC.notes(),asOf).filter(row=>window.IBB5_ROLE?.canView(row)??true);$('pending').textContent=fmt(pend.length);$('pending').closest('.mini').querySelector('.detail').textContent='HĐ cần theo dõi, gồm HĐ đã Online thiếu cập nhật · Theo danh sách hồ sơ HĐ tồn';agedContracts=agedFollowupContracts(pend,IBB_CALC.notes(),asOf);$('aged').textContent=fmt(agedContracts.length);agedDetails.refresh();
+ const followupRows=dashboardData().filter(row=>row.type==='Internet'&&(!room||row.room===room)&&(includeInOperationalReports(row)||hasProcessingRequest(IBB_CALC.notes()[row.id])));const pend=pendingFollowupContracts(followupRows,IBB_CALC.notes(),asOf).filter(row=>window.IBB5_ROLE?.canView(row)??true);$('pending').textContent=fmt(pend.length);$('pending').closest('.mini').querySelector('.detail').textContent='HĐ cần theo dõi, gồm HĐ đã Online thiếu cập nhật · Theo danh sách hồ sơ HĐ tồn';agedContracts=agedFollowupContracts(pend,IBB_CALC.notes(),asOf);$('aged').textContent=fmt(agedContracts.length);agedDetails.refresh();
  const tvOnline=dashboardData().filter(x=>x.type==='Truyền hình'&&(!room||x.room===room)&&x.id&&/^[A-Z0-9]+$/.test(x.id)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||'')&&x.date>=start&&x.date<=asOf);
  const tvVvipOnline=tvOnline.filter(x=>x.vvip===true||(x.vvip==null&&IBB_TV_META[x.id]?.vvip===true));
  const vvipCount=IBB_CALC.unique(tvVvipOnline);
@@ -306,13 +306,13 @@ function refreshPendingTimestampWarnings(){el('pendingContracts').querySelectorA
 setInterval(refreshPendingTimestampWarnings,60000);window.addEventListener('focus',refreshPendingTimestampWarnings);document.addEventListener('visibilitychange',refreshPendingTimestampWarnings);
 const isCancelled=id=>notes[id]?.cancellationApproved===true;
 const isManager=()=>window.IBB5_CURRENT_PROFILE?.role==='manager';
-const buildDistinct=()=>[...new Map(operationalData().filter(x=>x.type==='Internet'&&x.id).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
+const buildDistinct=()=>[...new Map(dashboardData().filter(x=>x.type==='Internet'&&x.id&&(includeInOperationalReports(x)||hasProcessingRequest(notes[x.id]))).map(x=>[x.id,x])).values()];let distinct=buildDistinct();
 const hiddenContracts=(mode='')=>[...new Map([...(mode==='hidden'?[]:dashboardData().filter(x=>x.type==='Internet'&&x.id&&isCancelled(x.id))),...(mode==='hidden-cancelled'?[]:distinct.filter(isAutoHidden))].map(x=>[x.id,x])).values()];
 const isHiddenMode=mode=>mode==='hidden'||mode==='hidden-cancelled';
 const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-slot',action:'.p-note',result:'.p-result',source:'.p-source',cancelReason:'.p-cancel-reason'};
 
 function isFilled(id){return pendingFollowupFilled(notes[id]);}
-function isAutoHidden(row){const asof=el('pendAsOf').value;return !isCancelled(row.id)&&validDay(row.created)&&row.created<=asof&&validDay(row.date)&&row.date<=asof&&isFilled(row.id)&&!isCancellationResult(notes[row.id]?.result);}
+function isAutoHidden(row){const asof=el('pendAsOf').value;return !isCancelled(row.id)&&!hasProcessingRequest(notes[row.id])&&validDay(row.created)&&row.created<=asof&&validDay(row.date)&&row.date<=asof&&isFilled(row.id)&&!isCancellationResult(notes[row.id]?.result);}
 function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&(!x.date||x.date>asof))}
 function pending(){return pendingFollowupContracts(distinct,notes,el('pendAsOf').value);}
 function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d===asof?'due':d<asof?'overdue':'waiting'}
@@ -341,7 +341,7 @@ a=a.filter(x=>{
  if(mode==='all')return true;
  if(mode==='unupdated')return !!x.created&&x.created<=asof&&!String(notes[x.id]?.result||'').trim();
  if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
- if(mode==='continue-processing')return !!x.created&&x.created<=asof&&!!notes[x.id]?.processingRequestedAt&&!notes[x.id]?.processingRespondedAt&&!isCancellationResult(notes[x.id]?.result);
+ if(mode==='continue-processing')return !!x.created&&x.created<=asof&&hasProcessingRequest(notes[x.id]);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
  if(mode==='notonline')return !String(x.date||'').trim();
@@ -361,12 +361,13 @@ function populateFilters(){const mode=el('pendStatus').value,hidden=isHiddenMode
 const monthSelect=el('pendCreatedMonth'),selectedMonth=monthSelect.value,months=[...new Set([...all.map(x=>String(x.created||'').slice(0,7)),selectedMonth].filter(m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m)))].sort().reverse();
 monthSelect.innerHTML='<option value="">Tất cả tháng</option>'+months.map(m=>'<option value="'+m+'">'+m.slice(5)+'/'+m.slice(0,4)+'</option>').join('');monthSelect.value=selectedMonth;
 header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;const vals=[...new Set([...all.map(x=>cellValue(x,sel.dataset.field)).filter(Boolean),...(previous&&!previous.startsWith('__SORT_')?[previous]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'vi'));sel.innerHTML='<option value="">Tất cả</option><option value="__SORT_AZ__">↑ Từ A-Z</option><option value="__SORT_ZA__">↓ Từ Z-A</option>'+vals.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');sel.value=previous;});}
-function cancellationApproval(id,result){
+function cancellationApproval(id,result,showTime=true){
  if(isCancelled(id))return '<span class="p-manager-only">Đã duyệt hủy</span>';
- if(!isCancellationResult(result))return notes[id]?.processingRequestedAt&&!notes[id]?.processingRespondedAt?'<span class="p-continue-status" title="Trưởng phòng yêu cầu nhân viên cập nhật lại lịch hẹn và tình trạng HĐ">Y/C xử lý tiếp</span>'+processingRequestedTime(notes[id]):'';
- if(!isManager())return '<span class="p-manager-only">Chỉ Trưởng phòng</span>';
- const disabled=pendingDrafts.has(id)||!notes[id]?.cancelReason?.trim();
- return '<select class="p-manager-decision" aria-label="TP xử lý '+escapeHTML(id)+'" '+(disabled?'disabled title="Lưu kết quả và lý do hủy trước khi TP xử lý"':'')+'><option value="">Chọn xử lý</option><option value="cancel">Duyệt hủy</option><option value="continue">Y/C xử lý tiếp</option></select>';
+ const continuing=hasProcessingRequest(notes[id]),badge='<span class="p-continue-status" title="Hợp đồng tiếp tục được theo dõi đến khi Trưởng phòng duyệt hủy">Y/C xử lý tiếp</span>'+processingRequestedTime(notes[id]);
+ if(!isCancellationResult(result)&&!continuing)return '';
+ if(!isManager())return continuing?badge:'<span class="p-manager-only">Chỉ Trưởng phòng</span>';
+ const disabled=pendingDrafts.has(id)||(!continuing&&!notes[id]?.cancelReason?.trim());
+ return '<select class="p-manager-decision" aria-label="TP xử lý '+escapeHTML(id)+'" '+(disabled?'disabled title="Lưu kết quả và lý do hủy trước khi TP xử lý"':'')+'><option value="">Chọn xử lý</option><option value="cancel">Duyệt hủy</option><option value="continue" '+(continuing?'selected':'')+'>Y/C xử lý tiếp</option></select>'+(continuing&&showTime?processingRequestedTime(notes[id]):'');
 }
 function updateSaveButton(row){const button=row.querySelector('.p-save');if(isCancelled(row.dataset.id)){button.textContent='Đã ẩn';button.disabled=true;return;}const saved=!!notes[row.dataset.id]?.updated&&!pendingDrafts.has(row.dataset.id);button.textContent=saved?'Đã lưu':'Lưu';button.classList.toggle('is-saved',saved);button.disabled=saved;}
 function updateCancellationRow(row){const result=row.querySelector('.p-result').value,cancelled=requiresCancellationReason(result),reason=row.querySelector('.p-cancel-reason');for(const selector of ['.p-date','.p-time-slot']){const input=row.querySelector(selector);input.required=!skipsOnlineAppointment(result);input.hidden=!input.required;let placeholder=input.parentElement.querySelector('.p-appointment-na');if(!placeholder){placeholder=document.createElement('span');placeholder.className='p-appointment-na';placeholder.textContent='—';input.after(placeholder);}placeholder.hidden=input.required;if(!input.required){input.classList.remove('pending-required-error');input.removeAttribute('aria-invalid');}}reason.closest('label').hidden=!cancelled;reason.required=cancelled;row.querySelector('.p-cancel-cell').innerHTML=cancellationApproval(row.dataset.id,row.querySelector('.p-result').value);if(isCancelled(row.dataset.id)){row.querySelectorAll('input,select,textarea').forEach(input=>input.disabled=true);row.querySelector('.p-mobile-edit').textContent='Xem';}}
@@ -411,18 +412,18 @@ function openPendingEditor(id){
  const n=notes[id]||{},editorRevision=window.IBB5_SHARED_STATE?.revisions['pending:'+id]??0;
  mobileEditor.innerHTML='<div class="pm-head"><div><h3>'+(isCancelled(id)?'Xem HĐ đã ẩn ':'Cập nhật ')+escapeHTML(id)+'</h3><p>'+escapeHTML(contract.staff||'—')+'</p></div><button type="button" class="pm-close" aria-label="Đóng cập nhật hợp đồng">✕</button></div>'+
  pendingNetCancellationHtml(contract)+'<dl class="pm-info"><dt>Khách hàng</dt><dd>'+escapeHTML(customer(contract)||'—')+'</dd><dt>Ngày tạo HĐ</dt><dd>'+escapeHTML(contract.created||'—')+'</dd><dt>Online thực tế</dt><dd>'+escapeHTML(contract.date||'Chưa Online')+'</dd><dt>Lưu gần nhất (giờ VN)</dt><dd>'+pendingUpdatedHtml(n)+'</dd></dl>'+
- (n.processingRequestedAt&&!n.processingRespondedAt?'<p class="p-continue-status">Trưởng phòng Y/C xử lý tiếp. Cần cập nhật lại lịch hẹn và tình trạng HĐ.'+processingRequestedTime(n)+'</p>':'')+'<form id="pendingMobileForm">'+
+ (hasProcessingRequest(n)?'<p class="p-continue-status">Trưởng phòng Y/C xử lý tiếp. HĐ tiếp tục được theo dõi đến khi TP duyệt hủy.'+processingRequestedTime(n)+'</p>':'')+'<form id="pendingMobileForm">'+
  '<label>Kết quả<select name="result" required>'+opts(RESULTS,n.result||'')+'</select></label>'+
  '<label class="pm-cancel-reason" '+(requiresCancellationReason(n.result)?'':'hidden')+'>Lý do hủy/dự kiến hủy<textarea name="cancelReason" maxlength="1000" rows="3" '+(requiresCancellationReason(n.result)?'required':'')+' placeholder="Nhập lý do hủy...">'+escapeHTML(n.cancelReason||'')+'</textarea></label>'+
  '<label>Ngày Online dự kiến<input name="expected" type="date" required value="'+escapeHTML(n.expected||'')+'"></label>'+
  '<label>Mốc hẹn Online<select name="timeSlot" required>'+opts(TIME_SLOTS,n.timeSlot||'')+'</select></label>'+
  '<label>Nguyên nhân hẹn Online<select name="action" required>'+opts(REASONS,n.action||'')+'</select></label>'+
  '<label>Nguồn thông tin<select name="source" required>'+opts(SOURCES,n.source||'')+'</select></label>'+
- (isManager()&&!isCancelled(id)&&isCancellationResult(n.result)?'<label>TP xử lý'+cancellationApproval(id,n.result)+'</label>':'')+'<div class="pm-actions"><button type="button" class="pm-close">Hủy</button><button type="submit" class="primary">Lưu cập nhật</button></div></form>';
+ (isManager()&&!isCancelled(id)&&(isCancellationResult(n.result)||hasProcessingRequest(n))?'<label>TP xử lý'+cancellationApproval(id,n.result,false)+'</label>':'')+'<div class="pm-actions"><button type="button" class="pm-close">Hủy</button><button type="submit" class="primary">Lưu cập nhật</button></div></form>';
  mobileEditor.querySelectorAll('.pm-close').forEach(button=>button.onclick=()=>mobileEditor.close());
  mobileEditor.querySelector('form').onsubmit=async event=>{event.preventDefault();if(!event.target.reportValidity())return;const values=Object.fromEntries(new FormData(event.target)),submit=event.target.querySelector('[type="submit"]');submit.disabled=true;if(await savePendingEntry(id,values,editorRevision)){mobileEditor.close();mobileStatus.textContent='Đã lưu cập nhật '+id+(window.IBB5_SYNC?' lên hệ thống dùng chung.':' trên thiết bị này.');mobileStatus.hidden=false;const button=[...el('pendRows').querySelectorAll('.p-mobile-edit')].find(b=>b.closest('tr').dataset.id===id);button?.focus();}submit.disabled=false;};
  const decision=mobileEditor.querySelector('.p-manager-decision');if(decision)decision.onchange=()=>applyPendingDecision(id,decision,editorRevision);
- const updateMobileResult=()=>{const result=mobileEditor.querySelector('[name="result"]').value,cancelled=requiresCancellationReason(result);for(const name of ['expected','timeSlot']){const input=mobileEditor.querySelector('[name="'+name+'"]');input.required=!skipsOnlineAppointment(result);input.closest('label').hidden=!input.required;}mobileEditor.querySelector('.pm-cancel-reason').hidden=!cancelled;mobileEditor.querySelector('[name="cancelReason"]').required=cancelled;if(decision)decision.closest('label').hidden=!isCancellationResult(result);};updateMobileResult();mobileEditor.querySelector('[name="result"]').addEventListener('change',updateMobileResult);for(const type of ['input','change'])mobileEditor.querySelector('form').addEventListener(type,event=>{if(decision&&event.target!==decision)decision.disabled=true;});
+ const updateMobileResult=()=>{const result=mobileEditor.querySelector('[name="result"]').value,cancelled=requiresCancellationReason(result);for(const name of ['expected','timeSlot']){const input=mobileEditor.querySelector('[name="'+name+'"]');input.required=!skipsOnlineAppointment(result);input.closest('label').hidden=!input.required;}mobileEditor.querySelector('.pm-cancel-reason').hidden=!cancelled;mobileEditor.querySelector('[name="cancelReason"]').required=cancelled;if(decision)decision.closest('label').hidden=!isCancellationResult(result)&&!hasProcessingRequest(n);};updateMobileResult();mobileEditor.querySelector('[name="result"]').addEventListener('change',updateMobileResult);for(const type of ['input','change'])mobileEditor.querySelector('form').addEventListener(type,event=>{if(decision&&event.target!==decision)decision.disabled=true;});
  if(isCancelled(id)){mobileEditor.querySelectorAll('input,select,textarea,[type="submit"]').forEach(input=>input.disabled=true);}
  mobileEditor.showModal();
 }

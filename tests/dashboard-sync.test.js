@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot, validateNote } from '../js/dashboardStateModel.js';
+import { unpackState, monthKey, validateSnapshot, mergeStateRows, mergeNetSnapshot, validateNote, hasProcessingRequest } from '../js/dashboardStateModel.js';
 import { importAudit } from '../api/_dashboardState.js';
 
 test('each file keeps its last successful uploader and server time independently',()=>{
@@ -160,12 +160,16 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('POST',{kind:'continuePending',id:'RETURN',revision:1})).code,200);
     const returned=(await invoke('GET')).body.notes.RETURN;
     assert.equal(returned.result,'Chưa Online');assert.equal(returned.cancelReason,cancel.cancelReason);assert.equal(returned.processingCancelReason,cancel.cancelReason);assert.equal(returned.processingRequestedBy,'manager');assert.ok(Date.parse(returned.processingRequestedAt));assert.equal(returned.cancellationApproved,undefined);
-    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:2})).code,400);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:1})).code,409);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'NET1',revision:5})).code,409);
     caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
-    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:2,value:{...note,result:'Chưa Online',processingRequestedBy:'forged'}})).code,200);
+    assert.equal((await invoke('POST',{kind:'pending',id:'RETURN',revision:2,value:{...note,result:'Đã Online',processingRequestedBy:'forged',processingRequestedAt:null,cancellationApproved:true}})).code,200);
     const responded=(await invoke('GET')).body.notes.RETURN;assert.equal(responded.processingRequestedBy,'manager');assert.equal(responded.processingRequestedAt,returned.processingRequestedAt);assert.ok(Date.parse(responded.processingRespondedAt));
+    assert.equal(responded.result,'Đã Online');assert.equal(responded.cancellationApproved,undefined);assert.equal(hasProcessingRequest(responded),true);
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:3})).code,403);
     caller={id:'manager',role:'manager'};
+    assert.equal((await invoke('POST',{kind:'cancelPending',id:'RETURN',revision:3})).code,200);
+    const approvedContinuation=(await invoke('GET')).body.notes.RETURN;assert.equal(hasProcessingRequest(approvedContinuation),false);assert.equal(approvedContinuation.result,'Hủy');assert.equal(approvedContinuation.cancelReason,cancel.cancelReason);assert.equal(approvedContinuation.cancellationApprovedBy,'manager');
     assert.equal((await invoke('POST',{kind:'pending',id:'NOV',revision:0,value:cancel})).code,200);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'NOV',revision:1})).code,409);
 

@@ -19,3 +19,14 @@ test('aged follow-up uses strictly more than seven calendar days and the same el
  const notes={APPROVED:{cancellationApproved:true},COMPLETE:{expected:'2026-11-18',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web'}};
  assert.deepEqual(agedFollowupContracts(rows,notes,'2026-11-18').map(row=>row.id),['EIGHT','INCOMPLETE']);
 });
+
+test('manager continuation survives every staff update and source Online until manager cancellation',()=>{
+ const row={id:'CONTINUE',type:'Internet',created:'2026-11-01',date:'2026-11-18'};
+ const note={expected:'2026-11-18',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web',cancelReason:'Lý do ban đầu',processingRequestedAt:'2026-11-17T01:00:00Z',processingRespondedAt:'2026-11-18T01:00:00Z'};
+ for(const change of [{expected:'2026-11-19'},{timeSlot:'10h - 12h'},{action:'Kh chưa chuyển vào ở'},{source:'Đại Lý'},{cancelReason:'Đổi nội dung'},...['Chưa Online','Đã Online','Dự Kiến Hủy','Hủy'].map(result=>({result}))]){
+  assert.deepEqual(pendingFollowupContracts([row],{CONTINUE:{...note,...change}},'2026-11-20').map(row=>row.id),['CONTINUE']);
+ }
+ assert.equal(pendingFollowupContracts([{...row,status:'Đã chấm dứt hợp đồng'}],{CONTINUE:note},'2026-11-20').length,1);
+ assert.equal(pendingFollowupContracts([row],{CONTINUE:{...note,cancellationApproved:true}},'2026-11-20').length,0);
+ assert.equal(pendingFollowupContracts([row],{CONTINUE:{...note,processingRequestedAt:null}},'2026-11-20').length,0);
+});
