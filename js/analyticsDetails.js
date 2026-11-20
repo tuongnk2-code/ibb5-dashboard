@@ -21,16 +21,24 @@ export function overdueContracts(rows, asOf) {
 export const SALES_CHANNELS = ['Face Book','Web','Thị Trường','Đại Lý','Top Zalo','SMS','KH cũ','Tờ Dán','Phướn','Người Quen + Thân','Telesale','Khác'];
 const normalized = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]/g,'');
 const aliases = new Map(SALES_CHANNELS.map(channel=>[normalized(channel),channel]));
-for (const [alias,channel] of [['facebookads','Face Book'],['fb','Face Book'],['fbads','Face Book'],['website','Web'],['zalo','Top Zalo'],['khachhangcu','KH cũ'],['nguoiquen','Người Quen + Thân'],['nguoithan','Người Quen + Thân'],['telesales','Telesale'],['ibb','IBB']]) aliases.set(alias,channel);
+for (const [alias,channel] of [['facebookads','Face Book'],['fb','Face Book'],['fbads','Face Book'],['website','Web'],['zalo','Top Zalo'],['khachhangcu','KH cũ'],['nguoiquen','Người Quen + Thân'],['nguoithan','Người Quen + Thân'],['telesales','Telesale']]) aliases.set(alias,channel);
+
+export function salesChannel(row,notes={}) {
+  const source=String(notes[row.id]?.source||row.sourceExcel||'').trim();
+  return !source||normalized(source)==='ibb'?'Chưa cập nhật':aliases.get(normalized(source))||source;
+}
+
+export function monthlyChannelContracts(rows,notes,month,channel,cutoff='',staff='',roster=STAFF_ROSTER,team='') {
+  const norm=value=>String(value||'Chưa gán').trim().toLowerCase();
+  const members=team?new Set(roster.filter(person=>String(person.team)===String(team)).map(person=>norm(person.acc))):null;
+  return unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month&&(!cutoff||row.created<=cutoff)&&(!staff||norm(row.staff)===norm(staff))&&(!members||members.has(norm(row.staff)))&&salesChannel(row,notes)===channel);
+}
 
 // Creation month and source priority are unchanged. Unknown sources retain their own columns.
 export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '', cutoff = '') {
   const monthRows = unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month);
   const sourceRows = monthRows.filter(row=>!cutoff||row.created<=cutoff);
-  const sourceOf = row => {
-    const source = String(notes[row.id]?.source || row.sourceExcel || '').trim();
-    return source ? aliases.get(normalized(source)) || source : 'Chưa cập nhật';
-  };
+  const sourceOf = row => salesChannel(row,notes);
   const extra = [...new Set(sourceRows.map(sourceOf))].filter(channel=>!SALES_CHANNELS.includes(channel)).sort((a,b)=>a.localeCompare(b,'vi'));
   const channels = [...SALES_CHANNELS,...extra];
   const normAcc = value=>String(value||'').trim().toLowerCase();

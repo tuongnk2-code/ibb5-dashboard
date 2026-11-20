@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { overdueContracts, monthlyStaffChannels, SALES_CHANNELS, filterStaffTeam } from '../js/analyticsDetails.js';
+import { overdueContracts, monthlyStaffChannels, SALES_CHANNELS, filterStaffTeam, salesChannel, monthlyChannelContracts } from '../js/analyticsDetails.js';
 import { mergeNetSnapshot } from '../js/dashboardStateModel.js';
 
 test('overdue list and total use the latest NET status, regardless of creation month', () => {
@@ -45,9 +45,10 @@ test('monthly channels show the full roster, fixed channels, source aliases and 
   const jan=monthlyStaffChannels(rows,notes,'2026-01','',roster);
   assert.equal(jan.total,1);assert.equal(jan.groups[0].rows[0].counts['Top Zalo'],1);
   const feb=monthlyStaffChannels(rows,notes,'2026-02','',roster);
-  assert.equal(feb.total,3);assert.equal(feb.missing,1);
+  assert.equal(feb.total,3);assert.equal(feb.missing,2);
   assert.deepEqual(feb.channels.slice(0,SALES_CHANNELS.length),SALES_CHANNELS);
-  assert.equal(feb.counts['Face Book'],1);assert.equal(feb.counts.IBB,1);assert.equal(feb.counts['Chưa cập nhật'],1);
+  assert.equal(feb.counts['Face Book'],1);assert.equal(feb.counts.IBB,undefined);assert.equal(feb.counts['Chưa cập nhật'],2);
+  assert.ok(!feb.channels.includes('IBB'));
   assert.equal(feb.groups[2].rows[0].acc,'DNG.ZERO');assert.equal(feb.groups[2].rows[0].total,0);
   assert.ok(feb.groups.every(group=>group.rows.every(person=>Object.keys(person.counts).length===feb.channels.length)));
   assert.equal(feb.groups.reduce((sum,group)=>sum+group.total,0),feb.total);
@@ -55,6 +56,19 @@ test('monthly channels show the full roster, fixed channels, source aliases and 
   const filtered=monthlyStaffChannels(rows,notes,'2026-02','DNG.A',roster);
   assert.equal(filtered.total,1);assert.equal(filtered.groups.flatMap(group=>group.rows).length,1);
   assert.equal(monthlyStaffChannels(rows,notes,'2026-03','',roster).available,false);
+});
+
+test('IBB missing-source drill-down matches counts, source overrides and current staff/team/cutoff',()=>{
+ const roster=[{acc:'DNG.A',team:1},{acc:'DNG.B',team:2},{acc:'UNKNOWN',team:0}];
+ const row=(id,staff,created,sourceExcel='IBB')=>({id,staff,created,sourceExcel,type:'Internet'});
+ const rows=[row('IBB','DNG.A','2026-11-01'),row('IBB','DNG.A','2026-11-01'),row('EMPTY','DNG.B','2026-11-02',''),row('OVERRIDE','DNG.A','2026-11-03'),row('FUTURE','DNG.A','2026-11-20'),row('OLD','DNG.A','2026-10-01'),row('UNKNOWN','UNKNOWN','2026-11-05')];
+ const notes={OVERRIDE:{source:'Top ZaLo'}};
+ assert.equal(salesChannel(rows[0],notes),'Chưa cập nhật');assert.equal(salesChannel(rows[3],notes),'Top Zalo');
+ const report=monthlyStaffChannels(rows,notes,'2026-11','',roster,'','2026-11-19');
+ const details=(staff='',team='')=>monthlyChannelContracts(rows,notes,'2026-11','Chưa cập nhật','2026-11-19',staff,roster,team);
+ assert.equal(details().length,report.missing);assert.deepEqual(details().map(row=>row.id),['IBB','EMPTY','UNKNOWN']);
+ assert.deepEqual(details(' dng.a ').map(row=>row.id),['IBB']);assert.deepEqual(details('','2').map(row=>row.id),['EMPTY']);assert.deepEqual(details('','0').map(row=>row.id),['UNKNOWN']);
+ notes.IBB={source:'Web'};assert.deepEqual(details().map(row=>row.id),['EMPTY','UNKNOWN']);
 });
 
 test('unrecognized channels and accounts remain visible instead of being dropped into Other',()=>{
@@ -69,7 +83,7 @@ test('team selection limits personnel and conserved channel totals while retaini
   const team=monthlyStaffChannels(rows,{},'2026-11','',roster,'2');
   assert.equal(all.total,4);assert.equal(team.total,2);assert.deepEqual(team.channels,all.channels);
   assert.deepEqual(team.groups.flatMap(g=>g.rows.map(p=>p.acc)),['DNG.B','DNG.ZERO']);
-  assert.equal(team.counts.Web,1);assert.equal(team.counts.IBB,1);
+  assert.equal(team.counts.Web,1);assert.equal(team.counts['Chưa cập nhật'],1);
   assert.equal(Object.values(team.counts).reduce((a,b)=>a+b,0),team.total);
   assert.equal(monthlyStaffChannels(rows,{},'2026-11','DNG.A',roster,'2').total,0);
   assert.equal(filterStaffTeam(rows,'2',roster).length,2);assert.equal(filterStaffTeam(rows,'',roster).length,4);
