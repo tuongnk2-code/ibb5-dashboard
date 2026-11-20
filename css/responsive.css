@@ -364,6 +364,15 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #ibb5Analytics svg.trk-combined-plot{min-width:960px;min-height:190px;max-height:300px}
 #ibb5Analytics .trk-series-point,#ibb5Analytics .trk-focus-line{pointer-events:none}
 #ibb5Analytics .trk-series-point.is-selected{stroke-width:3.5}
+#ibb5Analytics .trk-aligned-scroll{width:100%;overflow-x:auto;scrollbar-width:thin}
+#ibb5Analytics .trk-aligned-content{width:100%;min-width:1080px}
+#ibb5Analytics .trk-aligned-content .trk-plot-scroll{overflow:visible;padding:0 1px;box-sizing:border-box}
+#ibb5Analytics .trk-aligned-content svg.trk-combined-plot{width:100%;min-width:0;min-height:0;max-height:none}
+#ibb5Analytics .trk-aligned-content .trk-table-scroll{overflow:visible;margin-bottom:8px}
+#ibb5Analytics .trk-aligned-content .trk-day-table{min-width:0}
+#ibb5Analytics .trk-day-table :is(th,td):not(:first-child){text-align:center;vertical-align:middle;font-variant-numeric:tabular-nums}
+#ibb5Analytics .trk-aligned-content .trk-day-table :is(th,td):is(:first-child,:last-child){width:auto}
+#ibb5Analytics .trk-day-table th.trk-highlighted{background:#e8f5ee;box-shadow:inset 0 -2px #1db181}
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }

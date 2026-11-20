@@ -503,17 +503,17 @@ function render(){const m=$('anaMonth').value,staff=$('anaStaff').value,day=$('a
 const totalOn=series.reduce((a,x)=>a+x.on,0),totalSold=series.reduce((a,x)=>a+x.sold,0);
 const highestOn=series.reduce((a,x)=>x.on>a.on?x:a,series[0]);
 const commonMax=Math.max(1,...series.map(x=>Math.max(x.on,x.sold)));
-const YMAX=Math.max(5,Math.ceil(commonMax/5)*5), W=1200,H=264,L=49,R=15,T=28,B=212;
-const step=(W-L-R)/Math.max(1,series.length-1),xx=i=>L+i*step;
+const YMAX=Math.max(5,Math.ceil(commonMax/5)*5), W=1200,H=264,L=84,R=60,T=28,B=212;
+const step=(W-L-R)/series.length,xx=i=>L+(i+.5)*step;
 const yy=v=>B-(B-T)*v/YMAX;
 const areaPath=k=>'M'+xx(0).toFixed(1)+' '+B+' L'+series.map((x,i)=>xx(i).toFixed(1)+' '+yy(x[k]).toFixed(1)).join(' L')+' L'+xx(series.length-1).toFixed(1)+' '+B+' Z';
 const path=k=>'M'+series.map((x,i)=>xx(i).toFixed(1)+' '+yy(x[k]).toFixed(1)).join(' L');
 function graph(){
  const grids=[0,.25,.5,.75,1].map(f=>{const value=Math.round(YMAX*f),y=yy(YMAX*f).toFixed(1);return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#e7eef6" stroke-dasharray="4 5"/><text x="'+(L-10)+'" y="'+(+y+5)+'" text-anchor="end" fill="#71859c" font-size="14">'+value+'</text>';}).join('');
- const labels=series.map((item,i)=>(i===0||i===series.length-1||item.d%5===0)?'<text x="'+xx(i).toFixed(1)+'" y="239" text-anchor="middle" font-size="14" fill="#697f97">'+item.d+'</text>':'').join('');
+ const labels=series.map((item,i)=>(i===0||i===series.length-1||item.d%5===0)?'<text data-axis-day="'+item.d+'" x="'+xx(i).toFixed(1)+'" y="239" text-anchor="middle" font-size="14" fill="#697f97">'+item.d+'</text>':'').join('');
  const lines=[['on','#1684e6'],['sold','#f47721']].map(([key,color])=>'<path data-trk-series="'+key+'" d="'+path(key)+'" stroke="'+color+'" fill="none" stroke-width="3" '+(key==='sold'?'stroke-dasharray="7 4"':'')+' stroke-linecap="round" stroke-linejoin="round"/>').join('');
  const points=series.map((item,i)=>{const x=xx(i),on=yy(item.on),sold=yy(item.sold);return '<circle class="trk-series-point" data-point-day="'+item.d+'" cx="'+x.toFixed(1)+'" cy="'+on.toFixed(1)+'" r="3.5" fill="#fff" stroke="#1684e6" stroke-width="2"/><path class="trk-series-point" data-point-day="'+item.d+'" d="M'+x.toFixed(1)+' '+(sold-4).toFixed(1)+' L'+(x+4).toFixed(1)+' '+sold.toFixed(1)+' L'+x.toFixed(1)+' '+(sold+4).toFixed(1)+' L'+(x-4).toFixed(1)+' '+sold.toFixed(1)+' Z" fill="#fff" stroke="#f47721" stroke-width="2"/>';}).join('');
- const hits=series.map((item,i)=>{const first=i===0?L-15:(xx(i-1)+xx(i))/2,last=i===series.length-1?W-R+15:(xx(i+1)+xx(i))/2;return '<rect data-trk-day="'+item.d+'" tabindex="0" role="button" aria-label="Ngày '+item.d+': Online '+item.on+' HĐ, Bán mới '+item.sold+' HĐ" x="'+first.toFixed(1)+'" width="'+(last-first).toFixed(1)+'" y="'+T+'" height="'+(B-T)+'" fill="transparent"><title>Ngày '+item.d+': Online '+item.on+' HĐ · Bán mới '+item.sold+' HĐ</title></rect>';}).join('');
+ const hits=series.map((item,i)=>{const first=i===0?L:(xx(i-1)+xx(i))/2,last=i===series.length-1?W-R:(xx(i+1)+xx(i))/2;return '<rect data-trk-day="'+item.d+'" tabindex="0" role="button" aria-label="Ngày '+item.d+': Online '+item.on+' HĐ, Bán mới '+item.sold+' HĐ" x="'+first.toFixed(1)+'" width="'+(last-first).toFixed(1)+'" y="'+T+'" height="'+(B-T)+'" fill="transparent"><title>Ngày '+item.d+': Online '+item.on+' HĐ · Bán mới '+item.sold+' HĐ</title></rect>';}).join('');
  return '<svg class="trk-plot trk-combined-plot" viewBox="0 0 '+W+' '+H+'" role="group" aria-label="So sánh Online thực tế và HĐ bán mới theo ngày, cùng thang số hợp đồng"><text x="8" y="18" fill="#71859c" font-size="14">HĐ</text>'+grids+'<path d="'+areaPath('on')+'" fill="#1684e6" opacity=".08"/><path d="'+areaPath('sold')+'" fill="#f47721" opacity=".06"/>'+lines+'<line class="trk-focus-line" x1="0" x2="0" y1="'+T+'" y2="'+B+'" stroke="#7a91ab" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>'+points+labels+'<text x="'+(W/2)+'" y="260" text-anchor="middle" fill="#71859c" font-size="14">Ngày trong tháng</text>'+hits+'</svg>';
 }
 function tile(label,value,detail,style){return '<div class="trk-stat '+(style||'')+'"><span>'+label+'</span><strong>'+value+'</strong><small>'+detail+'</small></div>'}
@@ -524,15 +524,16 @@ const tiles='<div class="trk-stat-row">'+
  tile('Chênh Online – Bán mới',sign+fmt(delta)+' HĐ','Chênh trong kỳ, không phải HĐ tồn',delta<0?'trk-orange':'trk-blue')+
  tile('Online cao nhất/ngày',highestOn.on+' HĐ','Ngày '+String(highestOn.d).padStart(2,'0')+'/'+m.slice(5,7),'trk-neutral')+'</div>';
 const legend=(key,label,total)=>'<div class="trk-legend-item '+(key==='on'?'trk-online':'trk-sold')+'"><span class="trk-color-line" aria-hidden="true"></span><strong>'+label+'</strong><span class="trk-section-total">Tổng <b>'+fmt(total)+' HĐ</b></span></div>';
-const plotSection=()=>'<section class="trk-section trk-combined"><div class="trk-section-top"><div class="trk-combined-legend">'+legend('on','Online thực tế',totalOn)+legend('sold','HĐ bán mới',totalSold)+'</div><small class="trk-day-count">'+series.length+' ngày theo dõi</small></div><div class="trk-plot-scroll">'+graph()+'</div></section>';
+const plotSection=()=>'<section class="trk-section trk-combined"><div class="trk-section-top"><div class="trk-combined-legend">'+legend('on','Online thực tế',totalOn)+legend('sold','HĐ bán mới',totalSold)+'</div><small class="trk-day-count">'+series.length+' ngày theo dõi</small></div><div class="trk-aligned-scroll"><div class="trk-aligned-content"><div class="trk-plot-scroll">'+graph()+'</div>'+allTable+'</div></div></section>';
 const tableCells=k=>series.map(x=>'<td data-day="'+x.d+'">'+fmt(x[k])+'</td>').join('');
-const tableHead=series.map(x=>'<th>'+String(x.d).padStart(2,'0')+'</th>').join('');
+const tableHead=series.map(x=>'<th data-day="'+x.d+'">'+String(x.d).padStart(2,'0')+'</th>').join('');
+const tableColumns='<colgroup><col style="width:7%">'+series.map(()=>'<col style="width:'+88/series.length+'%">').join('')+'<col style="width:5%"></colgroup>';
 const allTable='<div class="trk-table-title"><strong>Chi tiết số liệu theo ngày</strong><small>Đầy đủ '+series.length+' ngày · Cuộn ngang nếu dùng màn hình hẹp</small></div>'+
- '<div class="trk-table-scroll"><table class="trk-day-table"><thead><tr><th>Ngày</th>'+tableHead+'<th>Tổng</th></tr></thead>'+
+ '<div class="trk-table-scroll"><table class="trk-day-table">'+tableColumns+'<thead><tr><th>Ngày</th>'+tableHead+'<th>Tổng</th></tr></thead>'+
  '<tbody><tr class="trk-row-online"><th>Online</th>'+tableCells('on')+'<td>'+fmt(totalOn)+'</td></tr>'+
  '<tr class="trk-row-sold"><th>Bán mới</th>'+tableCells('sold')+'<td>'+fmt(totalSold)+'</td></tr></tbody></table></div>';
 $('anaTrend').innerHTML=tiles+'<div class="trk-description"><span class="trk-hint">Online và Bán mới trên cùng biểu đồ, cùng thang số HĐ.</span><strong id="ibbTrkFocus">Rê chuột vào điểm bất kỳ để xem kết quả của ngày.</strong></div>'+
- plotSection()+allTable;
+ plotSection();
 const focusNode=$('ibbTrkFocus');focusNode.setAttribute('aria-live','polite');
 const focusDay=d=>{
   const x=series.find(a=>a.d===d);if(!x)return;

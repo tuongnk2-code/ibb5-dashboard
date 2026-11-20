@@ -28,6 +28,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await page.locator('#anaTrend .trk-series-point.is-selected').count(),2);assert.equal(await page.locator('#anaTrend .trk-row-sold .trk-highlighted').innerText(),'17');
   await page.keyboard.press('ArrowRight');assert.match(await page.locator('#ibbTrkFocus').innerText(),/Ngày 20\/11: Online 0 HĐ · Bán mới 0 HĐ/);
   assert.equal(await page.locator('#anaTrend .trk-row-online .trk-highlighted').innerText(),'0');
+  const checkColumns=async()=>{
+   const offsets=await page.locator('#anaTrend .trk-day-table thead [data-day]').evaluateAll(headers=>headers.map(header=>{
+    const day=header.dataset.day,table=header.closest('table'),cells=[header,...table.querySelectorAll('tbody [data-day="'+day+'"]')],center=el=>{const r=el.getBoundingClientRect();return (r.left+r.right)/2;};
+    const svg=document.querySelector('#anaTrend .trk-combined-plot'),point=svg.querySelector('circle[data-point-day="'+day+'"]'),position=svg.createSVGPoint();position.x=Number(point.getAttribute('cx'));position.y=Number(point.getAttribute('cy'));const screen=position.matrixTransform(svg.getScreenCTM());
+    return {day,alignments:cells.map(cell=>getComputedStyle(cell).textAlign),offsets:cells.map(cell=>Math.abs(center(cell)-screen.x))};
+   }));
+   for(const item of offsets){assert.ok(item.offsets.every(offset=>offset<2),'chart/table day '+item.day+' must align: '+item.offsets);assert.ok(item.alignments.every(value=>value==='center'),'day '+item.day+' headers and figures must be centered');}
+  };
+  await checkColumns();
+  if(width===390){await page.locator('#anaTrend .trk-aligned-scroll').evaluate(el=>el.scrollLeft=400);await checkColumns();}
+  if(width===1440){for(const month of ['2026-02','2026-12','2026-11']){await page.locator('#anaMonth').fill(month);await page.locator('#anaMonth').dispatchEvent('change');await checkColumns();}}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
   await page.evaluate(()=>location.hash='performance');await page.locator('#dpView').selectOption('day');await page.locator('#dpDay').fill('2026-11-19');await page.locator('#dpDay').dispatchEvent('change');assert.equal(await page.locator('#dpTableBody .dp-grand .dp-sold').innerText(),'17');
   await page.evaluate(()=>{window.IBB5_PENDING_NOTES.LOCAL.result='Chưa Online';document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:LOCAL']}}));});await page.waitForFunction(()=>document.getElementById('soldToday').textContent==='18 HĐ');assert.equal(await page.locator('#dpTableBody .dp-grand .dp-sold').innerText(),'18');assert.equal(await page.locator('#anaTrend .trk-row-sold [data-day="19"]').innerText(),'18');
