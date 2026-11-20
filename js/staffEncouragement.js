@@ -5,7 +5,7 @@ import './staffEncouragement.css';
 
 const shown=new Set();
 const themeHistory=new Map();
-const DURATION_MS=7000;
+const DURATION_MS=10000;
 export function showStaffEncouragement({profile,name,data,day}) {
   if(!profile?.acc||document.querySelector('.staff-encouragement'))return false;
   const growth=personalGrowth(data,profile.acc,day);if(!growth)return false;
@@ -17,13 +17,16 @@ export function showStaffEncouragement({profile,name,data,day}) {
   const appearance=nextEncouragementTheme(message.kind,history);
   dialog.className='staff-encouragement '+message.kind;dialog.setAttribute('aria-labelledby','staffEncouragementTitle');dialog.setAttribute('aria-describedby','staffEncouragementBody');dialog.dataset.messageId=message.id;
   dialog.dataset.theme=appearance.id;dialog.style.setProperty('--se-accent',appearance.theme.accent);appearance.theme.colors.forEach((color,index)=>dialog.style.setProperty('--se-bg-'+index,color));dialog.style.setProperty('--se-glow',appearance.theme.glow);
-  dialog.innerHTML='<header class="se-header"><strong>IBB5 <span>· CÙNG NHAU TIẾN LÊN</span></strong><span class="se-account"></span></header><main class="se-main"><canvas class="se-scene" aria-hidden="true"></canvas><div class="se-text"><p class="se-greeting"></p><h1 id="staffEncouragementTitle"><span></span><em></em></h1><p class="se-comparison"></p><p id="staffEncouragementBody"></p><p class="se-signature"></p></div></main><footer class="se-footer"><div><span class="se-countdown">Tiếp sức 7 giây, rồi mình bắt đầu nhé!</span><button type="button" class="se-skip" autofocus>Vào dashboard →</button></div><div class="se-track" role="progressbar" aria-label="Thời gian còn lại" aria-valuemin="0" aria-valuemax="7" aria-valuenow="7"><div></div></div></footer>';
+  dialog.innerHTML='<header class="se-header"><strong>IBB5 <span>· CÙNG NHAU TIẾN LÊN</span></strong><span class="se-account"></span></header><main class="se-main"><canvas class="se-scene" aria-hidden="true"></canvas><div class="se-text"><p class="se-greeting"></p><h1 id="staffEncouragementTitle"><span></span><em></em></h1><p class="se-comparison"></p><p id="staffEncouragementBody"></p><p class="se-signature"></p></div></main><footer class="se-footer"><div><span class="se-countdown">Tiếp sức 10 giây, rồi mình bắt đầu nhé!</span><button type="button" class="se-skip" autofocus>Vào dashboard →</button></div><div class="se-track" role="progressbar" aria-label="Thời gian còn lại" aria-valuemin="0" aria-valuemax="10" aria-valuenow="10"><div></div></div></footer>';
   dialog.querySelector('.se-account').textContent=profile.acc;
   dialog.querySelector('.se-greeting').textContent='Chào '+(name||profile.full_name||profile.acc)+',';
   dialog.querySelector('h1 span').textContent=message.title[0];dialog.querySelector('h1 em').textContent=message.title[1];
   dialog.querySelector('#staffEncouragementBody').textContent=message.body;dialog.querySelector('.se-signature').textContent=message.signature;
   const delta=growth.delta;
-  dialog.querySelector('.se-comparison').textContent=delta===null?'Chưa đủ dữ liệu cùng kỳ để so sánh':delta<0?'Hiện thấp hơn cùng kỳ tháng trước '+Math.abs(delta)+' HĐ':delta>0?'Hiện vượt cùng kỳ tháng trước '+delta+' HĐ':'Đang ngang cùng kỳ tháng trước';
+  const comparison=dialog.querySelector('.se-comparison'),label=document.createElement('span');
+  label.textContent=delta===null?'Chưa đủ dữ liệu cùng kỳ để so sánh':delta<0?'Hiện thấp hơn cùng kỳ tháng trước':delta>0?'Hiện vượt cùng kỳ tháng trước':'Đang ngang cùng kỳ tháng trước';
+  comparison.append(label);
+  if(delta!==null){const change=document.createElement('strong');change.className='se-change';change.textContent=(delta>0?'+':'')+delta+' HĐ';comparison.append(change);}
   document.body.append(dialog);const focused=document.activeElement;
   try{dialog.showModal();}catch{dialog.remove();return false;}
   shown.add(key);
