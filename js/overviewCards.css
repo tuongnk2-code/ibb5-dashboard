@@ -34,7 +34,7 @@
   #overview .mini.ov-metric>.value {
     grid-area:2/1/3/3 !important;
     align-self:center !important;
-    justify-self:start !important;
+    justify-self:center !important;
     margin:0 !important;
     font-size:40px !important;
     font-weight:800 !important;
@@ -43,6 +43,7 @@
     line-height:1.15 !important;
     white-space:normal !important;
     overflow-wrap:anywhere;
+    text-align:center !important;
   }
   #overview .mini.ov-metric>.detail {
     grid-area:3/1/4/3 !important;
@@ -67,6 +68,25 @@
     #overview .mini.ov-metric>.value {font-size:36px !important}
     #overview .mini.ov-metric>.name {font-size:14px !important}
   }
+}
+
+@layer overview-card-layout {
+  #overview .executive.overview-priority :is(.hero,.value) {
+    width:100% !important;text-align:center !important;justify-content:center !important;
+  }
+  #overview .executive.overview-priority #rate {text-align:center !important}
+  #overview #ibbQualitySummary>.kpi {
+    display:flex !important;flex-direction:column !important;
+    padding:20px !important;gap:14px;min-height:190px;
+  }
+  #overview #ibbQualitySummary>.kpi>.name {min-height:40px;padding-right:46px}
+  #overview #ibbQualitySummary>.kpi>.value {width:100%;text-align:center !important;margin:0 !important}
+  #overview #ibbQualitySummary>.kpi>.detail {margin-top:auto;text-align:center}
+  #overview #ibbQualitySummary>.kpi::after {
+    width:32px !important;height:32px !important;right:18px !important;top:20px !important;
+    bottom:auto !important;transform:none !important;
+  }
+  #overview #ibbQualitySummary>.kpi:nth-child(2)::after {background-size:5px 100%;background-position:0 bottom,9px bottom,18px bottom,27px bottom}
 }
 #overview .ov-metric-icon {grid-area:1/2/2/3;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--ov-tint);color:var(--ov-accent)}
 #overview .ov-metric-icon svg {display:block;width:24px;height:24px}
