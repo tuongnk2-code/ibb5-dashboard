@@ -1,4 +1,5 @@
 import { renderChannelShareChart } from './channelShareChart.js';
+import { installOverviewCards } from './overviewCards.js';
 import { compareChannelSources } from './channelSourceComparison.js';
 import { pendingFollowupContracts, pendingFollowupFilled, agedFollowupContracts } from './pendingInventory.js';
 import { renderWeeklyReports } from './weeklyReports.js';
@@ -68,6 +69,7 @@ let performanceSelection=null;
 const performanceTitles={sold:'HĐ bán mới',online:'HĐ Online trong tháng',previous:'HĐ Online cùng kỳ tháng trước',pending:'HĐ tồn',aged:'HĐ tồn trên 7 ngày'};
 const performanceDetails=installAgedContractDetails({button:null,id:'performanceContractDialog',showPending:()=>['pending','aged'].includes(performanceSelection?.kind),showOnline:true,hideFollowup:()=>['online','previous'].includes(performanceSelection?.kind),getRows:()=>performanceContractRows(operationalData(),performanceSelection,IBB_CALC.notes()),getAsOf:()=>performanceSelection?.kind==='previous'?performanceSelection.previousCut:performanceSelection?.asOf,getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getTitle:()=>performanceTitles[performanceSelection.kind]+' · '+performanceSelection.label,getDescription:()=>performanceSelection.kind==='previous'?'Online từ '+performanceSelection.previousMonth+'-01 đến '+performanceSelection.previousCut:'Tháng '+performanceSelection.asOf.slice(0,7)+' · Ngày theo dõi '+performanceSelection.asOf.split('-').reverse().join('/')});
 document.querySelector('#overview .overview-support').insertAdjacentHTML('beforeend','<div class="mini"><div class="name">HĐ Online cùng ngày tháng trước</div><label class="previous-day-picker">Ngày xem<input id="previousDayDate" type="date"></label><div class="value blue" id="previousDayOnline">—</div><div class="detail" id="previousDayOnlineNote">Số HĐ NET Online trong ngày đối chiếu</div></div>');
+installOverviewCards();
 let selectedPreviousDay='';
 let overviewMetricSelection='pending';
 const overviewMetricRows={pending:[],online:[],vvip:[],cameraKpi:[],previousDayOnline:[]},overviewMetricTitles={pending:'HĐ tồn cần theo dõi',online:'HĐ NET Online trong tháng',vvip:'HĐ V.VIP Online trong tháng',cameraKpi:'HĐ Camera Online trong tháng',previousDayOnline:'HĐ NET Online cùng ngày tháng trước'};
