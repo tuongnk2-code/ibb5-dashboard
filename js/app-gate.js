@@ -24,7 +24,8 @@ async function showApp(profile) {
   loginScreen.style.display = 'none';
   appShell.style.display = '';
   window.IBB5_CURRENT_PROFILE = profile;
-  await import('./main.js');
+  const dashboard = await import('./main.js');
+  dashboard.showDailyEncouragement(profile);
   installSyncControls();
   const reportRoot = document.getElementById('dailyReportsRoot');
   if (reportRoot) {

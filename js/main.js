@@ -1,5 +1,6 @@
 import { renderChannelShareChart } from './channelShareChart.js';
 import { installContactDirectory } from './contactDirectory.js';
+import { showStaffEncouragement } from './staffEncouragement.js';
 import { installOverviewCards } from './overviewCards.js';
 import { compareChannelSources } from './channelSourceComparison.js';
 import { pendingFollowupContracts, pendingFollowupFilled, agedFollowupContracts } from './pendingInventory.js';
@@ -1101,6 +1102,11 @@ installContactDirectory(CONTACT_DATA);
 for(const id of ['from','to','ckMonth','anaMonth','anaDay','pendAsOf','pendDailyDate','psDay','dpMonth','dpDay']){const input=document.getElementById(id);if(!input)continue;input.value=input.type==='month'?reportDay().slice(0,7):id==='from'?reportDay().slice(0,7)+'-01':reportDay();input.dispatchEvent(new Event('change',{bubbles:true}));}
 document.addEventListener('ibb5-shared-updated',()=>{commitDB=window.IBB5_SHARED_STATE.commitments;refreshCommitUI();perfRender();update();window.dispatchEvent(new Event('storage'));});
 window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??null;
+export function showDailyEncouragement(profile){
+ const person=PERSONNEL.find(person=>String(person.acc).trim().toLowerCase()===String(profile?.acc||'').trim().toLowerCase());
+ if(person)return showStaffEncouragement({profile,name:person.name,data:operationalData(),day:reportDay()});
+ return false;
+}
 
 renderQuoteBuilder(document.getElementById('pricing'),window.IBB5_CURRENT_PROFILE);
 let salesPlaybookLoad;
