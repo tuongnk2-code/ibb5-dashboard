@@ -1,0 +1,47 @@
+/* Layered important rules also cover legacy and lazily loaded section styles. */
+@layer dashboard-boundaries {
+#appShell {
+  --dashboard-border: #9bb4d1;
+  --dashboard-grid: #a6bdd7;
+}
+
+#appShell .content :is(
+  .panel,.kpi,.execbig,.mini,.ibb-kpi,.ibbc-kpi,.ibbc-stat,
+  .ana-card,.ana-stat,.trk-stat,.dp-kpi,.pending-card,.pending-kpi,
+  .pending-metrics>article,.pending-forward-breakdown>div,
+  .pending-box,.pending-schedule,.ck-card,.ck-stat,.ct-card,
+  .price-card,.price-panel,.price-stat,.acc-me-card,
+  .mk-card,.dr-card,.wr-kpi,.wr-section,.wr-summary,
+  .salary-card,.quote-card,.sp-card
+) {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-right-color: var(--dashboard-border) !important;
+  border-bottom-color: var(--dashboard-border) !important;
+  border-left-color: var(--dashboard-border) !important;
+}
+
+/* Keep the existing status colors; make colored dividers more prominent. */
+#appShell #overview .executive.overview-priority > :is(.execbig,.mini),
+#appShell .content .dailygrid>.mini,
+#appShell #pendingContracts .pending-metrics>article,
+#appShell .content .wr-rollup-cards .wr-kpi {
+  border-top-width: 4px !important;
+}
+#appShell #overview .subkpis.overview-focus>.mini {
+  border-left-width: 5px !important;
+  border-left-color: #295d92 !important;
+}
+#appShell #overview .subkpis.overview-focus>.mini:nth-child(2) {
+  border-left-color: #0781ef !important;
+}
+
+#appShell .content table :is(th,td),
+#appShell :is(dialog,.modal,.metric-details) table :is(th,td) {
+  border: 2px solid var(--dashboard-grid) !important;
+}
+
+#appShell .content :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]) {
+  border-width: 2px;
+}
+}
