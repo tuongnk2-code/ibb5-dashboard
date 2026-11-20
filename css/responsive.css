@@ -357,6 +357,13 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #ibb5Analytics .ana-monthly-table [data-source-metric]{font-weight:800;white-space:nowrap}
 #ibb5Analytics .ana-missing-source{border:0;background:transparent;color:inherit;font:inherit;font-weight:750;padding:4px 8px;min-height:32px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:currentColor;cursor:pointer}
 #ibb5Analytics .ana-missing-source:hover{background:#1684e612}
+#ibb5Analytics .trk-combined-legend{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center}
+#ibb5Analytics .trk-legend-item{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:#183959}
+#ibb5Analytics .trk-legend-item.trk-sold .trk-color-line{background:repeating-linear-gradient(to right,#f47721 0 6px,transparent 6px 9px)}
+#ibb5Analytics .trk-combined .trk-day-count{font-size:11px;color:#71859c}
+#ibb5Analytics svg.trk-combined-plot{min-width:960px;min-height:190px;max-height:300px}
+#ibb5Analytics .trk-series-point,#ibb5Analytics .trk-focus-line{pointer-events:none}
+#ibb5Analytics .trk-series-point.is-selected{stroke-width:3.5}
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
