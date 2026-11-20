@@ -22,6 +22,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const sizes=await dialog.evaluate(el=>({title:parseFloat(getComputedStyle(el.querySelector('h1')).fontSize),body:parseFloat(getComputedStyle(el.querySelector('#staffEncouragementBody')).fontSize)}));
   assert.ok(sizes.title>=(width===1440?68:30));assert.ok(sizes.body>=(width===1440?26:height<=740?17:18));assert.equal(await dialog.locator('.se-track').getAttribute('aria-valuemax'),'7');
   const firstId=await dialog.getAttribute('data-message-id');
+  const firstTheme=await dialog.getAttribute('data-theme');assert.ok(['rocket','sunrise','flame','trophy','target','mountain'].includes(firstTheme));
   if(kind==='negative')assert.match(await dialog.locator('.se-comparison').innerText(),/thấp hơn.*4 HĐ/);
   if(kind==='positive'){assert.match(await dialog.locator('.se-comparison').innerText(),/vượt.*4 HĐ/);assert.equal(await dialog.locator('.se-text').evaluate(el=>getComputedStyle(el).animationName),'none');}
   if(kind==='neutral')assert.match(await dialog.locator('.se-comparison').innerText(),/ngang/);
@@ -30,7 +31,18 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   if(width===1440){await page.waitForTimeout(5100);assert.equal(await dialog.isVisible(),true);await dialog.waitFor({state:'detached',timeout:3500});}else{await dialog.locator('.se-skip').click();}
   assert.equal(await dialog.count(),0);assert.equal(await page.evaluate(()=>window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE)),false);
   if(kind==='negative'){
-   await page.evaluate(()=>{window.__welcomeNow+=86400000;window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);});await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-message-id'),firstId);assert.match(await dialog.locator('.se-comparison').innerText(),/thấp hơn.*4 HĐ/);await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
+   await page.evaluate(()=>{window.__welcomeNow+=86400000;window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);});await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-message-id'),firstId);assert.notEqual(await dialog.getAttribute('data-theme'),firstTheme);assert.match(await dialog.locator('.se-comparison').innerText(),/thấp hơn.*4 HĐ/);const lastTheme=await dialog.getAttribute('data-theme');await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
+   if(width===1440){await page.reload();await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-theme'),lastTheme);await dialog.locator('.se-skip').click();await dialog.waitFor({state:'detached'});}
+  }
+  if(kind==='positive'){
+   const drawings=new Set();
+   for(const theme of ['rocket','sunrise','flame','trophy','target','mountain']){
+    await page.evaluate(theme=>{localStorage.setItem('ibb5_encouragement_themes_v1:dng.chuonghm',JSON.stringify({last:'other',remaining:[theme]}));window.__welcomeNow+=86400000;window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);},theme);
+    await dialog.waitFor({state:'visible'});assert.equal(await dialog.getAttribute('data-theme'),theme);drawings.add(await dialog.locator('canvas').evaluate(el=>el.toDataURL()));
+    if(process.env.ENCOURAGEMENT_SCREENSHOT_DIR)await dialog.screenshot({path:process.env.ENCOURAGEMENT_SCREENSHOT_DIR+'/encouragement-theme-'+theme+'.png'});
+    await dialog.locator('.se-skip').click();await dialog.waitFor({state:'detached'});
+   }
+   assert.equal(drawings.size,6);
   }
   assert.deepEqual(errors,[]);await page.close();
  }console.log('PASS: larger readable text, seven-second animated welcome, daily variation, own growth and mobile/landscape layouts');}

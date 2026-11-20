@@ -1,6 +1,7 @@
 dialog.staff-encouragement{--se-accent:#88c8ff;box-sizing:border-box;position:fixed;inset:0;margin:0;width:100%;height:100dvh;max-width:none;max-height:none;padding:0;border:0;border-radius:0;background:radial-gradient(ellipse at 100% 30%,#35588766,transparent 60%),linear-gradient(125deg,#07213f,#15375c 65%,#28487a);color:#fff;overflow:auto;display:flex;flex-direction:column;font-family:Arial,sans-serif;z-index:2147483000}
 dialog.staff-encouragement::backdrop{background:#07213f}
 dialog.staff-encouragement.positive{--se-accent:#66e4b5;background:radial-gradient(ellipse at 100% 30%,#2ba79033,transparent 60%),linear-gradient(125deg,#07213f,#103c58 65%,#125f60)}
+dialog.staff-encouragement[data-theme]{background:radial-gradient(ellipse at 100% 30%,var(--se-glow),transparent 60%),linear-gradient(125deg,var(--se-bg-0),var(--se-bg-1) 65%,var(--se-bg-2))}
 .staff-encouragement *{box-sizing:border-box}
 .staff-encouragement .se-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:28px 5vw 10px}
 .staff-encouragement .se-header strong{font-size:23px;letter-spacing:.02em}
