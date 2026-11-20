@@ -355,6 +355,12 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #ibb5Analytics .ana-channel-grand .ana-source-change{color:#cfe3f6}
 #ibb5Analytics .ana-channel-grand [data-source-metric]{color:#fff}
 #ibb5Analytics .ana-monthly-table [data-source-metric]{font-weight:800;white-space:nowrap}
+#ibb5Analytics .ana-monthly-table{min-width:1800px}
+#ibb5Analytics .ana-net-online,#ibb5Analytics .ana-net-status-detail{display:block;font-size:11px;line-height:1.5;margin-top:3px;font-weight:500;white-space:nowrap}
+#ibb5Analytics .ana-net-online{color:#176b91}
+#ibb5Analytics .ana-channel-grand .ana-net-online{color:inherit}
+#ibb5Analytics .ana-net-total{display:block;white-space:nowrap}
+#ibb5Analytics .ana-monthly-table [data-source-metric="net-status"]{white-space:normal}
 
 #pendingContracts .p-discard { display: block; margin-top: 6px; font-size: 12px; border-color: #d5dfed; color: #486884; }
 #ckDiscard { margin-left: 6px; }
