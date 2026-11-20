@@ -11,8 +11,9 @@ export function mergeCancellationArchive(...sources) {
     if(!/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(id))continue;
     const existing=archive.get(id);
     const record={type:'Internet',id,status:'Đã chấm dứt hợp đồng',created:validDay(row.created)?row.created:'',staff:String(row.staff||'').slice(0,500),room:String(row.room||'').slice(0,500)};
+    if(typeof row.netCancelledAt==='string'&&validDay(row.netCancelledAt.slice(0,10))&&/^(?:|T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$/.test(row.netCancelledAt.slice(10)))record.netCancelledAt=row.netCancelledAt;
     if(!existing)archive.set(id,record);
-    else archive.set(id,{...existing,created:existing.created||record.created,staff:existing.staff||record.staff,room:existing.room||record.room});
+    else archive.set(id,{...existing,created:existing.created||record.created,staff:existing.staff||record.staff,room:existing.room||record.room,...(!existing.netCancelledAt&&record.netCancelledAt?{netCancelledAt:record.netCancelledAt}:{})});
   }
   return [...archive.values()];
 }

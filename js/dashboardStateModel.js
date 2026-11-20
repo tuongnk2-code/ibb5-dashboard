@@ -47,6 +47,11 @@ export function validateSnapshot(snapshot) {
     for (const field of ['room', 'staff', 'status', 'package', 'branch', 'customer', 'sourceExcel']) result[field] = String(row[field] || '').slice(0, 500);
     result.prepaid = Number(row.prepaid) || 0;
     if (row.type === 'Internet' && typeof row.netClbh === 'string') result.netClbh = row.netClbh.slice(0, 500);
+    if (row.type === 'Internet' && typeof row.netCancelledAt === 'string' &&
+        validDay(row.netCancelledAt.slice(0, 10)) &&
+        /^(?:|T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$/.test(row.netCancelledAt.slice(10))) {
+      result.netCancelledAt = row.netCancelledAt;
+    }
     if (row.vvip != null) result.vvip = row.vvip === true;
     return result;
   });

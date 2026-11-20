@@ -387,6 +387,7 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 #pendingContracts button.p-cancel-approve:disabled { opacity: .55; cursor: wait; }
 #pendingContracts .pending-table .p-manager-decision{width:100%;min-width:0;padding:7px 2px;font-size:11px;background:#fff7ef;color:#8d4219;border:1px solid #f0c8a3;border-radius:8px}
 #pendingContracts .p-continue-status{display:inline-block;white-space:normal;color:#175590;background:#eaf4ff;border-radius:6px;padding:5px;font-size:11px;font-weight:700}
+#pendingContracts .p-net-cancelled{display:block;margin-top:5px;color:#c43636;font-size:11px;font-weight:750;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
 #pendingContracts .p-processing-time{display:block;margin-top:5px;font-size:11px;line-height:1.4;font-weight:600;color:#365c83;white-space:normal;font-variant-numeric:tabular-nums}
 #pendingContracts .p-manager-decision:disabled{opacity:.55;cursor:default}
 #pendingContracts .p-manager-only { font-size: 11px; color: #677c94; }
