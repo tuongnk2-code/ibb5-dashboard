@@ -7,3 +7,36 @@
 @media(max-width:650px){.wr-rollup-cards{grid-template-columns:1fr}.wr-rollup-tabs{flex-wrap:wrap}.wr-report-dialog{padding:12px}.wr-report-dialog>.wr-section-head{top:-12px}.wr-rollup .wr-bottom{max-height:none;overflow:visible}}
 .wr-manager-review{background:#f1f7ff;border-left:4px solid #1684e6;padding:16px;border-radius:10px;margin-bottom:16px;font-size:14px;line-height:1.6}.wr-manager-review ul{padding-left:20px;margin:8px 0}.wr-manager-review li{margin:6px 0}.wr-report-dialog pre{font-family:inherit;font-size:14px;line-height:1.6}
 .wr-rollup tfoot th:first-child{background:#173b60;color:white}.wr-rollup .wr-tablewrap tfoot small{color:#d0e2f4}.wr-rollup .wr-tablewrap th:first-child,.wr-rollup .wr-tablewrap td:first-child{min-width:155px}.wr-rollup .wr-tablewrap td:nth-child(5) small{white-space:normal;min-width:115px}
+
+@media(max-width:600px){
+  #weeklyReports .wr-head {gap:8px}
+  #weeklyReports .wr-eyebrow {font-size:10px;letter-spacing:.5px}
+  #weeklyReports .wr-head h2 {font-size:20px;margin:4px 0}
+  #weeklyReports .wr-head p {font-size:11px;line-height:1.4;margin:4px 0 8px}
+  #weeklyReports .wr-tools {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%;min-width:0}
+  #weeklyReports .wr-tools label {min-width:0;gap:4px;font-size:11px}
+  #weeklyReports .wr-tools :is(input,select,button) {display:block;width:100%;min-width:0;max-width:100%;height:36px;min-height:36px;padding:6px;font-size:12px!important;border-radius:8px}
+  #weeklyReports .wr-data-notice {padding:9px 10px;margin-top:10px;gap:3px;font-size:11px;line-height:1.4;border-radius:10px}
+  #weeklyReports .wr-data-notice span {min-width:0;flex-basis:100%}
+  #weeklyReports .wr-period-nav {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:10px 0;font-size:12px}
+  #weeklyReports .wr-period-nav span {grid-column:1/-1;grid-row:1;width:auto;font-size:12px}
+  #weeklyReports .wr-period-nav button {min-height:34px;padding:6px;font-size:11px}
+  #weeklyReports .wr-summary {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;border-radius:12px}
+  #weeklyReports .wr-summary>div {min-width:0}
+  #weeklyReports .wr-summary small {display:block;font-size:10px;line-height:1.4}
+  #weeklyReports .wr-summary strong {font-size:26px;line-height:1.2;margin:7px 0;text-align:center;overflow-wrap:anywhere}
+  #weeklyReports .wr-summary strong span {font-size:12px}
+  #weeklyReports .wr-summary p {font-size:10px;line-height:1.4}
+  #weeklyReports .wr-number {min-height:32px;padding:2px}
+  #weeklyReports .wr-kpis {gap:8px;margin:10px 0 12px}
+  #weeklyReports .wr-kpi {padding:10px;min-width:0;border-radius:10px}
+  #weeklyReports .wr-kpi small {font-size:11px;line-height:1.35}
+  #weeklyReports .wr-kpi strong {font-size:26px;margin-top:5px;text-align:center}
+  #weeklyReports .wr-section {padding:10px;border-radius:12px}
+  #weeklyReports .wr-section h3 {font-size:16px;margin-bottom:8px}
+  #weeklyReports .wr-bottom {gap:10px;margin-top:12px}
+  #weeklyReports .wr-daily-root {margin-top:12px}
+  #weeklyReports .wr-rollup-cards {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #weeklyReports .wr-rollup-cards strong {font-size:22px}
+  #weeklyReports .wr-rollup-cards strong span {font-size:11px}
+}
