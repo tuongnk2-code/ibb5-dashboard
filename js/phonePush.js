@@ -17,6 +17,9 @@ export function updatePhoneBadge(count){
  if(!('Notification'in window)||Notification.permission!=='granted')return;
  try{const result=count>0?navigator.setAppBadge?.(count):navigator.clearAppBadge?.();result?.catch(()=>{});}catch{}
 }
+export async function clearDisplayedPhoneNotifications(){
+ try{const reg=await navigator.serviceWorker?.getRegistration('/');const notifications=await reg?.getNotifications({tag:'ibb5-phone-summary'});notifications?.forEach(notification=>notification.close());}catch{}
+}
 export async function clearPhonePushOnLogout(){
  if(!('serviceWorker'in navigator))return;
  const reg=await navigator.serviceWorker.getRegistration('/'),subscription=await reg?.pushManager.getSubscription();

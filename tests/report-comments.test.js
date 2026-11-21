@@ -2,15 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { reportDay } from '../js/dailyReportModel.js';
+import {scopedContractAlerts} from '../js/phonePushModel.js';
+import {contractAlertSignatures} from '../js/contractAlertReadModel.js';
 
 test('comments API scopes threads, authors and receipts; rejects spoofing and safely retries sends',async()=>{
  const oldFetch=globalThis.fetch;process.env.SUPABASE_URL='https://supabase.test';process.env.SUPABASE_SERVICE_ROLE_KEY='test-only';
  const staff={id:randomUUID(),role:'staff',acc:'DNG.ManLM3'},other={id:randomUUID(),role:'staff',acc:'DNG.Vypv'},manager={id:randomUUID(),role:'manager',acc:''},lead={id:randomUUID(),role:'lead',acc:'DNG.HoaNTB6'};
- const people=[staff,other,manager,lead],day=reportDay();let caller=staff,comments=[],status='submitted',lastRead=null;
+ const people=[staff,other,manager,lead],day=reportDay(),alertState={rows:[{id:'OWN',type:'Internet',staff:staff.acc,created:'2026-11-01',date:''},{id:'OTHER',type:'Internet',staff:other.acc,created:'2026-11-01',date:''}],notes:{}};let caller=staff,comments=[],status='submitted',lastRead=null,receipts=[];
  globalThis.fetch=async(input,init={})=>{
   const url=new URL(input instanceof Request?input.url:input),method=init.method||'GET';
   const json=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
   if(url.pathname==='/auth/v1/user')return json({id:caller.id});
+  if(url.pathname==='/rest/v1/rpc/push_contract_state')return json(alertState);
+  if(url.pathname==='/rest/v1/contract_alert_reads'){if(method==='POST'){receipts=JSON.parse(init.body);assert.ok(receipts.every(record=>record.user_id===caller.id));return json(null);}assert.equal(url.searchParams.get('user_id'),'eq.'+caller.id);return json(receipts.filter(r=>r.user_id===caller.id));}
   if(url.pathname==='/rest/v1/profiles'){const id=url.searchParams.get('id');return json(id?.startsWith('eq.')?people.find(p=>p.id===id.slice(3))||null:people);}
   if(['/rest/v1/daily_reports','/rest/v1/market_reports'].includes(url.pathname))return json({user_id:staff.id,report_date:day,status,data:{}});
   if(url.pathname==='/rest/v1/report_comments'){
@@ -21,7 +25,7 @@ test('comments API scopes threads, authors and receipts; rejects spoofing and sa
   if(url.pathname==='/rest/v1/report_notifications'){
    assert.equal(url.searchParams.get('recipient_id'),'eq.'+caller.id);
    if(method==='PATCH'){lastRead={url,body:JSON.parse(init.body)};return json(null);}
-   return json(comments.map(c=>({id:randomUUID(),comment_id:c.id,comment:c,read_at:null})));
+   assert.equal(url.searchParams.get('read_at'),'is.null');return json(lastRead?[]:comments.map(c=>({id:randomUUID(),comment_id:c.id,comment:c,read_at:null})));
   }
   throw Error(method+' '+url.pathname);
  };
@@ -42,6 +46,12 @@ test('comments API scopes threads, authors and receipts; rejects spoofing and sa
   caller=staff;assert.equal((await invoke('GET',context)).body.comments[0].author,'Trưởng phòng');
   assert.equal((await invoke('GET',{inbox:'mine',recipient_id:manager.id})).body.notifications.length,1);
   assert.equal((await invoke('POST',{action:'read',comment_ids:[comments[0].id],recipient_id:manager.id})).code,200);assert.match(lastRead.url.searchParams.get('recipient_id'),new RegExp(staff.id));assert.ok(lastRead.body.read_at);
+  assert.equal((await invoke('GET',{inbox:'mine'})).body.notifications.length,0);
+  const signatures=contractAlertSignatures(scopedContractAlerts(caller,alertState),alertState.notes);
+  assert.equal((await invoke('POST',{action:'read-contracts',user_id:manager.id,items:[{id:'OWN',signature:signatures.OWN}]})).code,200);assert.equal(receipts[0].user_id,staff.id);
+  assert.equal((await invoke('GET',{inbox:'mine'})).body.alertReads.length,1);
+  assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OTHER',signature:'fake'}]})).code,409);
+  assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OWN',signature:'old'}]})).code,409);
   caller=lead;assert.equal((await invoke('GET',context)).code,200);assert.equal((await invoke('GET',{...context,subject_id:other.id})).code,403);
   assert.equal((await invoke('GET',{...context,kind:'market'})).code,200);
  }finally{globalThis.fetch=oldFetch;delete process.env.SUPABASE_URL;delete process.env.SUPABASE_SERVICE_ROLE_KEY;}

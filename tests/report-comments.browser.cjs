@@ -45,6 +45,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await discussion.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
   if(process.env.COMMENTS_SCREENSHOT_DIR)await employee.screenshot({path:process.env.COMMENTS_SCREENSHOT_DIR+'/report-comment-mobile.png'});
   await discussion.getByRole('button',{name:'Đóng bình luận'}).click();
+  await employee.locator('#reportNotificationButton').click();assert.equal(await employee.locator('.rc-inbox .rc-notification').count(),0);await employee.locator('.rc-inbox header button').click();
   await boss.evaluate(()=>window.dispatchEvent(new Event('focus')));await boss.locator('#reportNotificationButton b').filter({hasText:'1'}).waitFor();await boss.locator('#reportNotificationButton').click();await boss.locator('.rc-notification').click();await boss.locator('.rc-dialog:not(.rc-inbox) .rc-comments article').nth(1).waitFor();
   if(process.env.COMMENTS_SCREENSHOT_DIR)await boss.screenshot({path:process.env.COMMENTS_SCREENSHOT_DIR+'/report-comment-desktop.png'});
   assert.deepEqual(errors,[]);console.log('PASS: report detail comment, failed-send draft retention, staff unread notification, exact report opening, safe rendering, read sync and reply notification to manager; desktop/mobile');

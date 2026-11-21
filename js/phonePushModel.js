@@ -1,8 +1,12 @@
 import {canSeeReport,reportDay} from './dailyReportModel.js';
 import {contractAlerts} from './contractAlertModel.js';
+import {unreadContractAlerts} from './contractAlertReadModel.js';
 const norm=value=>String(value||'').trim().toLowerCase();
-export function phoneAlertState(profile,state,now=Date.now()){
- const alerts=contractAlerts({...state,now,asOf:reportDay(new Date(now)),canView:row=>canSeeReport(profile,{id:norm(profile.acc)&&norm(profile.acc)===norm(row.staff)?profile.id:'other',acc:row.staff,role:'staff'})});
+export function scopedContractAlerts(profile,state,now=Date.now()){
+ return contractAlerts({...state,now,asOf:reportDay(new Date(now)),canView:row=>canSeeReport(profile,{id:norm(profile.acc)&&norm(profile.acc)===norm(row.staff)?profile.id:'other',acc:row.staff,role:'staff'})});
+}
+export function phoneAlertState(profile,state,now=Date.now(),reads={}){
+ const alerts=unreadContractAlerts(scopedContractAlerts(profile,state,now),state.notes,reads);
  return {count:alerts.total,signature:JSON.stringify(Object.entries(alerts.groups).map(([kind,rows])=>[kind,rows.map(r=>r.id).sort()]))};
 }
 export function phonePushDecision(subscription,{alerts,unread=0,latest=null,now=Date.now()}){

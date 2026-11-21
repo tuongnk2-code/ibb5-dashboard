@@ -19,12 +19,13 @@ Deno.serve(async(req:Request)=>{
   const version=check(await admin.rpc('push_state_version'));
   if(!cachedState||version!==cachedVersion){cachedState=check(await admin.rpc('push_contract_state'));cachedVersion=version;}
   const state=cachedState,unreadState=check(await admin.rpc('push_unread_state'));
+  const reads=new Map();for(let offset=0;;offset+=1000){const batch=check(await admin.from('contract_alert_reads').select('user_id,contract_id,signature').in('user_id',[...new Set(subscriptions.map((s:any)=>s.user_id))]).order('user_id').order('contract_id').range(offset,offset+999));for(const record of batch){if(!reads.has(record.user_id))reads.set(record.user_id,{});reads.get(record.user_id)[record.contract_id]=record.signature;}if(batch.length<1000)break;}
   webpush.setVapidDetails('https://ibb5-dashboard.vercel.app',config.public_key,config.private_key);
   const alerts=new Map();let sent=0,removed=0,failed=0;
   // Bound parallelism so one bad endpoint cannot prevent delivery to the remaining devices.
   for(let offset=0;offset<subscriptions.length&&Date.now()-now<45000;offset+=8)await Promise.all(subscriptions.slice(offset,offset+8).map(async(subscription:any)=>{
    const person:any=byId.get(subscription.user_id);if(!person){check(await admin.from('push_subscriptions').delete().eq('id',subscription.id));return;}
-   if(!alerts.has(person.id))alerts.set(person.id,phoneAlertState(person,state,now));
+   if(!alerts.has(person.id))alerts.set(person.id,phoneAlertState(person,state,now,reads.get(person.id)||{}));
    const visible=unreadState.filter((n:any)=>n.recipient_id===person.id&&byId.has(n.subject_id)&&canSeeReport(person,byId.get(n.subject_id)));
    const unread=visible.reduce((sum:number,n:any)=>sum+n.unread,0),latest=visible.map((n:any)=>n.latest).sort((a:string,b:string)=>Date.parse(b)-Date.parse(a))[0]||null;
    const decision=phonePushDecision(subscription,{alerts:alerts.get(person.id),unread,latest,now});if(!decision)return;

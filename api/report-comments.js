@@ -1,5 +1,7 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { canSeeReport, reportDay, validDay } from '../js/dailyReportModel.js';
+import { scopedContractAlerts } from '../js/phonePushModel.js';
+import { contractAlertSignatures } from '../js/contractAlertReadModel.js';
 
 const check = result => { if (result.error) throw result.error; return result.data; };
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -11,13 +13,21 @@ export default async function handler(req,res) {
   const {admin,caller}=auth;
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return fail(res,405,'Phương thức không hỗ trợ.');}
   if(req.method==='GET'&&req.query?.inbox==='mine'){
-   const notifications=check(await admin.from('report_notifications').select('id,comment_id,created_at,read_at,comment:report_comments!inner(id,kind,subject_id,report_date,author_id,body)').eq('recipient_id',caller.id).order('read_at',{ascending:false,nullsFirst:true}).order('created_at',{ascending:false}).limit(100));
+   const notifications=check(await admin.from('report_notifications').select('id,comment_id,created_at,read_at,comment:report_comments!inner(id,kind,subject_id,report_date,author_id,body)').eq('recipient_id',caller.id).is('read_at',null).order('created_at',{ascending:false}).limit(100));
+   const alertReads=[];for(let offset=0;;offset+=1000){const batch=check(await admin.from('contract_alert_reads').select('contract_id,signature,viewed_at').eq('user_id',caller.id).order('contract_id').range(offset,offset+999));alertReads.push(...batch);if(batch.length<1000)break;}
    const ids=[...new Set(notifications.flatMap(n=>[n.comment.subject_id,n.comment.author_id]))];
    const people=ids.length?check(await admin.from('profiles').select('id,acc,full_name,role').in('id',ids)):[];
    const profiles=new Map(people.map(p=>[p.id,p]));
-   return res.status(200).json({notifications:notifications.filter(n=>profiles.has(n.comment.subject_id)&&canSeeReport(caller,profiles.get(n.comment.subject_id))).map(n=>({...n,author:profiles.get(n.comment.author_id)?.acc||'Quản lý',subject:profiles.get(n.comment.subject_id)?.acc||'Nhân sự'}))});
+   return res.status(200).json({alertReads,notifications:notifications.filter(n=>profiles.has(n.comment.subject_id)&&canSeeReport(caller,profiles.get(n.comment.subject_id))).map(n=>({...n,author:profiles.get(n.comment.author_id)?.acc||'Quản lý',subject:profiles.get(n.comment.subject_id)?.acc||'Nhân sự'}))});
   }
   const input=req.method==='GET'?req.query:req.body||{};
+  if(req.method==='POST'&&input.action==='read-contracts'){
+   if(!Array.isArray(input.items)||!input.items.length||input.items.length>200||input.items.some(item=>typeof item?.id!=='string'||!/^[A-Z0-9][A-Z0-9._/-]{0,99}$/.test(item.id)||typeof item.signature!=='string'||!item.signature||item.signature.length>6000))return fail(res,400,'Danh sách cảnh báo không hợp lệ.');
+   const state=check(await admin.rpc('push_contract_state')),signatures=contractAlertSignatures(scopedContractAlerts(caller,state),state.notes);
+   const records=[...new Map(input.items.filter(item=>signatures[item.id]===item.signature).map(item=>[item.id,{user_id:caller.id,contract_id:item.id,signature:item.signature,viewed_at:new Date().toISOString()}])).values()];
+   if(!records.length)return fail(res,409,'Cảnh báo đã thay đổi. Anh/chị tải lại để xem nội dung mới.');
+   check(await admin.from('contract_alert_reads').upsert(records,{onConflict:'user_id,contract_id'}));return res.status(200).json({alertReads:records.map(({user_id,...record})=>record)});
+  }
   if(req.method==='POST'&&input.action==='read'){
    if(!Array.isArray(input.comment_ids)||input.comment_ids.length>200||!input.comment_ids.every(uuid))return fail(res,400,'Danh sách phản hồi không hợp lệ.');
    if(input.comment_ids.length)check(await admin.from('report_notifications').update({read_at:new Date().toISOString()}).eq('recipient_id',caller.id).is('read_at',null).in('comment_id',input.comment_ids));
