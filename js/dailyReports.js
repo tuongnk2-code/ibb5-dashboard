@@ -1,4 +1,5 @@
 import { getSession } from './auth.js';
+import { mountReportComments } from './reportComments.js';
 import { REPORT_SOURCES, STATE_LABEL, reportDay, reportState, validateReport, reportText, shiftDay, reportIdentity } from './dailyReportModel.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -53,10 +54,14 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     if (!response.ok) throw new Error(data.error || 'Không kết nối được máy chủ báo cáo.');
     return data;
   }
+  let disposeComments=()=>{};
+  $('#drDetail').addEventListener('close',()=>disposeComments());
   function showDetail(profile, report, reportDate) {
+    disposeComments();$('#drDetail').querySelector('[data-report-comments]')?.remove();
     $('#drDetailText').textContent = report?.data.sources ? reportText(profile, reportDate, report.data) : reportIdentity(profile) + '\n' + (report?.status === 'exempt' ? 'Nghỉ: ' + report.data.absenceReason : 'Chưa gửi báo cáo.');
     $('#drDetailAudit').textContent = report ? STATE_LABEL[reportState(report, reportDate)] + ' · Cập nhật ' + new Date(report.updated_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) + ' · Phiên bản ' + report.revision : 'Hạn gửi 22:00 giờ Việt Nam.';
     $('#drDetail').showModal();
+    if(report?.status==='submitted'){const comments=document.createElement('div');comments.dataset.reportComments='';$('#drDetail').append(comments);disposeComments=mountReportComments(comments,{kind:'daily',subject_id:profile.id,report_date:reportDate});}
   }
   async function loadHistory() {
     if (manager) return;

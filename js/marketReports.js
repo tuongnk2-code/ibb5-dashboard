@@ -1,5 +1,6 @@
 import { getSession } from './auth.js';
-import { reportDay, reportState, STATE_LABEL, reportIdentity } from './dailyReportModel.js';
+import { mountReportComments } from './reportComments.js';
+import { reportDay, reportState, STATE_LABEL, reportIdentity, canSeeReport } from './dailyReportModel.js';
 import { marketTotals, monthDays, validateMarketReport, canViewAllMarketReports } from './marketReportModel.js';
 import '../css/market.css';
 
@@ -38,13 +39,17 @@ export function renderMarketReports(root, me) {
     for (const control of $('#mkForm').querySelectorAll('[name]')) control.value = data[control.name] ?? (control.type === 'number' ? 0 : '');
     editRevision = report?.revision || 0; dirty = false; formBaseline = formSignature();
   }
+  let disposeComments=()=>{};
+  $('#mkDetail').addEventListener('close',()=>disposeComments());
   function detail(userId, day) {
+    disposeComments();$('#mkDetail').querySelector('[data-report-comments]')?.remove();
     const person = snapshot.profiles.find(p => p.id === userId); if (!person) return;
     const report = snapshot.reports.find(r => r.user_id === userId && r.report_date === day), data = report?.data;
     $('#mkDetailTitle').textContent = reportIdentity(person) + ' · ' + dayLabel(day);
     const s = reportState(report, day, new Date(Date.now() + offset));
     $('#mkDetailBody').innerHTML = `<p>${STATE_LABEL[s]}</p>` + (report?.status === 'exempt' ? `<p>Lý do: ${esc(data.absenceReason)}</p>` : data ? `<dl><dt>Số buổi tham gia</dt><dd>${data.sessions ?? 0}</dd><dt>Demo</dt><dd>${data.demos ?? 0}</dd><dt>PTTB</dt><dd>${data.pttb ?? 0}</dd><dt>Khu vực</dt><dd>${esc(data.area || '—')}</dd><dt>Ghi chú</dt><dd>${esc(data.note || '—')}</dd></dl><p>Gửi lúc: ${time(report.submitted_at)} · Phiên bản ${report.revision}</p>` : '<p>Chưa có báo cáo.</p>');
     $('#mkDetail').showModal();
+    if(report?.status==='submitted'&&canSeeReport(me,person)){const comments=document.createElement('div');comments.dataset.reportComments='';$('#mkDetail').append(comments);disposeComments=mountReportComments(comments,{kind:'market',subject_id:userId,report_date:day});}
   }
   function board() {
     if (!snapshot) return;

@@ -27,6 +27,8 @@ async function showApp(profile) {
   const dashboard = await import('./main.js');
   dashboard.showDailyEncouragement(profile);
   installSyncControls();
+  const { installReportNotifications } = await import('./reportComments.js');
+  installReportNotifications();
   const reportRoot = document.getElementById('dailyReportsRoot');
   if (reportRoot) {
     const { renderDailyReports } = await import('./dailyReports.js');
