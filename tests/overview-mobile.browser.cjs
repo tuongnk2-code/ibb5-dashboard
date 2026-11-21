@@ -41,6 +41,25 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await page.locator('#overview .overview-priority').scrollIntoViewIfNeeded();
       if (process.env.OVERVIEW_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.OVERVIEW_SCREENSHOT_DIR}/overview-compact-${width}.png` });
       console.log(JSON.stringify({ width, ...layout }));
+      for (const tab of ['pendingContracts', 'performance']) {
+        await page.evaluate(tab => { location.hash = tab; }, tab);
+        await page.waitForFunction(tab => document.getElementById(tab).classList.contains('page-active'), tab);
+        const selector = tab === 'pendingContracts' ? '.pending-metrics' : '#dpKpis';
+        await page.waitForSelector(`#${tab} ${selector}`);
+        const summary = await page.locator(`#${tab} ${selector}`).evaluate(el => ({
+          columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,
+          cards:[...el.children].map(card=>({height:card.getBoundingClientRect().height,overflow:card.scrollWidth>card.clientWidth+1})),
+        }));
+        if (width < 600) {
+          assert.equal(summary.columns,2,`${width}: ${tab} two-column summary`);
+          assert.ok(summary.cards.every(card=>card.height<240&&!card.overflow),`${width}: ${tab} compact readable cards`);
+          const controls=await page.locator(tab==='performance'?'#performance .dp-controls':'#pendingContracts .pending-title').evaluate(el=>el.scrollWidth<=el.clientWidth+1);
+          assert.ok(controls,`${width}: ${tab} controls fit`);
+        }
+        await page.locator(`#${tab} ${selector}`).scrollIntoViewIfNeeded();
+        if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/${tab}-compact-${width}.png`});
+        console.log(JSON.stringify({width,tab,...summary}));
+      }
       await page.close();
     }
     console.log('PASS: compact two-column phone KPIs, readable content/date input, unchanged desktop columns');
