@@ -465,6 +465,12 @@ for(const offset of [1,2,3]){
  metricGroups['pendForward'+offset]={title:()=> 'HĐ hẹn Online tháng '+metricMonth(offset).split('-').reverse().join('/'),rows:()=>unresolved().filter(row=>String(notes[row.id]?.expected||'').slice(0,7)===metricMonth(offset))};
 }
 const metricDetails=installAgedContractDetails({button:null,id:'pendingMetricDialog',showPending:true,getRows:()=>metricGroups[metricSelection].rows(),getTitle:()=>metricGroups[metricSelection].title(),getAsOf:()=>el('pendAsOf').value,getNotes:()=>notes,canView:row=>window.IBB5_ROLE?.canView(row)??false,getDescription:asOf=>'Ngày chốt '+asOf.split('-').reverse().join('/')+' · Danh sách theo chỉ số đang chọn'});
+document.addEventListener('ibb5-open-pending-contract',event=>{
+ const id=event.detail?.id,row=distinct.find(row=>row.id===id);if(!row||!(window.IBB5_ROLE?.canView(row)??false)||isCancelled(id))return;
+ el('pendAsOf').value=reportDay();el('pendCreatedMonth').value='';el('pendTeam').value='';el('pendStatus').value='all';el('pendQuery').value=id;
+ header.querySelectorAll('.ph-filter').forEach(select=>select.value='');const idFilter=header.querySelector('.ph-filter[data-field="id"]');if(![...idFilter.options].some(option=>option.value===id))idFilter.add(new Option(id,id));idFilter.value=id;location.hash='pendingContracts';render();
+ requestAnimationFrame(()=>{const target=[...el('pendRows').querySelectorAll('tr[data-id]')].find(row=>row.dataset.id===id);target?.scrollIntoView({block:'center'});target?.querySelector('.p-result')?.focus({preventScroll:true});});
+});
 for(const [id,group] of Object.entries(metricGroups)){
  const trigger=el(id);trigger.setAttribute('role','button');trigger.tabIndex=0;trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','pendingMetricDialog');trigger.setAttribute('aria-label','Xem danh sách: '+group.title());
  trigger.addEventListener('click',()=>{metricSelection=id;metricDetails.open();});
@@ -1108,6 +1114,11 @@ export function showDailyEncouragement(profile){
  const person=PERSONNEL.find(person=>String(person.acc).trim().toLowerCase()===String(profile?.acc||'').trim().toLowerCase());
  if(person){const day=reportDay();return showStaffEncouragement({profile,name:person.name,data:operationalData(),day,notes:IBB_CALC.notes(),target:getCommit(day.slice(0,7),'__ALL__').staff[person.acc]??null});}
  return false;
+}
+export function getContractNotificationContext(){return {rows:dashboardData(),notes:IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,asOf:reportDay(),netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)};}
+export function openPendingContract(id){
+ const row=dashboardData().find(row=>row.type==='Internet'&&row.id===id);if(!row||!(window.IBB5_ROLE?.canView(row)??false))return false;
+ document.dispatchEvent(new CustomEvent('ibb5-open-pending-contract',{detail:{id}}));return true;
 }
 
 renderQuoteBuilder(document.getElementById('pricing'),window.IBB5_CURRENT_PROFILE);

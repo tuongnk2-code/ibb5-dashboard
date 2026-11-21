@@ -1,5 +1,9 @@
 # Bình luận và thông báo báo cáo
 
+- Chuông có thêm **HĐ cần xử lý**: quá ngày/mốc hẹn Online, hồ sơ thiếu cập nhật, quá 3 ngày chưa cập nhật, chưa Online tồn quá 7 ngày. Các nhóm dùng cùng danh sách theo dõi và quyền xem của tab HĐ tồn, gồm hồ sơ đã Online còn thiếu cập nhật. HĐ đã TP duyệt hủy được loại bỏ.
+- Tổng trên chuông = phản hồi chưa đọc + số HĐ có cảnh báo (mỗi HĐ chỉ tính một lần dù thuộc nhiều nhóm). Cảnh báo công việc không có trạng thái đã đọc; tự hết khi điều kiện được xử lý theo dữ liệu mới. Chọn nhóm để xem danh sách, rồi **Mở HĐ để xử lý** để tới đúng mã HĐ trong tab HĐ tồn, không bị bộ lọc cũ che khuất.
+- Quá ngày hẹn dựa trên ngày dự kiến và nguồn NET hiện có. Nếu chỉ mới qua mốc hẹn trong hôm nay, phải có lần cập nhật NET sau mốc đó mới xác nhận quá hẹn. Thời điểm cập nhật NET hiện trong phần cảnh báo để đối chiếu.
+
 - Báo cáo ngày và báo cáo thị trường đã gửi có phần **Bình luận & phản hồi** trong chi tiết. Trong tổng hợp báo cáo tuần/tháng, nút **Bình luận / phản hồi** mở cùng cuộc trao đổi của báo cáo ngày gốc.
 - Trưởng phòng xem toàn phòng; Trưởng Bầy xem trong Bầy; nhân sự chỉ trao đổi trên báo cáo của mình. Quyền xem tổng hợp thị trường rộng hơn không tự cấp quyền đọc bình luận riêng.
 - Gửi bình luận tạo thông báo cho chủ báo cáo và những người đã tham gia trao đổi, trừ người gửi. Chuông ưu tiên thông báo chưa đọc, cập nhật mỗi 20 giây khi trang đang hiển thị, khi quay lại cửa sổ và sau khi gửi/đọc.
