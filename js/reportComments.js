@@ -59,11 +59,11 @@ export function installReportNotifications({getContractContext=()=>null,onOpenCo
  const button=document.createElement('button');button.id='reportNotificationButton';button.type='button';button.className='rc-bell top-logout-btn';button.innerHTML='<svg class="rc-bell-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span>Thông báo</span><b hidden>0</b>';button.setAttribute('aria-label','Thông báo báo cáo');
  const dock=document.createElement('div');dock.className='ibb-floating-actions';dock.append(button);const assistant=document.getElementById('ibbAssistantLauncher');if(assistant)dock.append(assistant);document.body.append(dock);
  const dialog=document.createElement('dialog');dialog.className='rc-dialog rc-inbox';dialog.innerHTML='<header class="rc-dialog-head"><h3>Thông báo báo cáo</h3><button type="button">Đóng</button></header><p class="rc-note">Phản hồi được cập nhật khi đang mở dashboard, hoặc khi đăng nhập lại.</p><div class="rc-inbox-list"></div><p class="rc-status" role="status"></p><button type="button" data-rc-inbox-reload>Tải lại thông báo</button>';document.body.append(dialog);
- const list=dialog.querySelector('.rc-inbox-list'),status=dialog.querySelector('.rc-status');let notifications=[],busy=false;const viewedComments=new Set();
+ const list=dialog.querySelector('.rc-inbox-list'),status=dialog.querySelector('.rc-status');let notifications=[],busy=false,pendingLoad=false;const viewedComments=new Set();
  dialog.querySelector('h3').textContent='Thông báo & nhắc việc';dialog.querySelector('.rc-note').textContent='Phản hồi mới và HĐ cần xử lý trong phạm vi tài khoản của bạn.';
  const alertsRoot=document.createElement('section');alertsRoot.className='rc-contract-alerts';list.before(alertsRoot);
  const messagesHeading=document.createElement('h4');messagesHeading.textContent='Bình luận & phản hồi';list.before(messagesHeading);
- let alerts=null,rawAlerts=null,selectedAlert='',selectedSnapshot=null,alertReadsReady=false,serverReads=[],localReads=[];
+ let alerts=null,rawAlerts=null,serverAlerts=null,selectedAlert='',selectedSnapshot=null,alertReadsReady=false,serverReads=[],localReads=[];
  function updateBadge(){
   const unread=notifications.filter(n=>!n.read_at).length,total=unread+(alerts?.total||0),badge=button.querySelector('b');badge.textContent=total>=100?'99+':String(total);badge.hidden=!total;
   const label=[unread+' phản hồi chưa đọc',(alerts?.total||0)+' HĐ có cảnh báo chưa xem'].join(' · ');button.setAttribute('aria-label','Thông báo, '+label);button.title=label;
@@ -71,7 +71,7 @@ export function installReportNotifications({getContractContext=()=>null,onOpenCo
  }
  function drawMessages(){list.innerHTML=notifications.map(n=>'<button type="button" class="rc-notification rc-unread" data-rc-notification="'+esc(n.id)+'"><strong>'+esc(n.author)+' · '+(n.comment.kind==='daily'?'Báo cáo ngày':'Báo cáo thị trường')+'</strong><span>'+esc(n.subject)+' · '+date(n.comment.report_date)+'</span><p>'+esc(n.comment.body)+'</p><small>'+time(n.created_at)+' · Chưa đọc</small></button>').join('')||'<p>Không có phản hồi chưa đọc.</p>';}
  function refreshAlerts(){
-  const context=getContractContext();rawAlerts=context?contractAlerts(context):null;alerts=context&&alertReadsReady?unreadContractAlerts(rawAlerts,context.notes,mergeContractAlertReads(serverReads,localReads)):null;alertsRoot.hidden=!alerts;updateBadge();if(!alerts)return;
+  const context=getContractContext();rawAlerts=context?contractAlerts(context):null;alerts=context&&alertReadsReady?unreadContractAlerts(serverAlerts||rawAlerts,context.notes,mergeContractAlertReads(serverReads,localReads)):null;alertsRoot.hidden=!alerts;updateBadge();if(!alerts)return;
   const groups=Object.entries(alerts.groups).filter(([,rows])=>rows.length);
   alertsRoot.innerHTML='<h4>Cảnh báo HĐ chưa xem · '+alerts.total+' HĐ</h4><p class="rc-note">Nội dung đã xem sẽ ẩn khỏi chuông; chỉ báo lại khi có thay đổi cần chú ý. Theo dữ liệu NET hiện có'+(alerts.netUpdatedAt?' · NET cập nhật '+esc(time(alerts.netUpdatedAt)):'')+'.</p>';
   if(!groups.length)alertsRoot.insertAdjacentHTML('beforeend','<p>Hiện không có cảnh báo HĐ chưa xem.</p>');
@@ -89,16 +89,16 @@ export function installReportNotifications({getContractContext=()=>null,onOpenCo
   const item=event.target.closest('[data-alert-contract]');if(item){refreshAlerts();const allowed=Object.values(rawAlerts?.groups||{}).flat().some(row=>row.id===item.dataset.alertContract);if(allowed&&onOpenContract(item.dataset.alertContract)!==false)dialog.close();}
  };
  async function load(){
-  refreshAlerts();if(busy)return;busy=true;
-  try{const result=await api('GET',{inbox:'mine'});notifications=result.notifications.filter(n=>!n.read_at&&!viewedComments.has(n.comment_id));serverReads=result.alertReads||[];alertReadsReady=true;
+  refreshAlerts();if(busy){pendingLoad=true;return;}busy=true;
+  try{const result=await api('GET',{inbox:'mine'});notifications=result.notifications.filter(n=>!n.read_at&&!viewedComments.has(n.comment_id));serverReads=result.alertReads||[];serverAlerts=result.contractAlerts||null;alertReadsReady=true;
    refreshAlerts();
    drawMessages();status.textContent=notifications.length===100?'Hiển thị tối đa 100 thông báo chưa đọc.':'';
   }catch(error){status.textContent=error.message;button.title='Chưa tải được thông báo. Bấm để thử lại.';}
-  finally{busy=false;}
+  finally{busy=false;if(pendingLoad){pendingLoad=false;queueMicrotask(load);}}
  }
  button.onclick=()=>{if(!dialog.open)dialog.showModal();load();};dialog.querySelector('header button').onclick=()=>dialog.close();dialog.querySelector('[data-rc-inbox-reload]').onclick=load;
  const phoneRoot=document.createElement('div');dialog.querySelector('header').after(phoneRoot);installPhonePush(phoneRoot,()=>button.click());
  list.onclick=event=>{const item=event.target.closest('[data-rc-notification]');if(!item)return;const notification=notifications.find(n=>n.id===item.dataset.rcNotification);if(notification){dialog.close();const {kind,subject_id,report_date}=notification.comment;openReportDiscussion({kind,subject_id,report_date});}};
  document.addEventListener('ibb5-report-comments-updated',event=>{for(const id of event.detail?.commentIds||[])viewedComments.add(id);notifications=notifications.filter(n=>!viewedComments.has(n.comment_id));drawMessages();updateBadge();load();});window.addEventListener('focus',load);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});setInterval(()=>{if(!document.hidden)load();},20000);load();
- for(const event of ['ibb5-shared-updated','ibb5-snapshot-updated','ibb5-role-change'])document.addEventListener(event,()=>queueMicrotask(refreshAlerts));
+ window.addEventListener('pageshow',load);for(const event of ['ibb5-shared-updated','ibb5-snapshot-updated','ibb5-role-change'])document.addEventListener(event,()=>queueMicrotask(load));
 }

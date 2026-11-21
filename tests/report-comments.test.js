@@ -50,6 +50,7 @@ test('comments API scopes threads, authors and receipts; rejects spoofing and sa
   const signatures=contractAlertSignatures(scopedContractAlerts(caller,alertState),alertState.notes);
   assert.equal((await invoke('POST',{action:'read-contracts',user_id:manager.id,items:[{id:'OWN',signature:signatures.OWN}]})).code,200);assert.equal(receipts[0].user_id,staff.id);
   assert.equal((await invoke('GET',{inbox:'mine'})).body.alertReads.length,1);
+  assert.equal((await invoke('GET',{inbox:'mine'})).body.contractAlerts.total,0,'Server returns the authoritative unread count even when a phone keeps old local notes');
   assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OTHER',signature:'fake'}]})).code,409);
   assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OWN',signature:'old'}]})).code,409);
   caller=lead;assert.equal((await invoke('GET',context)).code,200);assert.equal((await invoke('GET',{...context,subject_id:other.id})).code,403);

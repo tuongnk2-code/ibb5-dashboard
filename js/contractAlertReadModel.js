@@ -7,7 +7,7 @@ export function hasViewedContractAlert(current,stored){
  try{const a=JSON.parse(current),b=JSON.parse(stored);return Array.isArray(a.version)&&Array.isArray(b.version)&&JSON.stringify(a.version)===JSON.stringify(b.version)&&!!a.kinds&&!!b.kinds&&Object.entries(a.kinds).every(([kind,value])=>b.kinds[kind]===value);}catch{return false;}
 }
 export function unreadContractAlerts(alerts,notes={},reads={}){
- const signatures=contractAlertSignatures(alerts,notes);
+ const signatures=alerts.signatures||contractAlertSignatures(alerts,notes);
  const groups=Object.fromEntries(Object.entries(alerts.groups).map(([kind,rows])=>[kind,rows.filter(row=>!hasViewedContractAlert(signatures[row.id],typeof reads[row.id]==='string'?reads[row.id]:reads[row.id]?.signature))]));
  return {...alerts,groups,total:new Set(Object.values(groups).flat().map(row=>row.id)).size,signatures};
 }

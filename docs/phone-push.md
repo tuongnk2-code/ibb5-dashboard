@@ -8,6 +8,8 @@ Mở chuông → **Bật thông báo điện thoại** → **Cho phép**. Sau kh
 
 Thông báo chỉ chứa số phản hồi/HĐ cần xử lý, không hiện tên khách hàng hay nội dung báo cáo trên màn hình khóa. Bấm thông báo mở hộp thông báo của tài khoản đang đăng nhập. Số huy hiệu dùng Badging API khi thiết bị hỗ trợ; được đồng bộ khi nhận push hoặc mở app.
 
+Khi quay lại app, sự kiện pageshow/focus/visibility tải lại trạng thái chưa xem từ máy chủ. API inbox trả cảnh báo đã lọc theo dữ liệu NET và biên nhận đã xem hiện tại; điện thoại giữ snapshot cũ không được dùng snapshot đó để làm hiện lại cảnh báo. Đồng bộ số đếm ở cả trang và service worker; số về 0 cũng đóng thông báo tóm tắt đang hiển thị trên thiết bị. Nếu đang có yêu cầu tải trước khi app bị đưa về nền, lượt làm mới khi quay lại được xếp tiếp để không bị bỏ qua.
+
 ## Máy chủ
 
 - `api/phone-push.js`: API xác thực cho khóa công khai, đăng ký/tắt/gửi thử thiết bị của chính tài khoản. Khóa riêng và secret bộ gửi không trả về client. Endpoint chỉ cho các dịch vụ push đã biết, giới hạn 10 thiết bị/tài khoản và gửi thử tối đa một lần/phút.

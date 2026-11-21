@@ -1,4 +1,5 @@
 import './installApp.css';
+import './appUpdate.js';
 
 let pendingPrompt=null,installed=false,installing=false;
 const standalone=()=>installed||window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;

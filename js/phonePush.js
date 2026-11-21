@@ -1,6 +1,6 @@
 import {getSession} from './auth.js';
 
-let pendingOpen=false,openInbox=null,testStatus=null;
+let pendingOpen=false,openInbox=null,testStatus=null,badgeRevision=0;
 const supported=()=>window.isSecureContext&&'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;
 async function request(method,input={},timeout=15000){
  const session=await getSession();if(!session?.access_token)throw Error('Vui lòng đăng nhập lại để bật thông báo.');
@@ -15,7 +15,9 @@ async function registration(){
 }
 export function updatePhoneBadge(count){
  if(!('Notification'in window)||Notification.permission!=='granted')return;
+ const revision=++badgeRevision;
  try{const result=count>0?navigator.setAppBadge?.(count):navigator.clearAppBadge?.();result?.catch(()=>{});}catch{}
+ try{navigator.serviceWorker?.getRegistration('/').then(reg=>{if(revision===badgeRevision)reg?.active?.postMessage({type:'IBB5_SYNC_BADGE',count});}).catch(()=>{});}catch{}
 }
 export async function clearDisplayedPhoneNotifications(){
  try{const reg=await navigator.serviceWorker?.getRegistration('/');const notifications=await reg?.getNotifications({tag:'ibb5-phone-summary'});notifications?.forEach(notification=>notification.close());}catch{}

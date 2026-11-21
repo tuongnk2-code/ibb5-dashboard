@@ -22,3 +22,7 @@ self.addEventListener('notificationclick',event=>{
   if(client){await client.focus();client.postMessage({type:'IBB5_OPEN_NOTIFICATIONS'});}else await self.clients.openWindow('/?inbox=1');
  })());
 });
+self.addEventListener('message',event=>{
+ const {type,count}=event.data||{};if(type!=='IBB5_SYNC_BADGE'||!Number.isInteger(count)||count<0||count>99999||!event.source?.url||new URL(event.source.url).origin!==self.location.origin)return;
+ event.waitUntil((async()=>{try{if(count)await self.navigator.setAppBadge?.(count);else{await self.navigator.clearAppBadge?.();const notifications=await self.registration.getNotifications({tag:'ibb5-phone-summary'});notifications.forEach(notification=>notification.close());}}catch{}})());
+});
