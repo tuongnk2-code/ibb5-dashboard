@@ -3,7 +3,7 @@
 Bản cài trực tiếp từ website (PWA), dùng cùng Vercel project, tài khoản và dữ liệu hiện có. Không phải gói APK/IPA hay bản phát hành trên Google Play/App Store.
 
 - Mở dashboard bằng Chrome trên Android hoặc Safari trên iPhone, chọn **Cài ứng dụng IBB5** ở trang đăng nhập hoặc menu dashboard.
-- Android: dùng nút **Cài đặt ứng dụng** khi trình duyệt cho phép, hoặc menu Chrome → Cài đặt ứng dụng / Thêm vào màn hình chính.
+- Android: khi trình duyệt đã sẵn sàng cho cài đặt, bấm **Cài ứng dụng IBB5** mở trực tiếp xác nhận của trình duyệt, không qua màn hình hướng dẫn. Nếu chưa được hỗ trợ, hiển thị cách dùng menu Chrome → Cài đặt ứng dụng / Thêm vào màn hình chính.
 - iPhone/iPad: Safari → Chia sẻ → Thêm vào Màn hình chính → bật Mở dưới dạng ứng dụng web nếu có → Thêm.
 - Manifest có ID/scope ở `/`, khởi chạy `/#overview`, chế độ standalone, icon PNG 192/512 và icon maskable, Apple touch icon 180px. CTA ẩn trong chế độ standalone/sau sự kiện cài xong.
 - App cần Internet cho đăng nhập, dữ liệu và thao tác lưu. Service worker chỉ lưu trang hướng dẫn mất kết nối công khai; không cache index, mã ứng dụng, API, báo cáo hoặc thông tin phiên đăng nhập. Điều này giúp bản cài vẫn lấy mã/dữ liệu hiện tại, không dùng bản dữ liệu nghiệp vụ cũ từ service worker.

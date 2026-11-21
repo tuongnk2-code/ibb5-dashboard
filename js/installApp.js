@@ -1,6 +1,6 @@
 import './installApp.css';
 
-let pendingPrompt=null,installed=false;
+let pendingPrompt=null,installed=false,installing=false;
 const standalone=()=>installed||window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const triggers=[];
@@ -9,16 +9,18 @@ dialog.innerHTML='<header><div><img src="/icons/ibb5-192.png" alt="" width="48" 
 document.body.append(dialog);
 const native=dialog.querySelector('.pwa-install-native'),status=dialog.querySelector('[data-install-status]');
 dialog.querySelector('[data-install-guide]').innerHTML=ios?'<h3>Trên iPhone / iPad</h3><ol><li>Mở dashboard trong <strong>Safari</strong>.</li><li>Bấm <strong>Chia sẻ → Thêm vào Màn hình chính</strong>.</li><li>Bật <strong>Mở dưới dạng ứng dụng web</strong> nếu có, rồi bấm <strong>Thêm</strong>.</li></ol>':'<h3>Trên điện thoại Android</h3><ol><li>Mở dashboard trong <strong>Chrome</strong>.</li><li>Bấm menu <strong>⋮ → Cài đặt ứng dụng</strong> hoặc <strong>Thêm vào màn hình chính</strong>.</li><li>Xác nhận <strong>Cài đặt / Thêm</strong>, rồi mở biểu tượng IBB5.</li></ol><p class="pwa-install-note">Trên máy tính, dùng nút cài ứng dụng trên thanh địa chỉ nếu trình duyệt hỗ trợ.</p>';
-function update(){triggers.forEach(button=>button.hidden=standalone());native.hidden=!pendingPrompt||standalone();}
-function trigger(host){if(!host)return;const button=document.createElement('button');button.type='button';button.className='pwa-install-trigger';button.textContent='↓ Cài ứng dụng IBB5';button.onclick=()=>{status.textContent='';update();if(!dialog.open)dialog.showModal();};host.append(button);triggers.push(button);}
+function update(){triggers.forEach(button=>{button.hidden=standalone();button.disabled=installing;});native.hidden=!pendingPrompt||standalone();native.disabled=installing;}
+function showGuide(){status.textContent='';update();if(!dialog.open)dialog.showModal();}
+function trigger(host){if(!host)return;const button=document.createElement('button');button.type='button';button.className='pwa-install-trigger';button.textContent='↓ Cài ứng dụng IBB5';button.onclick=()=>{if(installing)return;if(pendingPrompt)install();else showGuide();};host.append(button);triggers.push(button);}
 trigger(document.querySelector('.login-card'));trigger(document.querySelector('.sidebar .nav'));
 dialog.querySelector('[data-install-close]').onclick=()=>dialog.close();
-native.onclick=async()=>{
- const prompt=pendingPrompt;if(!prompt)return;native.disabled=true;
- try{await prompt.prompt();const choice=await prompt.userChoice;status.textContent=choice.outcome==='accepted'?'Hoàn tất cài đặt theo hướng dẫn của thiết bị.':'Anh/chị có thể cài lại khi cần.';}
- catch{status.textContent='Hãy dùng menu trình duyệt theo hướng dẫn phía trên để cài ứng dụng.';}
- finally{pendingPrompt=null;native.disabled=false;update();}
-};
+async function install(){
+ const prompt=pendingPrompt;if(!prompt||installing)return;pendingPrompt=null;installing=true;update();if(dialog.open)dialog.close();
+ try{await prompt.prompt();await prompt.userChoice;}
+ catch{showGuide();status.textContent='Hãy dùng menu trình duyệt theo hướng dẫn phía trên để cài ứng dụng.';}
+ finally{installing=false;update();}
+}
+native.onclick=install;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();pendingPrompt=event;update();});
 window.addEventListener('appinstalled',()=>{installed=true;pendingPrompt=null;update();if(dialog.open)dialog.close();});
 window.matchMedia('(display-mode: standalone)').addEventListener('change',update);update();
