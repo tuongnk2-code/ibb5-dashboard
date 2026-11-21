@@ -3,7 +3,7 @@ exports.ids={MANAGER,STAFF,OTHER,LEAD};
 exports.fixture=async()=>{
   const {createCustomerCareHandler}=await import('../api/customer-care.js');
   const people=[{id:MANAGER,role:'manager',acc:'DNG.Manager',full_name:'Trưởng phòng'},{id:STAFF,role:'staff',acc:'DNG.ChuongHM',full_name:'Minh Chương'},{id:OTHER,role:'staff',acc:'DNG.ManLM3',full_name:'Lê Minh Mẫn'},{id:LEAD,role:'lead',acc:'DNG.Vypv',full_name:'Trưởng Bầy 1'}];
-  const contracts=[{id:'A1',staff:'DNG.ChuongHM',customer:'Nguyễn Khách A',type:'Internet',created:'2026-11-01',date:'2026-11-02'},{id:'A2',staff:'DNG.ChuongHM',customer:'Khách <img src=x onerror=alert(1)>',type:'Internet',created:'2026-11-01',date:''},{id:'B1',staff:'DNG.ManLM3',customer:'Khách B',type:'Internet',created:'2026-11-01',date:''}];
+  const contracts=[{id:'A1',staff:'DNG.ChuongHM',customer:'Nguyễn Khách A',type:'Internet',created:'2026-11-01',date:'2026-11-02'},{id:'A2',staff:'DNG.ChuongHM',customer:'Khách <img src=x onerror=alert(1)>',type:'Internet',created:'2026-11-01',date:'2026-11-02'},{id:'B1',staff:'DNG.ManLM3',customer:'Khách B',type:'Internet',created:'2026-11-01',date:'2026-11-02'}];
   const tables={profiles:people,dashboard_shared_state:[{key:'snapshot',data:{data:contracts}}],care_contacts:[{contract_id:'A2',phone:'0990000002',consent:true,note:'',revision:1},{contract_id:'B1',phone:'0990000003',consent:true,note:'',revision:1}],care_campaigns:[],care_results:[]};
   class Query{
     constructor(name){this.name=name;this.filters=[];this.mode='select';this.sort=[];}

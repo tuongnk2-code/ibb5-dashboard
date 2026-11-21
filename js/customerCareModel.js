@@ -1,4 +1,6 @@
-import { canSeeReport, validDay } from './dailyReportModel.js';
+import { canSeeReport, validDay, reportDay } from './dailyReportModel.js';
+import { isTerminatedNetContract } from './cancellationArchive.js';
+export const onlineCareContract=(row,asOf=reportDay())=>row?.type==='Internet'&&validDay(row.date)&&row.date<=asOf&&!isTerminatedNetContract(row);
 export const CARE_STATUS={pending:'Chưa thực hiện',sent:'Đã gửi',replied:'KH đã phản hồi',interested:'Có nhu cầu',support:'Cần hỗ trợ',no_zalo:'Không liên hệ được',optout:'Từ chối nhận tin'};
 export const CARE_TEMPLATES=[
   ['Hỏi thăm chất lượng','Chào anh/chị {ten_kh}, em là {nhan_su} phụ trách hợp đồng {ma_hd}. Internet nhà mình sử dụng có ổn định không ạ? Anh/chị cần hỗ trợ cứ nhắn em nhé.'],

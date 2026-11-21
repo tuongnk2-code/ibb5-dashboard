@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { sharedRow } from './_dashboardState.js';
-import { careScope,canManageCare,normCare,cleanCareContact,cleanCareCampaign,eligibleCare,CARE_STATUS,nextCareTime } from '../js/customerCareModel.js';
+import { careScope,canManageCare,normCare,cleanCareContact,cleanCareCampaign,eligibleCare,CARE_STATUS,nextCareTime,onlineCareContract } from '../js/customerCareModel.js';
 
 const check=r=>{if(r.error)throw r.error;return r.data;};
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
@@ -17,7 +17,9 @@ export function createCustomerCareHandler(authenticate=requireProfile){return as
     const snapshot=await sharedRow(admin,'snapshot');
     if(!snapshot?.data?.data)return fail(503,'Cần cập nhật dữ liệu NET tại Trung tâm dữ liệu trước khi sử dụng CSKH.');
     const contracts=new Map(snapshot.data.data.filter(r=>r.type==='Internet').map(r=>[r.id,r]));
-    const visible=[...contracts.values()].filter(r=>careScope(caller,byAcc.get(normCare(r.staff))));
+    const scoped=[...contracts.values()].filter(r=>careScope(caller,byAcc.get(normCare(r.staff))));
+    const visible=scoped.filter(r=>onlineCareContract(r));
+    const historyIds=new Set(scoped.map(r=>r.id));
     const visibleIds=new Set(visible.map(r=>r.id));
     const owners=people.filter(p=>careScope(caller,p));
     const ownerIds=owners.map(p=>p.id);
@@ -27,13 +29,14 @@ export function createCustomerCareHandler(authenticate=requireProfile){return as
       const campaigns=ownerIds.length?await allRows(admin.from('care_campaigns').select('*').in('owner_id',ownerIds).order('created_at',{ascending:false}).order('id')):[];
       const campaignIds=campaigns.map(c=>c.id);
       const results=[];for(let i=0;i<campaignIds.length;i+=100)results.push(...await allRows(admin.from('care_results').select('*').in('campaign_id',campaignIds.slice(i,i+100)).order('campaign_id').order('round').order('contract_id')));
-      return res.status(200).json({customers:visible.map(r=>({id:r.id,customer:r.customer||'',staff:r.staff,created:r.created,date:r.date,status:r.status,owner_id:byAcc.get(normCare(r.staff)).id,contact:contactMap.get(r.id)||null})),people:owners,campaigns,results:results.filter(r=>visibleIds.has(r.contract_id)),serverTime:new Date().toISOString()});
+      return res.status(200).json({customers:visible.map(r=>({id:r.id,customer:r.customer||'',staff:r.staff,created:r.created,date:r.date,status:r.status,owner_id:byAcc.get(normCare(r.staff)).id,contact:contactMap.get(r.id)||null})),people:owners,campaigns,results:results.filter(r=>historyIds.has(r.contract_id)),serverTime:new Date().toISOString()});
     }
     const input=req.body||{},now=new Date().toISOString();
     if(JSON.stringify(input).length>150000)return fail(400,'Nội dung quá lớn.');
     if(input.action==='contact'){
       const contract=contracts.get(input.contract_id),owner=contract&&byAcc.get(normCare(contract.staff));
       if(!contract||!careScope(caller,owner))return fail(403,'Không có quyền cập nhật khách hàng này.');
+      if(!onlineCareContract(contract))return fail(400,'CSKH chỉ áp dụng HĐ đã Online và chưa chấm dứt theo NET mới nhất.');
       const existing=contactMap.get(contract.id),revision=existing?.revision||0;
       if(input.revision!==revision)return fail(409,'Thông tin KH vừa thay đổi. Tải lại trước khi lưu.');
       const record={contract_id:contract.id,...cleanCareContact(input),revision:revision+1,updated_at:now,updated_by:caller.id};

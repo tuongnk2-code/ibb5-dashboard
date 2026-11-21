@@ -1,7 +1,8 @@
 const assert=require('node:assert/strict');
 const {fixture,ids}=require('./customer-care-fixture.cjs');
 (async()=>{
-  const {carePhone,cleanCareCampaign,nextCareTime,careMessage}=await import('../js/customerCareModel.js');
+  const {carePhone,cleanCareCampaign,nextCareTime,careMessage,onlineCareContract}=await import('../js/customerCareModel.js');
+  for(const [row,expected] of [[{type:'Internet',date:'2026-11-21',status:'Bình thường'},true],[{type:'Internet',date:''},false],[{type:'Internet',date:'2026-11-22'},false],[{type:'Internet',date:'2026-02-30'},false],[{type:'Internet',date:'2026-11-01',status:'Đã chấm dứt hợp đồng'},false],[{type:'Camera',date:'2026-11-01'},false]])assert.equal(onlineCareContract(row,'2026-11-21'),expected);
   assert.equal(carePhone('+84 990 000 001'),'0990000001');assert.throws(()=>carePhone('abc'));
   assert.throws(()=>cleanCareCampaign({name:'A',body:'{unknown}',scheduled_at:'2026-11-21T09:00+07:00',repeat_days:7,contract_ids:['A1']}));
   assert.equal(nextCareTime({scheduled_at:'2027-01-30T17:30:00Z',first_at:'2027-01-30T17:30:00Z',repeat_days:30}),'2027-02-27T17:30:00.000Z');
@@ -40,5 +41,12 @@ const {fixture,ids}=require('./customer-care-fixture.cjs');
   assert.equal((await request(STAFF,'POST',{action:'contact',contract_id:'A2',phone:'0990000001',consent:true,note:'Đồng ý mới',revision:2})).status,200);
   assert.equal((await request(STAFF,'POST',{...campaign,id:'66666666-6666-4666-8666-666666666666'})).status,400,'duplicate phone rejected');
   assert.equal((await request(STAFF,'POST',{action:'result',campaign_id:campaign.id,round:1,contract_id:'A1',status:'pending',note:'',revision:1})).status,409);
+  // Each read and campaign creation checks the newest NET status, without deleting contact/history.
+  tables.dashboard_shared_state[0].data.data[1].status='Đã chấm dứt hợp đồng';
+  tables.dashboard_shared_state[0].data.data[0].date='';
+  assert.deepEqual((await request(STAFF)).body.customers,[]);
+  assert.equal((await request(STAFF)).body.results.length,2,'historical results survive Online filtering');
+  assert.equal(tables.care_contacts.length,3,'phone records retained');
+  assert.equal((await request(STAFF,'POST',{...campaign,id:'77777777-7777-4777-8777-777777777777',contract_ids:['A1']})).status,403);
   console.log('PASS: CSKH scope, authorization, input validation, optimistic concurrency, opt-out, pause, recurring rounds and retained history');
 })().catch(error=>{console.error(error);process.exitCode=1;});
