@@ -690,6 +690,12 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
   #performance .dp-kpi {min-width:0;padding:10px;border-radius:10px}
   #performance .dp-kpi small {font-size:11px;line-height:1.35;min-height:0}
   #performance .dp-kpi strong {font-size:26px;line-height:1.2;margin-top:6px;text-align:center}
+  #performance .perf-table thead th,#perfStickyClone th {font-size:calc(var(--perf-font-size,12px) - 1px)!important;line-height:1.25!important;padding:6px 4px!important}
+  #performance .perf-table :is(tbody,tfoot) td,
+  #performance .perf-table tbody tr.perf-team-total td {padding:4px!important;height:30px!important;line-height:1.2!important}
+  #performance .perf-table .perf-person-cell .person {font-size:var(--perf-font-size,12px)!important;line-height:1.2!important}
+  #performance .perf-table .perf-person-cell .acc {font-size:11px!important;margin-top:1px!important}
+  #performance .perf-column-filter,#perfStickyClone .perf-column-filter {font-size:10px!important;min-height:28px!important;margin-top:5px;padding:4px 2px!important;border-radius:5px}
 }
 #pendingContracts .p-update-cell .pending-validation-message{white-space:normal}
 #pendingContracts .pending-table thead th{text-align:center}

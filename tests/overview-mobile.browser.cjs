@@ -69,6 +69,28 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         await page.locator(`#${tab} ${selector}`).scrollIntoViewIfNeeded();
         if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/${tab}-compact-${width}.png`});
         console.log(JSON.stringify({width,tab,...summary}));
+        if(tab==='performance'){
+          assert.equal(await page.locator('#perfFontSize').textContent(),width<600?'12px':'20px');
+          const cells=page.locator('#perfRows .perf-person-cell');
+          const row=cells.first().locator('..');
+          if(width<600){
+            assert.ok((await row.boundingBox()).height<=40,'compact staff row including wrapped missing-data note');
+            assert.equal(await page.locator('.perf-table').evaluate(el=>getComputedStyle(el).minWidth),'900px');
+            await page.locator('#perfFontIncrease').click();
+            assert.equal(await page.locator('#perfFontSize').textContent(),'14px');
+            await page.setViewportSize({width:1440,height:950});
+            await page.waitForFunction(()=>document.querySelector('#perfFontSize').textContent==='20px');
+            await page.setViewportSize({width,height:950});
+            await page.waitForFunction(()=>document.querySelector('#perfFontSize').textContent==='14px');
+            await page.locator('#perfFontDecrease').click();
+            assert.equal(await page.locator('#perfFontSize').textContent(),'12px');
+            await page.locator('#perfTableCapture').evaluate(el=>{el.scrollLeft=350});
+            assert.ok(await cells.first().evaluate(el=>Math.abs(el.getBoundingClientRect().left-el.closest('.tablewrap').getBoundingClientRect().left)<5),'staff identifier stays pinned');
+            await page.locator('#perfTableCapture').evaluate(el=>{el.scrollLeft=0});
+          }
+          await page.locator('#perfTableCapture').scrollIntoViewIfNeeded();
+          if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/staff-table-compact-${width}.png`});
+        }
         if(tab==='pendingContracts'){
           const appointments=page.locator('#psRows tr:not(.ps-team):not(.ps-total)');
           assert.equal(await appointments.count(),1);
