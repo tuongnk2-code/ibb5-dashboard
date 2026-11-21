@@ -11,7 +11,7 @@ import { PERF_FIELDS, matchesPerformanceFilters, performanceFilterOptions, sortP
 import { mergeCancellationArchive } from './cancellationArchive.js';
 import { includeInDashboardReports } from './reportScope.js';
 import { scheduledOnlineContracts, scheduledAppointmentStatus, latestNetUpdate } from './pendingScheduleModel.js';
-import { dailyPerformanceContracts, dailySoldContracts } from './dailyPerformanceModel.js';
+import { dailyPerformanceContracts, dailySoldContracts, normalNetSales } from './dailyPerformanceModel.js';
 import { installAgedContractDetails } from './agedContractDetails.js';
 import { performanceContractRows } from './performanceContractDetails.js';
 import { quotePolicies } from './quotePolicy.js';
@@ -202,9 +202,11 @@ function perfRender(){
  for(const [id,label] of [['perfGoalTitle','Cam kết'],['perfSoldTitle','Bán mới'],['perfOnlineTitle','Online tháng']]){
   const title=$(id);if(title){(title.querySelector('.perf-column-title')||title).textContent=label+trackingSuffix;title.title='Tháng theo dõi '+month;}
  }
+ $('perfSoldTitle').title='HĐ NET có ngày tạo trong tháng đến ngày theo dõi và Tình trạng “Bình thường” theo dữ liệu NET cập nhật mới nhất.';
+ const soldRows=normalNetSales(all);
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
  const records=new Map(list.map(p=>{
-  const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()),sold=unique(a.filter(x=>x.created>=start&&x.created<=asof)),online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0,pending=pendingFollowupContracts(a,IBB_CALC.notes(),asof).length,aged=agedFollowupContracts(a,IBB_CALC.notes(),asof).length,goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null,missing=goal===null?null:Math.max(0,goal-online);
+  const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()),sold=soldRows.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()&&x.created>=start&&x.created<=asof).length,online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0,pending=pendingFollowupContracts(a,IBB_CALC.notes(),asof).length,aged=agedFollowupContracts(a,IBB_CALC.notes(),asof).length,goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null,missing=goal===null?null:Math.max(0,goal-online);
   const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged];
   const fields=Object.fromEntries(PERF_FIELDS.map((field,index)=>[field,{raw:values[index],display:index===6?periodGrowth(online,havePrev?prev:null):[7,8].includes(index)?values[index]===null?'—':formatPercent(values[index]):typeof values[index]==='number'?fmt(values[index]):values[index]??'—'}]));
   return [p.acc,{sold,online,prev,pending,aged,goal,fields}];

@@ -1,6 +1,16 @@
 import { isTerminatedNetContract } from './cancellationArchive.js';
 import { isCancellationResult } from './dashboardStateModel.js';
 
+// NET status is authoritative for the monthly Bán mới column; follow-up notes are separate.
+export function normalNetSales(data) {
+  const latest=new Map();
+  for(const row of data){
+    if(row.type!=='Internet'||!String(row.id||'').trim())continue;
+    latest.set(String(row.id).trim().toUpperCase(),row);
+  }
+  return [...latest.values()].filter(row=>String(row.status||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN').replace(/\s+/g,' ')==='bình thường');
+}
+
 export function dailyPerformanceContracts(data, notes = {}) {
   const contracts = new Map();
   for (const row of data) {
