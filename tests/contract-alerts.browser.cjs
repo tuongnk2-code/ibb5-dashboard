@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
 (async()=>{
  const {createServer}=await import('../node_modules/vite/dist/node/index.js');const server=await createServer({server:{host:'127.0.0.1',port:5251,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
- try{for(const [role,width,total] of [['staff',390,2],['lead',390,2],['manager',1440,4]]){
+ try{for(const [role,width,total] of [['staff',390,2],['staff',320,2],['lead',390,2],['manager',1440,4]]){
   const page=await browser.newPage({viewport:{width,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   const profile={id:'user',role,acc:role==='lead'?'DNG.HoaNTB6':'DNG.ChuongHM'};
   const own=role==='lead'?'DNG.ManLM3':'DNG.ChuongHM',other=role==='lead'?'DNG.ChuongHM':'DNG.ManLM3';
@@ -17,6 +17,13 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
   await page.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE=${JSON.stringify(profile)};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';window.dashboard=await import('/js/main.js');const {installReportNotifications}=await import('/js/reportComments.js');installReportNotifications({getContractContext:window.dashboard.getContractNotificationContext,onOpenContract:window.dashboard.openPendingContract});`}));
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5251/#overview');
   await page.waitForFunction(total=>document.querySelector('#reportNotificationButton b')?.textContent===String(total),total);
+  const bell=page.locator('#reportNotificationButton'),assistant=page.locator('#ibbAssistantLauncher');
+  const before=await bell.boundingBox(),assistantBox=await assistant.boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=assistantBox.x);assert.ok(before.y>=850);
+  await page.evaluate(()=>window.scrollTo(0,700));assert.equal((await bell.boundingBox()).y,before.y);
+  await page.evaluate(()=>location.hash='performance');await page.waitForFunction(()=>document.getElementById('performance').classList.contains('page-active'));assert.equal((await bell.boundingBox()).y,before.y);
+  assert.equal(await bell.locator('svg').evaluate(el=>getComputedStyle(el).animationName),'rc-bell-ring');
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await bell.locator('svg').evaluate(el=>getComputedStyle(el).animationName),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+  await assistant.click();await page.locator('#ibbAssistant').waitFor({state:'visible'});await page.locator('[data-chat-close]').click();
   await page.locator('#reportNotificationButton').click();const inbox=page.locator('.rc-inbox');await inbox.locator('[data-contract-alert="overdue"]').waitFor();
   assert.match(await inbox.locator('.rc-contract-alerts h4').first().innerText(),new RegExp(total+' HĐ'));
   await inbox.locator('[data-contract-alert="overdue"]').click();const cards=inbox.locator('.rc-alert-contracts article');assert.equal(await cards.count(),role==='manager'?2:1);assert.match(await cards.first().innerText(),/^A /);
@@ -29,7 +36,7 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
   assert.equal(await page.locator('#pendQuery').inputValue(),'A');assert.equal(await page.locator('#pendAsOf').inputValue(),'2026-11-21');assert.equal(await page.locator('#pendRows tr[data-id="A"]').count(),1);assert.equal(await page.locator('#pendRows tr[data-id]').count(),1);
   // Saving complete Online follow-ups removes all corresponding active warnings.
   await page.evaluate(()=>{for(const row of window.IBB5_IMPORTED_DATA){row.date='2026-11-21';window.IBB5_PENDING_NOTES[row.id]={result:'Đã Online',expected:'2026-11-21',timeSlot:'8h - 10h',source:'Web',action:'Đã lắp',updated:'2026-11-21T12:00:00+07:00'};}document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:[]}}));});
-  await page.waitForFunction(()=>document.querySelector('#reportNotificationButton b').hidden);assert.deepEqual(errors,[]);await page.close();
+  await page.waitForFunction(()=>document.querySelector('#reportNotificationButton b').hidden);assert.equal(await bell.locator('svg').evaluate(el=>getComputedStyle(el).animationName),'none');assert.deepEqual(errors,[]);await page.close();
  }console.log('PASS: staff/lead/manager scope, unique warning counts, live resolved updates, current-date exact contract navigation, desktop/mobile layout');}
  finally{await browser.close();await server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

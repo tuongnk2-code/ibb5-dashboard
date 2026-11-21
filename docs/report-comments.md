@@ -1,5 +1,7 @@
 # Bình luận và thông báo báo cáo
 
+- Nút Thông báo cố định cạnh Trợ lý IBB5 ở góc dưới màn hình, giữ vị trí khi cuộn hoặc chuyển tab. Khi có phản hồi chưa đọc/HĐ cần xử lý, chuông rung nhẹ và số đếm nhịp sáng; dừng khi không còn nội dung cần chú ý. Nếu thiết bị chọn giảm chuyển động, hiệu ứng được tắt. Trên màn hình rất hẹp, nút dùng biểu tượng chuông và số đếm để hai nút không chồng nhau.
+
 - Chuông có thêm **HĐ cần xử lý**: quá ngày/mốc hẹn Online, hồ sơ thiếu cập nhật, quá 3 ngày chưa cập nhật, chưa Online tồn quá 7 ngày. Các nhóm dùng cùng danh sách theo dõi và quyền xem của tab HĐ tồn, gồm hồ sơ đã Online còn thiếu cập nhật. HĐ đã TP duyệt hủy được loại bỏ.
 - Tổng trên chuông = phản hồi chưa đọc + số HĐ có cảnh báo (mỗi HĐ chỉ tính một lần dù thuộc nhiều nhóm). Cảnh báo công việc không có trạng thái đã đọc; tự hết khi điều kiện được xử lý theo dữ liệu mới. Chọn nhóm để xem danh sách, rồi **Mở HĐ để xử lý** để tới đúng mã HĐ trong tab HĐ tồn, không bị bộ lọc cũ che khuất.
 - Quá ngày hẹn dựa trên ngày dự kiến và nguồn NET hiện có. Nếu chỉ mới qua mốc hẹn trong hôm nay, phải có lần cập nhật NET sau mốc đó mới xác nhận quá hẹn. Thời điểm cập nhật NET hiện trong phần cảnh báo để đối chiếu.
