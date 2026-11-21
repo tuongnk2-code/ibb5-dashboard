@@ -326,10 +326,26 @@ body.perf-table-expanded #perfStickyClone { display: none !important; }
 @media(max-width:600px) {
   #pendingContracts .pending-schedule-list table,#pendingContracts .pending-schedule-list tbody { display: block; }
   #pendingContracts .pending-schedule-list thead { display: none; }
-  #pendingContracts #psRows tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 10px 0; padding: 12px; border: 1px solid #d7e5f4; border-radius: 10px; }
-  #pendingContracts #psRows tr > td { display: block; min-width: 0; width: auto !important; text-align: left !important; border: 0 !important; padding: 7px !important; }
-  #pendingContracts #psRows tr > td:first-child,#pendingContracts #psRows tr > td:nth-child(2),#pendingContracts #psRows tr > td:last-child { grid-column: 1 / -1; }
-  #pendingContracts #psRows tr > td:not(:first-child)::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 750; color: #456c94; margin-bottom: 5px; }
+  #pendingContracts .pending-schedule {padding:10px;margin:10px 0 12px;border-radius:12px}
+  #pendingContracts .pending-schedule-head {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
+  #pendingContracts .pending-schedule-head>div {grid-column:1/-1;min-width:0}
+  #pendingContracts .pending-schedule-head h3 {font-size:15px!important;line-height:1.3}
+  #pendingContracts .pending-schedule-head p {font-size:11px;line-height:1.4}
+  #pendingContracts .pending-schedule-head button {padding:6px;font-size:11px;min-height:36px;align-self:end}
+  #pendingContracts .pending-schedule-head label {gap:3px;font-size:10px;min-width:0;align-items:stretch}
+  #pendingContracts .pending-schedule-head input {width:100%;min-width:0;padding:6px;font-size:12px!important;min-height:36px}
+  #pendingContracts #psRows tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 8px; margin: 6px 0; padding: 9px; border: 1px solid #d7e5f4; border-radius: 10px; }
+  #pendingContracts #psRows tr > td { display: block; min-width: 0; width: auto !important; text-align: left !important; border: 0 !important; padding: 2px !important; white-space:normal;line-height:1.35; }
+  #pendingContracts #psRows tr > td:first-child { grid-column: 1 / -1;padding-bottom:5px!important;border-bottom:1px solid #d7e5f4!important }
+  #pendingContracts #psRows tr > td.ps-blank {display:none}
+  #pendingContracts #psRows tr > td:not(:first-child)::before { content: attr(data-label); display: block; font-size: 10px; font-weight: 750; color: #456c94; margin-bottom: 2px;line-height:1.3; }
+  #pendingContracts #psRows .ps-person {font-size:12px!important}
+  #pendingContracts #psRows .ps-id {font-size:11px!important;padding:3px 4px;line-height:1.35;margin:1px 2px 1px 0}
+  #pendingContracts #psRows :is(.ps-team,.ps-total)>td:first-child {grid-column:auto;align-self:center;border-bottom:0!important;font-size:12px!important}
+  #pendingContracts #psRows :is(.ps-team,.ps-total)>td:nth-child(2) {text-align:right!important;font-weight:850}
+  #pendingContracts #psRows :is(.ps-team,.ps-total)>td:nth-child(n+3) {display:flex;align-items:baseline;justify-content:space-between;gap:4px;font-weight:750}
+  #pendingContracts #psRows :is(.ps-team,.ps-total)>td:nth-child(n+3)::before {margin:0}
+  #pendingContracts .ps-note {font-size:10px;line-height:1.4}
   #pendingContracts #psRows .ps-team { background: #fff2e5; border-color: #f1c59a; }
   #pendingContracts #psRows .ps-total { background: #173b61; border-color: #173b61; }
   #pendingContracts #psRows .ps-total td::before { color: #dcecff !important; }

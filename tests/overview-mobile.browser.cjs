@@ -42,6 +42,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if (process.env.OVERVIEW_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.OVERVIEW_SCREENSHOT_DIR}/overview-compact-${width}.png` });
       console.log(JSON.stringify({ width, ...layout }));
       for (const tab of ['pendingContracts', 'performance']) {
+        if(tab==='pendingContracts'){
+      await page.addInitScript(() => {
+        const OriginalDate=Date;
+        window.Date=class extends OriginalDate {constructor(...args){super(...(args.length?args:['2026-11-21T06:00:00Z']));}static now(){return OriginalDate.parse('2026-11-21T06:00:00Z');}};
+        window.IBB5_IMPORTED_DATA=['THAAR8980','DAAAR1234','DAAAR5678'].map(id=>({id,staff:'DNG.ChuongHM',type:'Internet',created:'2026-11-01',date:'',status:'Bình thường',customer:'Khách thử nghiệm'}));
+        window.IBB5_PENDING_NOTES=Object.fromEntries(window.IBB5_IMPORTED_DATA.map(row=>[row.id,{result:'Chưa Online',expected:'2026-11-21',timeSlot:'10h - 12h',action:'Chờ lắp',source:'Web',updated:'2026-11-21T05:00:00Z'}]));
+      });
+          await page.goto('http://127.0.0.1:5266/#pendingContracts');
+          await page.reload();
+        }
         await page.evaluate(tab => { location.hash = tab; }, tab);
         await page.waitForFunction(tab => document.getElementById(tab).classList.contains('page-active'), tab);
         const selector = tab === 'pendingContracts' ? '.pending-metrics' : '#dpKpis';
@@ -59,6 +69,19 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         await page.locator(`#${tab} ${selector}`).scrollIntoViewIfNeeded();
         if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/${tab}-compact-${width}.png`});
         console.log(JSON.stringify({width,tab,...summary}));
+        if(tab==='pendingContracts'){
+          const appointments=page.locator('#psRows tr:not(.ps-team):not(.ps-total)');
+          assert.equal(await appointments.count(),1);
+          assert.equal(await appointments.locator('[data-schedule-id]').count(),3);
+          if(width<600){
+            assert.ok((await appointments.boundingBox()).height<260,`${width}: compact multi-contract appointment`);
+            assert.equal(await appointments.locator('.ps-blank').isVisible(),false);
+            for(const label of ['8h - 10h','10h - 12h','13h30 - 15h30','15h30 - 17h30','Chưa chọn mốc'])assert.ok(await appointments.locator(`td[data-label="${label}"]`).isVisible());
+            for(const row of await page.locator('#psRows .ps-team,#psRows .ps-total').all())assert.ok((await row.boundingBox()).height<200,`${width}: compact totals`);
+          }
+          await page.locator('#pendingSchedule').scrollIntoViewIfNeeded();
+          if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/schedule-compact-${width}.png`});
+        }
       }
       await page.close();
     }
