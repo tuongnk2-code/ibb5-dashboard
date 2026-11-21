@@ -1117,6 +1117,7 @@ main{min-width:0!important;flex:1!important}
 .login-card button.primary{margin-top:6px;padding:12px;border-radius:9px;font-size:13px}
 .login-error{color:#d63939;font-size:12px;font-weight:700;background:#fdecec;border:1px solid #f6c6c6;border-radius:8px;padding:9px 11px;margin:0}
 .top-right{display:flex;align-items:center;gap:10px}
+.top-right>#dashboardSyncBtn,.top-right>.tag{display:none}
 .top-logout-btn{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700}
 .top-logout-btn:hover{background:#f5f8fc}
 #account .acc-me-card{background:linear-gradient(140deg,#fff,#fbfcff);border:1px solid var(--line);border-radius:13px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
