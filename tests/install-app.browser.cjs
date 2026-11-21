@@ -1,0 +1,26 @@
+const assert=require('node:assert/strict');const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+(async()=>{
+ const {preview}=await import('../node_modules/vite/dist/node/index.js');const server=await preview({preview:{host:'127.0.0.1',port:5258,strictPort:true}});
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+ try{
+  const context=await browser.newContext({viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5258/');
+  const trigger=page.locator('.login-card .pwa-install-trigger');await trigger.waitFor({state:'visible'});
+  const manifest=await page.evaluate(async()=>fetch(document.querySelector('[rel=manifest]').href).then(r=>r.json()));assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/');assert.ok(manifest.icons.some(i=>i.sizes==='192x192'));assert.ok(manifest.icons.some(i=>i.sizes==='512x512'&&i.purpose==='maskable'));
+  for(const icon of manifest.icons)assert.equal(await page.evaluate(async src=>{const image=new Image();image.src=src;await image.decode();return image.naturalWidth;},icon.src),parseInt(icon.sizes));
+  await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  const cdp=await context.newCDPSession(page);const result=await cdp.send('Page.getAppManifest');assert.deepEqual(result.errors,[]);
+  await trigger.click();const dialog=page.locator('.pwa-install-dialog');await dialog.waitFor({state:'visible'});assert.match(await dialog.innerText(),/Chrome/);assert.equal(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),true);await dialog.getByRole('button',{name:'Đóng hướng dẫn cài đặt'}).click();
+  await page.evaluate(()=>{window.promptCalls=0;const event=new Event('beforeinstallprompt',{cancelable:true});event.prompt=async()=>{window.promptCalls++};event.userChoice=Promise.resolve({outcome:'accepted'});window.dispatchEvent(event);});assert.equal(await page.evaluate(()=>window.promptCalls),0);
+  await trigger.click();await dialog.getByRole('button',{name:'Cài đặt ứng dụng',exact:true}).click();assert.equal(await page.evaluate(()=>window.promptCalls),1);
+  await page.evaluate(()=>window.dispatchEvent(new Event('appinstalled')));await dialog.waitFor({state:'hidden'});assert.equal(await trigger.isVisible(),false);
+  const cached=await page.evaluate(async()=>{const cache=await caches.open('ibb5-offline-v1');return (await cache.keys()).map(r=>new URL(r.url).pathname)});assert.deepEqual(cached,['/offline.html']);
+  await context.setOffline(true);await page.reload();await page.getByRole('heading',{name:'Đang chờ kết nối mạng'}).waitFor();
+  assert.equal(await page.evaluate(()=>fetch('/api/report-comments?inbox=mine').then(()=>false,()=>true)),true,'API must fail offline, never receive the HTML fallback');
+  await context.setOffline(false);await page.goto('http://127.0.0.1:5258/');await trigger.waitFor({state:'visible'});assert.deepEqual(errors,[]);await context.close();
+  const iphone=await browser.newContext({viewport:{width:320,height:740},userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'}),ios=await iphone.newPage();await ios.route('https://**/*',r=>r.abort());await ios.goto('http://127.0.0.1:5258/');await ios.locator('.login-card .pwa-install-trigger').click();assert.match(await ios.locator('.pwa-install-dialog').innerText(),/Safari.*Chia sẻ → Thêm vào Màn hình chính/s);assert.equal(await ios.locator('.pwa-install-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+  if(process.env.PWA_SCREENSHOT_DIR)await ios.screenshot({path:process.env.PWA_SCREENSHOT_DIR+'/ibb5-install-iphone.png'});await iphone.close();
+  const standalone=await browser.newContext();await standalone.addInitScript(()=>Object.defineProperty(navigator,'standalone',{value:true}));const installed=await standalone.newPage();await installed.route('https://**/*',r=>r.abort());await installed.goto('http://127.0.0.1:5258/');await installed.waitForFunction(()=>!!document.querySelector('.login-card .pwa-install-trigger'));assert.equal(await installed.locator('.login-card .pwa-install-trigger').isVisible(),false);await standalone.close();
+  console.log('PASS: production manifest/icons, install guidance for Android/iPhone, user-triggered install flow, installed-state controls, service worker offline fallback, recovery and no caching/fallback for private APIs');
+ }finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve));}
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,0 +1,18 @@
+{
+ "id": "/",
+ "name": "IBB5 - DNG",
+ "short_name": "IBB5",
+ "description": "Dashboard điều hành kinh doanh IBB5 - Đà Nẵng",
+ "lang": "vi",
+ "start_url": "/#overview",
+ "scope": "/",
+ "display": "standalone",
+ "background_color": "#103f75",
+ "theme_color": "#103f75",
+ "prefer_related_applications": false,
+ "icons": [
+  {"src":"/icons/ibb5-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+  {"src":"/icons/ibb5-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+  {"src":"/icons/ibb5-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+ ]
+}
