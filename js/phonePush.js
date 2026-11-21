@@ -28,15 +28,17 @@ export async function clearPhonePushOnLogout(){
  if(subscription){const results=await Promise.allSettled([request('POST',{action:'unsubscribe',endpoint:subscription.endpoint},5000),subscription.unsubscribe()]);if(results.every(result=>result.status==='rejected'))throw Error('Chưa tắt được thông báo trên thiết bị. Anh/chị thử lại khi có mạng.');}
  try{const notifications=await reg?.getNotifications();notifications?.forEach(n=>n.close());await navigator.clearAppBadge?.();}catch{}
 }
-export function installPhonePush(root,onOpen){
+export function installPhonePush(root,onOpen,{compact=false}={}){
  openInbox=onOpen;root.innerHTML='<section class="rc-phone-push"><h4>Thông báo trên điện thoại</h4><p data-phone-state role="status"></p><div class="rc-actions"><button type="button" data-phone-enable>Bật thông báo điện thoại</button><button type="button" data-phone-test hidden>Gửi thông báo thử</button><button type="button" data-phone-disable hidden>Tắt trên thiết bị này</button></div></section>';
  const enable=root.querySelector('[data-phone-enable]'),test=root.querySelector('[data-phone-test]'),disable=root.querySelector('[data-phone-disable]'),status=root.querySelector('[data-phone-state]');let subscription=null,busy=false;
- const controls=on=>{enable.hidden=on;test.hidden=disable.hidden=!on;};
- const fail=error=>{status.textContent=error.message||'Chưa bật được thông báo. Vui lòng thử lại.';};
+ let settings=null,enabledLabel=null;
+ if(compact){const section=root.querySelector('section');section.classList.add('rc-phone-compact');enable.textContent='Bật thông báo';settings=document.createElement('details');settings.innerHTML='<summary>Cài đặt</summary>';enabledLabel=document.createElement('span');enabledLabel.textContent='✓ Thông báo đã bật';enabledLabel.hidden=true;const actions=document.createElement('div');actions.className='rc-actions';actions.append(test,disable);settings.append(status,actions);section.replaceChildren(enable,enabledLabel,settings);}
+ const controls=on=>{enable.hidden=on;test.hidden=disable.hidden=!on;if(enabledLabel)enabledLabel.hidden=!on;};
+ const fail=error=>{status.textContent=error.message||'Chưa bật được thông báo. Vui lòng thử lại.';if(settings)settings.open=true;};
  testStatus=()=>{status.textContent='Điện thoại đã nhận được thông báo thử từ máy chủ.';};
  async function refresh(){
-  if(!supported()){enable.disabled=true;status.textContent='Trên iPhone, mở IBB5 từ biểu tượng đã cài ở Màn hình chính (iOS 16.4 trở lên) để bật thông báo.';return;}
-  if(Notification.permission==='denied'){enable.disabled=true;status.textContent='Thông báo đang bị chặn. Anh/chị mở Cài đặt điện thoại → Thông báo → IBB5 để cho phép.';return;}
+  if(!supported()){enable.disabled=true;status.textContent='Trên iPhone, mở IBB5 từ biểu tượng đã cài ở Màn hình chính (iOS 16.4 trở lên) để bật thông báo.';if(settings)settings.open=true;return;}
+  if(Notification.permission==='denied'){enable.disabled=true;status.textContent='Thông báo đang bị chặn. Anh/chị mở Cài đặt điện thoại → Thông báo → IBB5 để cho phép.';if(settings)settings.open=true;return;}
   status.textContent='Bật để nhận phản hồi và nhắc việc ngay cả khi không mở app.';
   if(Notification.permission!=='granted')return;
   try{const reg=await navigator.serviceWorker.getRegistration('/');subscription=await reg?.pushManager.getSubscription();if(!subscription)return;const config=await request('GET',{endpoint:subscription.endpoint});if(config.registered){controls(true);status.textContent='Đang bật thông báo trên thiết bị này.';}else{await subscription.unsubscribe();subscription=null;}}
@@ -44,12 +46,13 @@ export function installPhonePush(root,onOpen){
  }
  enable.onclick=async()=>{
   if(busy||!supported())return;busy=true;enable.disabled=true;
+  if(settings)settings.open=true;
   try{
    // Request permission directly in the tap handler, before any network work (required on iPhone).
    const permission=await Notification.requestPermission();if(permission!=='granted'){status.textContent=permission==='denied'?'Anh/chị chưa cho phép thông báo. Có thể bật lại trong Cài đặt điện thoại → Thông báo → IBB5.':'Chưa bật thông báo. Anh/chị có thể thử lại khi cần.';return;}
    status.textContent='Đang kết nối thông báo điện thoại…';const config=await request('GET');if(!config.enabled||!config.publicKey)throw Error('Dịch vụ thông báo chưa sẵn sàng.');
    const reg=await registration();subscription=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:publicKey(config.publicKey)});
-   await request('POST',{action:'subscribe',subscription:subscription.toJSON()});controls(true);status.textContent='Đã bật. Anh/chị bấm Gửi thông báo thử để kiểm tra trên điện thoại.';
+   await request('POST',{action:'subscribe',subscription:subscription.toJSON()});controls(true);status.textContent='Đã bật. Anh/chị bấm Gửi thông báo thử để kiểm tra trên điện thoại.';if(settings)settings.open=false;
   }catch(error){fail(error);}finally{busy=false;enable.disabled=false;}
  };
  test.onclick=async()=>{if(busy||!subscription)return;busy=true;test.disabled=true;try{await request('POST',{action:'test',endpoint:subscription.endpoint});status.textContent='Đã yêu cầu gửi thử từ máy chủ. Anh/chị chờ thông báo trên điện thoại nhé.';}catch(error){fail(error);}finally{busy=false;test.disabled=false;}};

@@ -1,5 +1,7 @@
 # Bình luận và thông báo báo cáo
 
+- Hộp thông báo dùng bố cục gọn: giữ **Bật thông báo** khi chưa bật; khi đã bật chỉ hiện trạng thái ngắn. **Gửi thông báo thử / Tắt trên thiết bị này** nằm trong mục **Cài đặt** thu gọn. Các đoạn giới thiệu, giải thích nhóm trùng HĐ và thời điểm NET cập nhật được ẩn khỏi phần chính; ẩn khối phản hồi khi không có phản hồi chưa đọc.
+
 - Nút Thông báo cố định cạnh Trợ lý IBB5 ở góc dưới màn hình, giữ vị trí khi cuộn hoặc chuyển tab. Khi có phản hồi chưa đọc/HĐ cần xử lý, chuông rung nhẹ và số đếm nhịp sáng; dừng khi không còn nội dung cần chú ý. Nếu thiết bị chọn giảm chuyển động, hiệu ứng được tắt. Trên màn hình rất hẹp, nút dùng biểu tượng chuông và số đếm để hai nút không chồng nhau.
 
 - Chuông có thêm **HĐ cần xử lý**: quá ngày/mốc hẹn Online, hồ sơ thiếu cập nhật, quá 3 ngày chưa cập nhật, chưa Online tồn quá 7 ngày. Các nhóm dùng cùng danh sách theo dõi và quyền xem của tab HĐ tồn, gồm hồ sơ đã Online còn thiếu cập nhật. HĐ đã TP duyệt hủy được loại bỏ.

@@ -16,9 +16,9 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
    const input=r.request().postDataJSON();actions.push(input.action);if(input.action==='subscribe')registered=true;if(input.action==='unsubscribe')registered=false;return r.fulfill({json:{ok:true}});
   });
   await page.goto('http://127.0.0.1:5260/push-check?inbox=1');
-  await page.evaluate(async()=>{await import('/js/reportComments.css');window.phone=await import('/js/phonePush.js');window.opened=0;window.phone.installPhonePush(document.getElementById('root'),()=>window.opened++);});
+  await page.evaluate(async()=>{await import('/js/reportComments.css');window.phone=await import('/js/phonePush.js');window.opened=0;window.phone.installPhonePush(document.getElementById('root'),()=>window.opened++,{compact:true});});
   assert.equal(await page.evaluate(()=>window.permissionCalls),0,'Do not prompt automatically');assert.equal(await page.evaluate(()=>window.opened),1);assert.equal(new URL(page.url()).searchParams.has('inbox'),false);
-  await page.locator('[data-phone-enable]').click();await page.locator('[data-phone-test]').waitFor({state:'visible'});assert.deepEqual(actions,['subscribe']);assert.equal(await page.evaluate(()=>window.permissionCalls),1);
+  assert.equal(await page.locator('[data-phone-enable]').isVisible(),true);assert.equal(await page.locator('.rc-phone-compact h4').count(),0);await page.locator('[data-phone-enable]').click();await page.locator('[data-phone-enable]').waitFor({state:'hidden'});assert.equal(await page.locator('[data-phone-test]').isVisible(),false);await page.locator('summary').click();await page.locator('[data-phone-test]').waitFor({state:'visible'});assert.deepEqual(actions,['subscribe']);assert.equal(await page.evaluate(()=>window.permissionCalls),1);
   await page.locator('[data-phone-test]').click();await page.locator('[data-phone-state]').filter({hasText:'Đã yêu cầu gửi thử'}).waitFor();assert.equal(actions.at(-1),'test');
   await page.evaluate(()=>navigator.serviceWorker.dispatchEvent(new MessageEvent('message',{data:{type:'IBB5_PUSH_RECEIVED',kind:'test'}})));assert.match(await page.locator('[data-phone-state]').innerText(),/đã nhận/);
   await page.evaluate(()=>window.phone.updatePhoneBadge(41));assert.equal(await page.evaluate(()=>window.appBadge),41);
