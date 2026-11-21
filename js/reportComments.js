@@ -1,6 +1,7 @@
 import { getSession } from './auth.js';
 import { reportText, reportIdentity } from './dailyReportModel.js';
 import { contractAlerts, CONTRACT_ALERT_LABELS } from './contractAlertModel.js';
+import { installPhonePush, updatePhoneBadge } from './phonePush.js';
 import './reportComments.css';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -65,6 +66,7 @@ export function installReportNotifications({getContractContext=()=>null,onOpenCo
  function updateBadge(){
   const unread=notifications.filter(n=>!n.read_at).length,total=unread+(alerts?.total||0),badge=button.querySelector('b');badge.textContent=total>=100?'99+':String(total);badge.hidden=!total;
   const label=[unread+' phản hồi chưa đọc',(alerts?.total||0)+' HĐ cần xử lý'].join(' · ');button.setAttribute('aria-label','Thông báo, '+label);button.title=label;
+  updatePhoneBadge(total);
  }
  function refreshAlerts(){
   const context=getContractContext();alerts=context?contractAlerts(context):null;alertsRoot.hidden=!alerts;updateBadge();if(!alerts)return;
@@ -88,6 +90,7 @@ export function installReportNotifications({getContractContext=()=>null,onOpenCo
   finally{busy=false;}
  }
  button.onclick=()=>{if(!dialog.open)dialog.showModal();load();};dialog.querySelector('header button').onclick=()=>dialog.close();dialog.querySelector('[data-rc-inbox-reload]').onclick=load;
+ const phoneRoot=document.createElement('div');dialog.querySelector('header').after(phoneRoot);installPhonePush(phoneRoot,()=>button.click());
  list.onclick=event=>{const item=event.target.closest('[data-rc-notification]');if(!item)return;const notification=notifications.find(n=>n.id===item.dataset.rcNotification);if(notification){dialog.close();const {kind,subject_id,report_date}=notification.comment;openReportDiscussion({kind,subject_id,report_date});}};
  document.addEventListener('ibb5-report-comments-updated',load);window.addEventListener('focus',load);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});setInterval(()=>{if(!document.hidden)load();},20000);load();
  for(const event of ['ibb5-shared-updated','ibb5-snapshot-updated','ibb5-role-change'])document.addEventListener(event,()=>queueMicrotask(refreshAlerts));

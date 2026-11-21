@@ -15,6 +15,8 @@ export async function signIn(login, password) {
 }
 
 export async function signOut() {
+  let pushCleanupTimer;
+  try { const {clearPhonePushOnLogout}=await import('./phonePush.js');await Promise.race([clearPhonePushOnLogout(),new Promise(resolve=>{pushCleanupTimer=setTimeout(resolve,3500);})]); } catch { /* Signing out must still complete if the device is offline. */ } finally { clearTimeout(pushCleanupTimer); }
   await supabase.auth.signOut();
 }
 

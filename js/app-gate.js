@@ -1,4 +1,5 @@
 import { getSession, signIn, signOut, fetchMyProfile } from './auth.js';
+import './phonePush.js';
 
 const loginScreen = document.getElementById('loginScreen');
 const appShell = document.getElementById('appShell');
