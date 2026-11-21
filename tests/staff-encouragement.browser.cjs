@@ -20,7 +20,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.match(await dialog.locator('.se-greeting').innerText(),/Hạ Minh Chương/);
   assert.equal(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),true);assert.equal(await dialog.evaluate(el=>el.scrollHeight<=el.clientHeight),true,'No vertical clipping '+width+'x'+height);
   const sizes=await dialog.evaluate(el=>({title:parseFloat(getComputedStyle(el.querySelector('h1')).fontSize),body:parseFloat(getComputedStyle(el.querySelector('#staffEncouragementBody')).fontSize)}));
-  assert.ok(sizes.title>=(width===1440?68:30));assert.ok(sizes.body>=(width===1440?26:height<=740?17:18));assert.equal(await dialog.locator('.se-track').count(),0);assert.equal(await dialog.getByRole('checkbox',{name:'Đã đọc, vào dashboard'}).count(),1);assert.equal(await dialog.locator('.se-confirm').isChecked(),false);
+  assert.ok(sizes.title>=(width===1440?68:30));assert.ok(sizes.body>=(width===1440?26:height<=740?17:18));assert.equal(await dialog.locator('.se-track').count(),0);assert.equal(await dialog.getByRole('button',{name:'Đóng thông điệp'}).count(),1);assert.equal(await dialog.getByRole('checkbox').count(),0);
   const firstId=await dialog.getAttribute('data-message-id');
   if(kind!=='unavailable'){const number=dialog.locator('.se-change');assert.equal(await number.innerText(),kind==='positive'?'+4 HĐ':kind==='neutral'?'0 HĐ':'-4 HĐ');const style=await number.evaluate(el=>({weight:Number(getComputedStyle(el).fontWeight),size:parseFloat(getComputedStyle(el).fontSize)}));assert.ok(style.weight>=800);assert.ok(style.size>=24);}else assert.equal(await dialog.locator('.se-change').count(),0);
   const firstTheme=await dialog.getAttribute('data-theme');assert.ok(['rocket','sunrise','flame','trophy','target','mountain'].includes(firstTheme));
@@ -29,11 +29,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   if(kind==='neutral')assert.match(await dialog.locator('.se-comparison').textContent(),/ngang/);
   if(kind==='unavailable')assert.match(await dialog.locator('.se-comparison').textContent(),/Chưa đủ dữ liệu/);
   if(process.env.ENCOURAGEMENT_SCREENSHOT_DIR&&kind==='negative')await dialog.screenshot({path:process.env.ENCOURAGEMENT_SCREENSHOT_DIR+'/staff-encouragement-live-'+width+'.png'});
-  if(width===1440){await page.waitForTimeout(11100);assert.equal(await dialog.isVisible(),true);await dialog.locator('.se-confirm').press('Space');}else{await dialog.locator('.se-skip').click();}await dialog.waitFor({state:'detached'});
+  if(width===1440){await page.waitForTimeout(11100);assert.equal(await dialog.isVisible(),true);await dialog.locator('.se-close').press('Space');}else{await dialog.locator('.se-close').click();}await dialog.waitFor({state:'detached'});
   assert.equal(await dialog.count(),0);assert.equal(await page.evaluate(()=>window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE)),false);
   if(kind==='negative'){
    await page.evaluate(()=>{window.__welcomeNow+=86400000;window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);});await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-message-id'),firstId);assert.notEqual(await dialog.getAttribute('data-theme'),firstTheme);assert.match(await dialog.locator('.se-comparison').textContent(),/thấp hơn.*4 HĐ/);const lastTheme=await dialog.getAttribute('data-theme');await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
-   if(width===1440){await page.reload();await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-theme'),lastTheme);await dialog.locator('.se-skip').click();await dialog.waitFor({state:'detached'});}
+   if(width===1440){await page.reload();await dialog.waitFor({state:'visible'});assert.notEqual(await dialog.getAttribute('data-theme'),lastTheme);await dialog.locator('.se-close').click();await dialog.waitFor({state:'detached'});}
   }
   if(kind==='positive'){
    const drawings=new Set();
@@ -41,11 +41,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await page.evaluate(theme=>{localStorage.setItem('ibb5_encouragement_themes_v1:dng.chuonghm',JSON.stringify({last:'other',remaining:[theme]}));window.__welcomeNow+=86400000;window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);},theme);
     await dialog.waitFor({state:'visible'});assert.equal(await dialog.getAttribute('data-theme'),theme);drawings.add(await dialog.locator('canvas').evaluate(el=>el.toDataURL()));
     if(process.env.ENCOURAGEMENT_SCREENSHOT_DIR)await dialog.screenshot({path:process.env.ENCOURAGEMENT_SCREENSHOT_DIR+'/encouragement-theme-'+theme+'.png'});
-    await dialog.locator('.se-skip').click();await dialog.waitFor({state:'detached'});
+    await dialog.locator('.se-close').click();await dialog.waitFor({state:'detached'});
    }
    assert.equal(drawings.size,6);
   }
   assert.deepEqual(errors,[]);await page.close();
- }console.log('PASS: larger readable text, manual checkbox dismissal without auto-close, daily variation, own growth and mobile/landscape layouts');}
+ }console.log('PASS: larger readable text, manual X dismissal without auto-close, daily variation, own growth and mobile/landscape layouts');}
  finally{await browser.close();await server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});
