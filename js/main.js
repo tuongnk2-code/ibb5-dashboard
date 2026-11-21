@@ -1106,7 +1106,7 @@ document.addEventListener('ibb5-shared-updated',()=>{commitDB=window.IBB5_SHARED
 window.IBB5_MONTHLY_TARGET=(month,acc)=>getCommit(month,'__ALL__').staff[acc]??null;
 export function showDailyEncouragement(profile){
  const person=PERSONNEL.find(person=>String(person.acc).trim().toLowerCase()===String(profile?.acc||'').trim().toLowerCase());
- if(person)return showStaffEncouragement({profile,name:person.name,data:operationalData(),day:reportDay()});
+ if(person){const day=reportDay();return showStaffEncouragement({profile,name:person.name,data:operationalData(),day,notes:IBB_CALC.notes(),target:getCommit(day.slice(0,7),'__ALL__').staff[person.acc]??null});}
  return false;
 }
 

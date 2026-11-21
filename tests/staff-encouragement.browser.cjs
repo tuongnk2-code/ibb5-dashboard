@@ -11,11 +11,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.addInitScript(rows=>{window.IBB5_IMPORTED_DATA=rows;window.IBB5_PENDING_NOTES={};window.IBB5_SHARED_STATE={notes:{},commitments:{},revisions:{}};const OriginalDate=Date;window.__welcomeNow=OriginalDate.parse('2026-11-20T04:00:00Z');window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[window.__welcomeNow]));}static now(){return window.__welcomeNow;}};},rows);
   await page.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:'export async function getSession(){return {access_token:"test"}};export async function signOut(){};export async function callAdminUsersApi(){return {profiles:[]}}'}));
   await page.route('**/js/api.js',r=>r.fulfill({contentType:'application/javascript',body:'import * as data from "/js/mockData.sample.js";export async function fetchDashboardData(){return data}'}));
+  await page.route('**/api/daily-reports?**',r=>r.fulfill({status:503,body:'Unavailable'}));
+  await page.route('**/api/salary?**',r=>r.fulfill({status:503,body:'Unavailable'}));
   await page.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE=${JSON.stringify(profile)};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';window.testDashboard=await import('/js/main.js');window.testDashboard.showDailyEncouragement(window.IBB5_CURRENT_PROFILE);`}));
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5244/#performance');await page.waitForFunction(()=>!!window.testDashboard);
   const dialog=page.locator('.staff-encouragement');
   if(kind==='no-account'){assert.equal(await dialog.count(),0);await page.close();continue;}
   await dialog.waitFor({state:'visible'});assert.ok((await dialog.getAttribute('class')).includes(kind));
+  await dialog.locator('.se-background').evaluate(el=>el.decode());
   assert.equal(await dialog.locator('.se-account').innerText(),'DNG.ChuongHM');assert.doesNotMatch(await dialog.innerText(),/OTHER.ACC/);
   assert.match(await dialog.locator('.se-greeting').innerText(),/Hạ Minh Chương/);
   assert.equal(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),true);assert.equal(await dialog.evaluate(el=>el.scrollHeight<=el.clientHeight),true,'No vertical clipping '+width+'x'+height);

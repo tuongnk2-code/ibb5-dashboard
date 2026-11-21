@@ -1,4 +1,5 @@
 import { reportDay, shiftDay, validDay } from './dailyReportModel.js';
+import { encouragementFocus } from './staffEncouragementContext.js';
 
 const normalize = value => String(value || '').trim().toLowerCase();
 function previousCut(day) {
@@ -50,14 +51,15 @@ const bodies = {
 const actions=['Chăm khách kỹ, xác nhận chắc từng lịch hẹn.','Gọi lại một khách đang phân vân nhé.','Hỏi khách còn cần hỗ trợ điều gì nhé.','Nhờ đồng đội hỗ trợ khi có điểm vướng.','Theo sát một lịch triển khai đang chờ nhé.','Chia sẻ một cách làm hay với cả nhóm nhé.','Rà lại những cơ hội đang gần chốt nhé.','Chốt rõ bước tiếp theo sau mỗi cuộc trao đổi.','Gửi một lời hỏi thăm đúng lúc tới khách nhé.','Lắng nghe nhu cầu trước khi tư vấn nhé.','Giữ lời hẹn và cập nhật khách thật rõ ràng.','Cùng đồng đội tìm cách cho một ca đang vướng.','Ưu tiên một khách cần được hỗ trợ hôm nay.','Giữ chất lượng trong từng hợp đồng nhé.','Bắt đầu từ một cuộc gọi có chuẩn bị nhé.','Chăm tốt khách đã tin tưởng mình nhé.'];
 const signatures=['Phòng luôn đồng hành cùng bạn.','IBB5 cùng bạn giữ lửa mỗi ngày.','Có đồng đội, mình cùng tìm cách.','Cùng tiếp sức cho một ngày mới nhé!'];
 
-export function encouragementMessage(account, growth) {
+export function encouragementMessage(account, growth, context=null) {
   const kind=growth.delta===null?'unavailable':growth.delta<0?'negative':growth.delta>0?'positive':'neutral';
   const bank=kind==='unavailable'?'neutral':kind;
   const dayNumber=Math.floor(Date.parse(growth.day+'T00:00:00Z')/86400000);
   let offset=0;for(const char of normalize(account))offset=(offset*31+char.charCodeAt(0))%4096;
   // A daily sequence of 16×16×16 combinations: consecutive days never reuse a full message.
-  const sequence=((dayNumber+offset)%4096+4096)%4096,h=sequence%16,b=Math.floor(sequence/16)%16,a=Math.floor(sequence/256)%16;
+  const sequence=((dayNumber+offset)%4096+4096)%4096,h=sequence%16,b=(Math.floor(sequence/16)+h)%16,a=(Math.floor(sequence/256)+h*5)%16;
   const title=headlines[bank][h];
   const improvement=kind==='negative'&&growth.changeSinceYesterday>0?'Khoảng cách đã thu hẹp '+growth.changeSinceYesterday+' HĐ. ':'';
-  return {kind,id:bank+':'+sequence,title,body:improvement+bodies[bank][b]+' '+actions[a],signature:signatures[sequence%4]};
+  const focus=encouragementFocus(context,a+b+h);
+  return {kind,id:bank+':'+sequence,title,body:improvement+(focus?.body||bodies[bank][b]+' '+actions[a]),signature:signatures[sequence%4],priority:focus?.type||'general'};
 }

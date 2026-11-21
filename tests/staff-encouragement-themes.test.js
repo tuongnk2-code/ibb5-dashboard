@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { nextEncouragementTheme, ENCOURAGEMENT_THEMES } from '../js/staffEncouragementThemes.js';
+import { nextEncouragementBackground } from '../js/staffEncouragementThemes.js';
+import { existsSync } from 'node:fs';
+
+test('photo rotation visits all six local assets before repeating',()=>{
+ let history={},previous;
+ for(let cycle=0;cycle<4;cycle++){
+  const ids=new Set();
+  for(let i=0;i<6;i++){
+   const next=nextEncouragementBackground(history,()=>.41);
+   assert.notEqual(next.id,previous);assert.ok(existsSync(new URL('../public'+next.src,import.meta.url)));
+   ids.add(next.id);previous=next.id;history=next.history;
+  }
+  assert.equal(ids.size,6);
+ }
+});
 
 test('each positive cycle shows all six distinct backgrounds and symbols without adjacent repetition',()=>{
  let history={},previous;
