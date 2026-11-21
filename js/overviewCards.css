@@ -123,7 +123,6 @@
   #overview .overview-five>.ov-metric:has(.previous-day-picker)>.detail {grid-area:4/1/5/3 !important;font-size:11px !important}
   @media(max-width:1199px){#overview .overview-five{grid-template-columns:repeat(3,minmax(0,1fr))}}
   @media(max-width:700px){#overview .overview-five{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:480px){#overview .overview-five{grid-template-columns:minmax(0,1fr)}}
 }
 
 @layer overview-card-layout {
@@ -144,8 +143,62 @@
   #overview .overview-efficiency>.ov-metric>.ov-metric-icon svg {width:18px;height:18px}
   @media(max-width:1199px){#overview .overview-efficiency{grid-template-columns:repeat(3,minmax(0,1fr)) !important}}
   @media(max-width:700px){#overview .overview-efficiency{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
-  @media(max-width:480px){#overview .overview-efficiency{grid-template-columns:minmax(0,1fr) !important}}
   #overview .daily {padding:14px !important;margin-top:14px !important}
   #overview .daily h2 {margin:0 0 12px !important}
   #overview .dailygrid {gap:10px !important}
+}
+
+/* Phone KPIs use the same compact two-column rhythm as the tracking summary. */
+@layer overview-card-layout {
+  @media(max-width:600px){
+    #overview :is(.overview-five,.overview-efficiency,.dailygrid,#ibbQualitySummary) {
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      gap:8px !important;
+      align-items:stretch;
+    }
+    #overview :is(.overview-five,.overview-efficiency,.dailygrid)>.mini.ov-metric {
+      min-width:0;
+      min-height:0 !important;
+      padding:10px !important;
+      grid-template-columns:minmax(0,1fr) auto !important;
+      grid-template-rows:auto auto 1fr auto !important;
+      gap:6px 4px !important;
+      border-radius:12px !important;
+    }
+    #overview :is(.overview-five,.overview-efficiency,.dailygrid)>.mini.ov-metric>.name {
+      font-size:12px !important;
+      line-height:1.35 !important;
+      min-height:0 !important;
+    }
+    #overview :is(.overview-five,.overview-efficiency,.dailygrid)>.mini.ov-metric>.value {
+      font-size:28px !important;
+      line-height:1.15 !important;
+      letter-spacing:-.6px;
+    }
+    #overview :is(.overview-five,.overview-efficiency,.dailygrid)>.mini.ov-metric>.detail {
+      grid-area:3/1/4/3 !important;
+      align-self:start !important;
+      font-size:11px !important;
+      line-height:1.4 !important;
+      text-align:center !important;
+      overflow-wrap:anywhere;
+    }
+    #overview .mini.ov-metric>.ov-metric-icon {width:22px !important;height:22px !important;border-radius:6px !important}
+    #overview .mini.ov-metric>.ov-metric-icon svg {width:15px !important;height:15px !important}
+    #overview .overview-five>.mini.ov-metric>.previous-day-picker {
+      grid-area:3/1/4/3 !important;
+      width:100%;min-width:0;
+    }
+    #overview .overview-five>.mini.ov-metric>.previous-day-picker input {
+      width:100%;max-width:100%;min-width:0;min-height:34px;font-size:11px;
+    }
+    #overview .overview-five>.mini.ov-metric:has(.previous-day-picker)>.detail {grid-area:4/1/5/3 !important}
+    #overview .overview-efficiency #staffProductivity::after {font-size:11px;margin-top:2px}
+    #overview #ibbQualitySummary>.kpi {min-width:0;min-height:0 !important;padding:10px !important;gap:8px}
+    #overview #ibbQualitySummary>.kpi>.name {min-height:0;padding-right:24px;font-size:12px !important;line-height:1.35}
+    #overview #ibbQualitySummary>.kpi>.value {font-size:26px !important}
+    #overview #ibbQualitySummary>.kpi>.detail {font-size:11px !important;line-height:1.4;overflow-wrap:anywhere}
+    #overview #ibbQualitySummary>.kpi::after {width:20px !important;height:20px !important;right:8px !important;top:10px !important}
+    #overview .daily {padding:10px !important}
+  }
 }
