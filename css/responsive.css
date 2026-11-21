@@ -649,6 +649,29 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #pendingContracts .p-update-cell .p-updated{display:inline;white-space:nowrap;max-width:none;margin:0 0 0 8px}
 #pendingContracts .p-update-cell .p-discard{display:block;margin-top:6px}
 
+/* Hide the explanatory captions selected for removal on every screen size.
+   Keep their nodes because dashboard updates still write to these IDs. */
+#appShell .top .ibb-top-subtitle,
+#appShell .footer,
+#overview #rangeLabel,
+#overview .ibb-kpi-section-title:not(.ibb-kpi-quality-title)>small,
+#ibbCaptureOverview>p.note,
+#ibb5Analytics>.ana-muted,
+#ibb5Analytics .ana-card:has(>#anaTrend)>.ana-muted,
+#ibb5Analytics .trk-description,
+#ibb5Analytics .ana-overdue-card>.ana-muted,
+#anaOldScope,
+#anaShareScope,
+#ibb5Analytics .ana-card:has(>#anaChannelBars)>.ana-muted,
+#anaMonthlyScope,
+#performance>.heading .sub,
+#performance>p.note,
+#performance .dp-heading>p,
+#pendingContracts .pending-title>div>p,
+#pendingContracts #psSummary,
+#pendingContracts .ps-note,
+#remainingOnlineSchedule .rc-summary {display:none!important}
+
 /* Compact phone summaries and controls; keep contract tables scrollable. */
 @media(max-width:600px){
   #pendingContracts .pending-cards.pending-metrics {grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:12px 0!important}

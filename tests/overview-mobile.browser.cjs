@@ -15,6 +15,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await page.route('https://**/*', r => r.abort());
       await page.goto('http://127.0.0.1:5266/#overview');
       await page.waitForSelector('#overview .overview-efficiency .ov-metric');
+      const assertHidden=async selectors=>{
+        for(const selector of selectors){
+          const elements=page.locator(selector);
+          assert.ok(await elements.count(),`caption exists: ${selector}`);
+          for(const element of await elements.all())assert.equal(await element.isVisible(),false,`${width}: hidden caption ${selector}`);
+        }
+      };
+      await assertHidden(['#appShell .top .ibb-top-subtitle','#appShell .footer','#rangeLabel','#overview .ibb-kpi-section-title:not(.ibb-kpi-quality-title)>small','#ibbCaptureOverview>p.note','#ibb5Analytics>.ana-muted','#ibb5Analytics .ana-card:has(>#anaTrend)>.ana-muted','#ibb5Analytics .trk-description','#ibb5Analytics .ana-overdue-card>.ana-muted','#anaOldScope','#anaShareScope','#ibb5Analytics .ana-card:has(>#anaChannelBars)>.ana-muted','#anaMonthlyScope']);
+      assert.ok(await page.locator('#anaMonth').isVisible());
+      if(width===1440)assert.ok(await page.locator('#overview .ibb-kpi-quality-title>small').isVisible(),'unselected quality caption remains on desktop');
       const layout = await page.evaluate(() => {
         const groups = ['.overview-five', '.overview-efficiency', '.dailygrid', '#ibbQualitySummary'].map(selector => {
           const el = document.querySelector('#overview ' + selector);
@@ -56,6 +66,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         await page.waitForFunction(tab => document.getElementById(tab).classList.contains('page-active'), tab);
         const selector = tab === 'pendingContracts' ? '.pending-metrics' : '#dpKpis';
         await page.waitForSelector(`#${tab} ${selector}`);
+        await assertHidden(tab==='performance'?['#performance>.heading .sub','#performance>p.note','#performance .dp-heading>p']:['#pendingContracts .pending-title>div>p','#psSummary','#pendingContracts .ps-note','#remainingOnlineSchedule .rc-summary']);
         const summary = await page.locator(`#${tab} ${selector}`).evaluate(el => ({
           columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,
           cards:[...el.children].map(card=>({height:card.getBoundingClientRect().height,overflow:card.scrollWidth>card.clientWidth+1})),
