@@ -74,10 +74,14 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
           assert.equal(await appointments.count(),1);
           assert.equal(await appointments.locator('[data-schedule-id]').count(),3);
           if(width<600){
-            assert.ok((await appointments.boundingBox()).height<260,`${width}: compact multi-contract appointment`);
+            assert.ok((await appointments.boundingBox()).height<160,`${width}: only occupied appointment slots take space`);
             assert.equal(await appointments.locator('.ps-blank').isVisible(),false);
-            for(const label of ['8h - 10h','10h - 12h','13h30 - 15h30','15h30 - 17h30','Chưa chọn mốc'])assert.ok(await appointments.locator(`td[data-label="${label}"]`).isVisible());
+            assert.ok(await appointments.locator('td[data-label="10h - 12h"]').isVisible());
+            for(const label of ['8h - 10h','13h30 - 15h30','15h30 - 17h30','Chưa chọn mốc'])assert.equal(await appointments.locator(`td[data-label="${label}"]`).isVisible(),false);
+            for(const cell of await page.locator('#psRows .ps-empty-slot').all())assert.equal(await cell.isVisible(),false);
             for(const row of await page.locator('#psRows .ps-team,#psRows .ps-total').all())assert.ok((await row.boundingBox()).height<200,`${width}: compact totals`);
+          }else{
+            for(const cell of await page.locator('#psRows .ps-empty-slot').all())assert.ok(await cell.isVisible(), 'desktop retains all time columns');
           }
           await page.locator('#pendingSchedule').scrollIntoViewIfNeeded();
           if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/schedule-compact-${width}.png`});

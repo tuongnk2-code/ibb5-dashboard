@@ -630,7 +630,11 @@ const unknown=[...grouped.values()].filter(p=>!p.team);
 for(const p of unknown){p.values.forEach((v,i)=>sum[i]+=remaining(v));html+='<tr><td><div class="ps-person">'+esc(p.acc)+'</div></td><td class="ps-blank">—</td>'+p.values.map(ids=>'<td class="ps-ids">'+(ids.length?ids.map(appointmentTag).join(''):'—')+'</td>').join('')+'</tr>';}
 html+='<tr class="ps-total"><td>TỔNG PHÒNG</td><td>'+(rows.length-overdue.size)+'</td>'+sum.map(v=>'<td>'+v+'</td>').join('')+'</tr>';
 $('psRows').innerHTML=html;
-const labels=['Mã Acc / Bầy','Số HĐ',...slots,'Chưa chọn mốc'];$('psRows').querySelectorAll('tr').forEach(row=>[...row.cells].forEach((cell,i)=>{cell.dataset.label=labels[i]}));
+const labels=['Mã Acc / Bầy','Số HĐ',...slots,'Chưa chọn mốc'];$('psRows').querySelectorAll('tr').forEach(row=>[...row.cells].forEach((cell,i)=>{
+cell.dataset.label=labels[i];
+// Appointment tags remain visible even when overdue and excluded from totals.
+if(i>=2)cell.classList.toggle('ps-empty-slot',!cell.querySelector('[data-schedule-id]')&&['0','—',''].includes(cell.textContent.trim()));
+}));
 }
 $('psDay').addEventListener('change',()=>{const date=$('pendDailyDate');if(date){date.value=$('psDay').value;date.dispatchEvent(new Event('change',{bubbles:true}));}render()});
 $('pendDailyDate')?.addEventListener('change',()=>{$('psDay').value=$('pendDailyDate').value;render()});
