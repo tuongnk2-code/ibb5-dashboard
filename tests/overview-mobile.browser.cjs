@@ -103,6 +103,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
           if(process.env.OVERVIEW_SCREENSHOT_DIR)await page.screenshot({path:`${process.env.OVERVIEW_SCREENSHOT_DIR}/staff-table-compact-${width}.png`});
         }
         if(tab==='pendingContracts'){
+          const reasonFilter=page.locator('.ph-filter[data-field="action"]');
+          assert.equal(await reasonFilter.locator('option[value="Hủy lên lại"]').count(),1,'standard re-sign reason remains available');
+          assert.equal(await page.locator('#pendRows .p-note').first().locator('option[value="Hủy lên lại"]').count(),1,'editable reason retained');
+          await reasonFilter.selectOption('Hủy lên lại');
+          assert.equal(await page.locator('#pendRows tr[data-id]').count(),0,'no matching contracts yields empty list');
+          assert.equal(await reasonFilter.inputValue(),'Hủy lên lại','selected empty reason remains available');
+          assert.equal(await reasonFilter.locator('option[value="KH chưa đồng ý PHM"]').count(),1,'other standard reasons remain');
+          await reasonFilter.selectOption('Chờ lắp');
+          assert.equal(await page.locator('#pendRows tr[data-id]').count(),3,'previously saved custom reason still filters');
+          await reasonFilter.selectOption('');
           const appointments=page.locator('#psRows tr:not(.ps-team):not(.ps-total)');
           assert.equal(await appointments.count(),1);
           assert.equal(await appointments.locator('[data-schedule-id]').count(),3);
