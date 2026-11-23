@@ -1155,3 +1155,6 @@ main{min-width:0!important;flex:1!important}
 #performance .perf-table th:nth-child(7),#performance .perf-table th:nth-child(9){width:9%!important}
 
 #performance .perf-table #perfRows tr td.perf-growth-negative{color:#c62828!important;background:#ffebee!important;font-weight:800!important}
+
+/* Private KHTN navigation stays hidden until server membership is verified. */
+#dashboardSidebar .nav a[data-private-prospects][hidden]{display:none!important}
