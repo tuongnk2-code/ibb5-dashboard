@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
-import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, requiresCancellationReason, monthKey, normAcc, canImportData, hasProcessingRequest } from '../js/dashboardStateModel.js';
+import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, requiresCancellationReason, monthKey, normAcc, canImportData, hasProcessingRequest, scopeCommitmentRow } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay, reportDay } from '../js/dailyReportModel.js';
 import { isTerminatedNetContract } from '../js/cancellationArchive.js';
 
@@ -24,10 +24,10 @@ export default async function handler(req, res) {
         if (!Array.isArray(keys) || !keys.length || keys.length > 100 || keys.some(key => typeof key !== 'string' || !key || key.length > 200)) return bad(res, 400, 'Danh sách mục đồng bộ không hợp lệ.');
         const result = await admin.from(STATE_TABLE).select('*').in('key', [...new Set(keys)]);
         if (result.error) throw result.error;
-        return res.status(200).json({ rows: result.data });
+        return res.status(200).json({ rows: result.data.map(row => scopeCommitmentRow(row, caller)) });
       }
       const versionsOnly = req.query?.versions === '1', rows = await sharedRows(admin, versionsOnly);
-      return res.status(200).json(versionsOnly ? { signature: stateSignature(rows), revisions: Object.fromEntries(rows.map(row => [row.key, row.revision])) } : unpackState(rows));
+      return res.status(200).json(versionsOnly ? { signature: stateSignature(rows), revisions: Object.fromEntries(rows.map(row => [row.key, row.revision])) } : unpackState(rows.map(row => scopeCommitmentRow(row, caller))));
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return bad(res, 405, 'Phương thức không hỗ trợ.'); }
     const body = req.body || {}, now = new Date().toISOString();
@@ -79,6 +79,18 @@ export default async function handler(req, res) {
       const manager = caller.role === 'manager';
       if (!manager && (body.action !== 'submit' || !caller.acc || normAcc(body.acc) !== normAcc(caller.acc))) return bad(res, 403, 'Không có quyền duyệt hoặc sửa cam kết của nhân sự khác.');
       if (!['submit', 'approve', 'reject', 'revise', 'sign', 'import'].includes(body.action)) return bad(res, 400, 'Thao tác cam kết không hợp lệ.');
+      if (body.action !== 'import' && Object.hasOwn(body, 'expectedTarget')) {
+        if (body.action !== 'sign' && (typeof body.acc !== 'string' || !body.acc || body.acc.length > 100)) return bad(res, 400, 'Mã Acc không hợp lệ.');
+        const result = await admin.rpc('save_dashboard_commitment', {
+          p_key: key, p_action: body.action, p_acc: body.acc || null,
+          p_value: ['submit','sign'].includes(body.action) ? int(body.value) : null,
+          p_plan: String(body.plan || '').slice(0,2000), p_expected: body.expectedTarget, p_actor: caller.id,
+        });
+        if (result.error) throw result.error;
+        const row = scopeCommitmentRow(result.data.row, caller);
+        if (result.data.conflict) return res.status(409).json({ error: 'Cam kết này vừa được sửa hoặc duyệt trên thiết bị khác. Dữ liệu mới đã được tải về; nội dung anh/chị đang nhập vẫn được giữ. Kiểm tra lại trước khi lưu.', row });
+        return res.status(200).json({ row });
+      }
       const current = await sharedRow(admin, key);
       if ((current?.revision || 0) !== body.revision) return bad(res, 409, 'Cam kết đã thay đổi trên thiết bị khác. Bấm Đồng bộ để tải lại.');
       data = cleanCommit(current?.data || {});
@@ -100,7 +112,7 @@ export default async function handler(req, res) {
     const query = current ? admin.from(STATE_TABLE).update(row).eq('key', key).eq('revision', body.revision) : admin.from(STATE_TABLE).insert(row);
     const saved = await query.select().maybeSingle(); if (saved.error) throw saved.error;
     if (!saved.data) return bad(res, 409, 'Dữ liệu vừa thay đổi. Bấm Đồng bộ để tải lại.');
-    return res.status(200).json({ row: saved.data });
+    return res.status(200).json({ row: scopeCommitmentRow(saved.data, caller) });
   } catch (err) {
     if (['42P01', 'PGRST205'].includes(err.code)) return bad(res, 503, 'Đồng bộ chưa được kích hoạt trên máy chủ.');
     if (err.code === '23505') return bad(res, 409, 'Dữ liệu vừa thay đổi. Bấm Đồng bộ để tải lại.');

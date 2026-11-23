@@ -1,7 +1,22 @@
 import { mergeCancellationArchive } from './cancellationArchive.js';
-import { validDay } from './dailyReportModel.js';
+import { validDay, canSeeReport } from './dailyReportModel.js';
 export const LEGACY_KEYS = { snapshot: 'ibb5_three_source_snapshot_v1', commitments: 'fpt_ibb_monthly_commitments_v2', notes: 'ibb5_pending_followup_v1' };
 export const normAcc = v => String(v || '').trim().toLowerCase();
+export function canViewCommitment(profile, acc) {
+  return profile?.role === 'manager' || (!!profile?.acc && normAcc(profile.acc) === normAcc(acc))
+    || (!!profile && canSeeReport(profile, { id: '__commitment_subject__', acc, role: 'staff' }));
+}
+export function scopeCommitmentRow(row, profile) {
+  if (!row?.key.startsWith('commit:') || profile.role === 'manager' || !row.data) return row;
+  return { ...row, data: { ...row.data, staff: Object.fromEntries(Object.entries(row.data.staff || {}).filter(([acc]) => canViewCommitment(profile, acc))) } };
+}
+export function commitmentTarget(data, action, acc) {
+  const value = action === 'sign' ? data?.manager : data?.staff?.[acc];
+  if (!value) return null;
+  return action === 'sign'
+    ? { value: value.value, status: value.status, signedAt: value.signedAt || null }
+    : { value: value.value, status: value.status, plan: value.plan || '', submittedAt: value.submittedAt || null, reviewedAt: value.reviewedAt || null };
+}
 export const canImportData = profile => ['manager', 'lead'].includes(profile?.role);
 export const hasProcessingRequest = (note = {}) => !!note?.processingRequestedAt && !note?.cancellationApproved;
 export const monthKey = (month, room = '__ALL__') => {

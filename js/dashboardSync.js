@@ -1,5 +1,5 @@
 import { getSession } from './auth.js';
-import { LEGACY_KEYS, stateRows, mergeStateRows, monthKey } from './dashboardStateModel.js';
+import { LEGACY_KEYS, stateRows, mergeStateRows, monthKey, commitmentTarget } from './dashboardStateModel.js';
 
 async function request(method, body, query = '') {
   const session = await getSession();
@@ -8,7 +8,7 @@ async function request(method, body, query = '') {
   try {
     const res = await fetch('/api/dashboard-sync' + query, { method, signal: controller.signal, cache: 'no-store', headers: { Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.error || 'Không tải được dữ liệu đồng bộ. Vui lòng thử lại.');
+    if (!res.ok) throw Object.assign(new Error(result.error || 'Không tải được dữ liệu đồng bộ. Vui lòng thử lại.'), { status: res.status, row: result.row });
     return result;
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('Kết nối quá lâu. Vui lòng kiểm tra mạng.');
@@ -71,7 +71,14 @@ export async function bootstrapDashboardSync(profile) {
     async cancelPending(id, expectedRevision) { const result = await request('POST', { kind: 'cancelPending', id, revision: expectedRevision ?? state.revisions['pending:' + id] ?? 0 }); merge([result.row]); return result.row.data; },
     async continuePending(id, expectedRevision) { const result = await request('POST', { kind: 'continuePending', id, revision: expectedRevision ?? state.revisions['pending:' + id] ?? 0 }); merge([result.row]); return result.row.data; },
     async pending(id, value, expectedRevision) { const result = await request('POST', { kind: 'pending', id, value, revision: expectedRevision ?? state.revisions['pending:' + id] ?? 0 }); merge([result.row]); return result.row.data; },
-    async commit(payload) { const { expectedRevision, ...body } = payload; const key = monthKey(body.month, body.room); const result = await request('POST', { kind: 'commit', ...body, revision: expectedRevision ?? state.revisions[key] ?? 0 }); merge([result.row]); return state.commitments; },
+    async commit(payload) {
+      const { expectedRevision, ...body } = payload, key = monthKey(body.month, body.room);
+      if (body.action !== 'import' && !Object.hasOwn(body,'expectedTarget')) body.expectedTarget = commitmentTarget(state.commitments[body.month]?.[body.room || '__ALL__'],body.action,body.acc);
+      try {
+        const result = await request('POST', { kind: 'commit', ...body, revision: expectedRevision ?? state.revisions[key] ?? 0 });
+        merge([result.row]); return state.commitments;
+      } catch (err) { if (err.status === 409 && err.row) merge([err.row]); throw err; }
+    },
     async snapshot(value, types) { const result = await request('POST', { kind: 'snapshot', snapshot: value, types, revision: state.revisions.snapshot || 0 }); merge([result.row]); return result.row.data; },
   };
   return state;
