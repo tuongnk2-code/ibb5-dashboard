@@ -68,3 +68,13 @@ QUY TRINH NHIEU BUOC (workflow_v1)
 - Buoc tiep theo doc truong previous tu stdin. Du lieu nay chi di tren may.
 - Ket qua dua len IBB5 chi gom status va summary, khong gom output trung gian.
 - Dung ngay khi mot buoc loi. Khong tu chay lai cac buoc da lam khi gian doan.
+
+CSKH NGAY ONLINE +3 / +7 / +10
+- Adapter phai cau hinh supportsOnlineCare: true de nhan lich theo tung KH.
+- Nhan doi tuong care qua stdin: contract_id, customer, phone, online_date,
+  due_date, offset (3/7/10), approved_late.
+- Chi gui config.content dung 1 lan cho DUY NHAT care.phone; khong gui ca danh sach.
+- config.content da duoc dien ten KH/ma HD/nhan su tu kich ban dung moc.
+- Dung run_id/idempotency_key de ngan gui trung va tra ket qua co xac nhan.
+- KH tu choi nhan tin / NET cham dut / doi quyen se khong du dieu kien nhan viec.
+- Moc qua han khong tu gui bu; can nguoi co quyen duyet tren IBB5.

@@ -9,7 +9,7 @@ if(!/^dw_[A-Za-z0-9_-]{43}$/.test(config.token||''))throw Error('Tệp kết n�
 const channelNames=['meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','fpt_sop','facebook_search','zalo_campaign','facebook_post','email_campaign','other'];
 const handlers=Object.fromEntries(Object.entries(config.handlers||{}).filter(([key,value])=>channelNames.includes(key)&&value&&typeof value.command==='string'&&value.command&&Array.isArray(value.args)&&value.args.every(arg=>typeof arg==='string')&&value.enabled!==false));
 let wake=null;
-const capabilities=[...new Set([...Object.keys(handlers),...(Object.keys(handlers).some(key=>key!=='other')?['other','workflow_v1']:[])])],journalPath=configPath+'.journal',delay=ms=>new Promise(resolveDelay=>{const timer=setTimeout(()=>{wake=null;resolveDelay();},ms);wake=()=>{clearTimeout(timer);wake=null;resolveDelay();};});
+const capabilities=[...new Set([...Object.keys(handlers),...Object.entries(handlers).filter(([,handler])=>handler.supportsOnlineCare===true).map(([channel])=>'care_'+channel),...(Object.keys(handlers).some(key=>key!=='other')?['other','workflow_v1']:[])])],journalPath=configPath+'.journal',delay=ms=>new Promise(resolveDelay=>{const timer=setTimeout(()=>{wake=null;resolveDelay();},ms);wake=()=>{clearTimeout(timer);wake=null;resolveDelay();};});
 let journal=existsSync(journalPath)?JSON.parse(readFileSync(journalPath,'utf8')):null,stopping=false,child=null;
 function remember(value){const temporary=journalPath+'.tmp';writeFileSync(temporary,JSON.stringify(value),{mode:0o600});renameSync(temporary,journalPath);journal=value;}
 async function api(body){const response=await fetch(new URL('/api/digital-worker',server),{method:'POST',headers:{Authorization:'Bearer '+config.token,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(25000)});const result=await response.json();if(!response.ok){const error=Error(result.error||'Không kết nối được IBB5');error.status=response.status;throw error;}return result;}
@@ -18,6 +18,7 @@ async function flush(){if(!journal)return;const outcome=journal.outcome||{status
 async function execute(run){
  remember({run_id:run.id});
  const steps=run.task_snapshot.config?.steps;
+ if(run.task_snapshot.care&&handlers[run.task_snapshot.channel]?.supportsOnlineCare!==true){remember({run_id:run.id,outcome:{status:'failed',summary:'Bộ kết nối chưa hỗ trợ gửi đúng từng KH theo mốc Online. Chưa thực hiện gửi.'}});return await flush();}
  let cancelled=false,uncertain=false,heartbeatBusy=false,finished=false;
  const heartbeat=setInterval(async()=>{if(heartbeatBusy)return;heartbeatBusy=true;try{const response=await api({action:'heartbeat',capabilities});if(!finished&&response.active?.id===run.id&&response.active.cancel_requested){cancelled=true;stopChild();}}catch(error){if(!finished&&[401,403].includes(error.status)){uncertain=true;stopping=true;stopChild();}}finally{heartbeatBusy=false;}},15000);
  let outcome;

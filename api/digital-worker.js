@@ -2,11 +2,18 @@ import { createHash, randomBytes } from 'node:crypto';
 import { requireProfile, getSupabaseAdmin } from './_supabaseAdmin.js';
 import { WORKER_CHANNELS, canViewWorker, canManageWorker, cleanWorkerTask, workerSupportsTask } from '../js/digitalWorkerModel.js';
 import { planWorkerRequest } from './_workerPlanner.js';
+import { sharedRow } from './_dashboardState.js';
+import { onlineCareEvents } from '../js/onlineCareModel.js';
 const plannerLimits=new Map();
 const checked=result=>{if(result.error)throw result.error;return result.data;};
 const uuid=value=>typeof value==='string'&&/^[a-f\d]{8}(-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(value);
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const deviceColumns='id,owner_id,name,capabilities,last_seen_at,revoked,created_at';
+async function careContext(admin,task,owner){
+ const all=async query=>{const rows=[];for(let start=0;;start+=1000){const batch=checked(await query.range(start,start+999));rows.push(...batch);if(batch.length<1000)return rows;}};
+ const [snapshot,contacts,runs]=await Promise.all([sharedRow(admin,'snapshot'),all(admin.from('care_contacts').select('*').order('contract_id')),all(admin.from('worker_runs').select('*').eq('owner_id',task.owner_id).order('id'))]);
+ return onlineCareEvents({task,rows:snapshot?.data?.data||[],contacts,runs,owner});
+}
 export function createDigitalWorkerHandler(authenticate=requireProfile,adminClient=getSupabaseAdmin,planner=planWorkerRequest){return async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  const fail=(status,error)=>res.status(status).json({error});
@@ -27,7 +34,7 @@ export function createDigitalWorkerHandler(authenticate=requireProfile,adminClie
     const run=checked(await admin.from('worker_runs').update({status:input.status,summary:input.summary,finished_at:new Date().toISOString()}).eq('id',previous.id).eq('status','running').select().maybeSingle());
     return res.status(200).json({run});
    }
-   const capabilities=Array.isArray(input.capabilities)?[...new Set(input.capabilities.filter(c=>Object.hasOwn(WORKER_CHANNELS,c)||c==='workflow_v1'))]:device.capabilities;
+   const capabilities=Array.isArray(input.capabilities)?[...new Set(input.capabilities.filter(c=>Object.hasOwn(WORKER_CHANNELS,c)||c==='workflow_v1'||(typeof c==='string'&&c.startsWith('care_')&&Object.hasOwn(WORKER_CHANNELS,c.slice(5)))))]:device.capabilities;
    checked(await admin.from('worker_devices').update({last_seen_at:new Date().toISOString(),capabilities}).eq('id',device.id));
    const active=checked(await admin.from('worker_runs').select('id,cancel_requested').eq('device_id',device.id).eq('status','running').maybeSingle());
    const run=input.action==='poll'&&!active?checked(await admin.rpc('claim_worker_run',{p_device:device.id})):null;
@@ -77,7 +84,19 @@ export function createDigitalWorkerHandler(authenticate=requireProfile,adminClie
    return res.status(200).json({task});
   }
   const task=uuid(input.task_id)&&checked(await admin.from('worker_tasks').select('*').eq('id',input.task_id).maybeSingle());
+  if(input.action==='care_preview'&&task?.config.care_policy&&canViewWorker(caller,byId.get(task.owner_id))){
+   const events=await careContext(admin,task,byId.get(task.owner_id)),matching=input.status?events.filter(e=>e.status===input.status):events,offset=Number.isInteger(input.offset)&&input.offset>=0?input.offset:0;
+   return res.status(200).json({events:matching.slice(offset,offset+100),total:matching.length,stats:Object.fromEntries(['future','due','missed','queued','running','succeeded','failed'].map(status=>[status,events.filter(e=>e.status===status).length]))});
+  }
   if(!task||!canManageWorker(caller,byId.get(task.owner_id)))return fail(403,'Không có quyền điều khiển tác vụ này.');
+  if(input.action==='approve_care'){
+   if(caller.role!=='manager')return fail(403,'Chỉ Trưởng phòng được duyệt chăm bù các mốc đã quá.');
+   if(!task.config.care_policy||input.revision!==task.revision)return fail(409,'Lịch hoặc kịch bản vừa thay đổi. Tải lại trước khi duyệt.');
+   if(!Array.isArray(input.keys)||!input.keys.length||input.keys.length>100||input.keys.some(k=>typeof k!=='string'||k.length>110))return fail(400,'Chọn từ 1 đến 100 mốc quá hạn để duyệt.');
+   const events=await careContext(admin,task,byId.get(task.owner_id));let queued=0,skipped=0;
+   for(const key of new Set(input.keys)){const event=events.find(e=>e.key===key&&e.can_approve);if(!event){skipped++;continue;}const result=checked(await admin.rpc('enqueue_online_care',{p_task:task.id,p_contract:event.contract_id,p_offset:event.offset,p_late:true,p_revision:task.revision}));if(result?.id&&result.status==='queued')queued++;else skipped++;}
+   return res.status(200).json({queued,skipped});
+  }
   if(input.action==='update'){
    const clean=cleanWorkerTask(input),device=input.device_id&&uuid(input.device_id)?checked(await admin.from('worker_devices').select(deviceColumns).eq('id',input.device_id).maybeSingle()):null;
    if(input.device_id&&(!device||device.revoked||device.owner_id!==task.owner_id))return fail(400,'Chọn máy thuộc đúng nhân sự.');
@@ -86,6 +105,7 @@ export function createDigitalWorkerHandler(authenticate=requireProfile,adminClie
    return res.status(200).json({task:saved});
   }
   if(input.action==='run'){
+   if(task.config.care_policy)return fail(400,'Dùng Bật lịch CSKH hoặc duyệt mốc chăm bù; không chạy chung cả danh sách.');
    if(!uuid(input.request_id))return fail(400,'Mã yêu cầu chạy không hợp lệ.');
    if(!Number.isInteger(input.revision))return fail(400,'Cần xem trước tác vụ trước khi chạy.');
    const run=checked(await admin.rpc('enqueue_worker_run',{p_task:task.id,p_request:input.request_id,p_revision:input.revision}));
@@ -104,10 +124,10 @@ export function createDigitalWorkerHandler(authenticate=requireProfile,adminClie
    if(input.action==='enable'){
     const device=task.device_id&&checked(await admin.from('worker_devices').select(deviceColumns).eq('id',task.device_id).maybeSingle());
     if(!workerSupportsTask(device,task))return fail(400,'Chưa kết nối đủ các tool cần thiết trên máy đã chọn.');
-    if(!task.scheduled_at)return fail(400,'Tác vụ chưa có lịch. Dùng Chạy ngay hoặc tạo tác vụ có lịch.');
-    if(!task.repeat_days&&!task.next_run_at)return fail(400,'Lịch một lần đã kết thúc. Dùng Chạy ngay hoặc sửa lịch mới.');
+    if(!task.config.care_policy&&!task.scheduled_at)return fail(400,'Tác vụ chưa có lịch. Dùng Chạy ngay hoặc tạo tác vụ có lịch.');
+    if(!task.config.care_policy&&!task.repeat_days&&!task.next_run_at)return fail(400,'Lịch một lần đã kết thúc. Dùng Chạy ngay hoặc sửa lịch mới.');
    }
-   const updated=checked(await admin.from('worker_tasks').update({enabled:input.action==='enable',next_run_at:task.next_run_at||task.scheduled_at,revision:task.revision+1,updated_at:new Date().toISOString()}).eq('id',task.id).eq('revision',task.revision).select().maybeSingle());
+   const updated=checked(await admin.from('worker_tasks').update({enabled:input.action==='enable',next_run_at:task.config.care_policy?new Date().toISOString():task.next_run_at||task.scheduled_at,revision:task.revision+1,updated_at:new Date().toISOString()}).eq('id',task.id).eq('revision',task.revision).select().maybeSingle());
    if(!updated)return fail(409,'Tác vụ vừa thay đổi. Tải lại trước khi điều khiển.');
    return res.status(200).json({task:updated});
   }

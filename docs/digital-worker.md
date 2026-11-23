@@ -86,3 +86,30 @@ Without server AI configuration, the UI explicitly reports that free-form planni
 is unavailable; existing fixed commands and manual task creation remain usable.
 AI-provider tests use mocked responses. No production provider key or tool session
 is created automatically.
+
+## Care at Online +3 / +7 / +10 days
+
+Apply `supabase/online-care.sql` after the base worker schema and then refresh the
+worker RPC definitions from `supabase/digital-worker.sql`. Care tasks use a separate
+`care_policy`, with independent 3/7/10-day scripts, a Vietnam daily delivery time,
+and no generic repeat_days/scheduled_at. Dates come from the latest NET snapshot.
+Only current owner, valid Online, non-terminated NET, phone and consent qualify.
+
+The scheduler creates one run per due customer/milestone on the due calendar date.
+Past dates are never automatically sent. The scoped care preview lists them; the
+Trưởng phòng can review and explicitly approve up to 100 missed items. Database
+uniqueness prevents repeated contract/milestone or phone/milestone deliveries across
+tasks, script edits and pauses. Completed/started runs are not automatically retried.
+Queued care is rechecked against current consent/phone/NET ownership before claiming;
+expired, unapproved or ineligible items are cancelled, not silently sent late.
+
+Adapters must opt into `supportsOnlineCare: true`. The runner then advertises a
+per-channel `care_<channel>` capability. They must use `task_snapshot.care.phone`
+as the sole recipient, send the selected personalized `config.content` once, and
+return actual evidence. A general bulk adapter cannot claim care jobs. This feature
+does not connect any real Zalo/SMS provider automatically. The client can save
+paused schedules before tool integration.
+
+`tests/online-care.rollback.sql` verifies personalized due jobs, no automatic past
+sends, deduplication, explicit catchup and last-minute opt-out cancellation. It uses
+synthetic uncommitted data and always rolls back; do not remove its transaction.

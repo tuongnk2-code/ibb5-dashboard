@@ -1,0 +1,28 @@
+import { ONLINE_CARE_SCRIPTS } from './onlineCareModel.js';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function installOnlineCareUI(root,{api,save,canApprove,getTask}){
+ const form=root.querySelector('[data-dialog="task"] form'),f=form.elements;
+ f.repeat_days.insertAdjacentHTML('beforeend','<option value="online_3_7_10">CSKH: sau Online 3 / 7 / 10 ngày</option>');
+ const settings=document.createElement('div');settings.className='dw-care-settings';settings.hidden=true;
+ settings.innerHTML='<h4>Chăm sóc theo ngày Online từng khách</h4><p>Ngày gốc lấy từ NET. Mỗi khách có 3 mốc riêng. Mốc đã quá chỉ chăm bù khi được duyệt.</p><label>Giờ chăm sóc trong ngày (Việt Nam)<input name="care_time" type="time" value="09:00"></label>'+[3,7,10].map((day,i)=>`<label>Lần ${i+1} · Sau Online ${day} ngày<textarea name="care_${day}" maxlength="2000" rows="4">${esc(ONLINE_CARE_SCRIPTS[day])}</textarea></label>`).join('')+'<small>Dùng {ten_kh}, {ma_hd}, {nhan_su}. KH cần SĐT và đồng ý nhận chăm sóc trong mục CSKH.</small>';
+ f.repeat_days.closest('.dw-form-grid').after(settings);
+ function redraw(){const care=f.repeat_days.value==='online_3_7_10';settings.hidden=!care;f.when.disabled=care;if(care&&!f.content.value.trim())f.content.value='Chăm sóc mỗi KH sau Online 3, 7, 10 ngày, mỗi mốc một kịch bản riêng.';}
+ f.repeat_days.addEventListener('change',redraw);
+ const dialog=document.createElement('dialog');dialog.className='dw-dialog dw-care-dialog';dialog.dataset.dialog='care';
+ dialog.innerHTML='<div class="dw-dialog-head"><h3>Lịch chăm sóc từng khách</h3><button data-close aria-label="Đóng">×</button></div><p class="oc-summary"></p><label>Lọc mốc<select data-oc="filter"><option value="">Tất cả</option><option value="missed">Quá mốc · chờ duyệt chăm bù</option><option value="due">Đến ngày chăm sóc</option><option value="future">Chưa đến ngày</option><option value="succeeded">Đã chăm sóc</option><option value="queued">Đang chờ máy</option><option value="failed">Cần kiểm tra</option></select></label><div class="oc-events"></div><div class="dw-actions"><button data-oc="prev">← Trước</button><button data-oc="next">Sau →</button><button class="primary" data-oc="approve">Duyệt chăm bù đã chọn</button></div><p class="oc-error" role="alert"></p>';
+ root.append(dialog);let task=null,offset=0,filter='',picked=new Set(),busy=false;
+ const $=selector=>dialog.querySelector(selector);
+ async function show(nextTask,reset=true){if(busy)return;busy=true;task=getTask(nextTask.id)||nextTask;if(reset){offset=0;filter='';}picked.clear();if(!dialog.open)dialog.showModal();$('[data-oc="filter"]').value=filter;$('.oc-error').textContent='';$('.oc-events').textContent='Đang đối chiếu NET và lịch sử chăm sóc…';
+  try{const result=await api({action:'care_preview',task_id:task.id,status:filter,offset});const labels={future:'Chưa đến ngày',due:'Đến ngày chăm sóc',missed:'Quá mốc · chờ duyệt',queued:'Chờ máy thực hiện',running:'Đang thực hiện',succeeded:'Đã chăm sóc',failed:'Cần kiểm tra · chưa ghi nhận đã chăm'};
+   $('.oc-summary').textContent='Đã chăm: '+result.stats.succeeded+' · Quá mốc: '+result.stats.missed+' · Đến ngày: '+result.stats.due+' · Chưa đến: '+result.stats.future+'. Hiển thị '+Math.min(offset+1,result.total)+'–'+Math.min(offset+100,result.total)+' / '+result.total;
+   $('.oc-events').innerHTML=result.events.map(e=>`<article class="oc-event">${canApprove()&&e.can_approve?`<label><input type="checkbox" data-oc-pick="${esc(e.key)}"> Chọn duyệt chăm bù</label>`:''}<b>${esc(e.customer)} · ${esc(e.contract_id)}</b><small>Online ${e.online_date} → Ngày +${e.offset}: ${e.due_date}</small><span>${labels[e.status]}</span><details><summary>Kịch bản gửi</summary><p>${esc(e.message)}</p></details></article>`).join('')||'<p>Chưa có mốc phù hợp. Kiểm tra KH đã Online, SĐT và đồng ý nhận chăm sóc tại mục CSKH.</p>';
+   $('[data-oc="prev"]').disabled=!offset;$('[data-oc="next"]').disabled=offset+100>=result.total;$('[data-oc="approve"]').hidden=!canApprove();
+  }catch(error){$('.oc-events').textContent='';$('.oc-error').textContent=error.message;}finally{busy=false;}}
+ dialog.addEventListener('change',event=>{const input=event.target;if(input.dataset.ocPick){if(input.checked)picked.add(input.dataset.ocPick);else picked.delete(input.dataset.ocPick);}if(input.dataset.oc==='filter'){filter=input.value;offset=0;show(task,false);}});
+ dialog.addEventListener('click',async event=>{const action=event.target.closest('[data-oc]')?.dataset.oc;if(!action||busy)return;
+  if(action==='prev'||action==='next'){offset=Math.max(0,offset+(action==='next'?100:-100));return show(task,false);}
+  if(action==='approve'){if(!picked.size)return $('.oc-error').textContent='Chọn ít nhất một mốc quá hạn.';if(!confirm('Duyệt chăm bù '+picked.size+' mốc theo kịch bản đang hiển thị? Lượt chưa thực hiện sẽ chờ máy kết nối.'))return;busy=true;
+   try{const result=await save({action:'approve_care',task_id:task.id,revision:task.revision,keys:[...picked]});busy=false;await show(task,false);$('.oc-error').textContent='Đã giao '+result.queued+' mốc; bỏ qua '+result.skipped+' mốc đã có hoặc không còn đủ điều kiện. Chưa ghi nhận đã gửi.';}catch(error){$('.oc-error').textContent=error.message;}finally{busy=false;}}
+ });
+ return {open:show,showForm(task){const policy=task?.config.care_policy;if(policy){f.repeat_days.value='online_3_7_10';f.care_time.value=policy.time;for(const day of [3,7,10])f['care_'+day].value=policy.scripts[day];}redraw();},payload(){return f.repeat_days.value==='online_3_7_10'?{care_policy:{kind:'online_3_7_10',time:f.care_time.value,scripts:Object.fromEntries([3,7,10].map(day=>[day,f['care_'+day].value]))}}:{};}};
+}

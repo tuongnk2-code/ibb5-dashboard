@@ -1,0 +1,22 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {fixture}=require('./digital-worker-fixture.cjs');
+test('milestone previews and catchup approvals respect owner scope, consent and saved revision',async()=>{
+ const {ids,tables,request,people}=await fixture(),{ONLINE_CARE_SCRIPTS}=await import('../js/onlineCareModel.js');
+ const me=people.find(p=>p.id===ids.staff),today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),online=new Date(Date.parse(today+'T12:00Z')-5*86400000).toISOString().slice(0,10);
+ const device=(await request(ids.staff,'POST',{action:'register',owner_id:ids.staff,name:'Test PC'})).body.device;
+ tables.worker_devices[0].capabilities=['top_zalo'];
+ tables.dashboard_shared_state.push({key:'snapshot',data:{data:[{id:'CARE1',type:'Internet',staff:me.acc,date:online,status:'Bình thường',customer:'Own customer'},{id:'PRIVATE',type:'Internet',staff:'DNG.Vypv',date:online,status:'Bình thường',customer:'Outside'}]}});
+ tables.care_contacts.push({contract_id:'CARE1',phone:'0990000998',consent:true},{contract_id:'PRIVATE',phone:'0990000999',consent:true});
+ const payload={action:'create',id:'55555555-5555-4555-8555-555555555555',owner_id:ids.staff,device_id:device.id,name:'CSKH',channel:'top_zalo',content:'According to NET',repeat_days:0,care_policy:{kind:'online_3_7_10',time:'09:00',scripts:ONLINE_CARE_SCRIPTS}};
+ const task=(await request(ids.staff,'POST',payload)).body.task;
+ assert.equal((await request(ids.outside,'POST',{action:'care_preview',task_id:task.id})).status,403);
+ const preview=await request(ids.lead,'POST',{action:'care_preview',task_id:task.id});assert.equal(preview.status,200);assert.equal(preview.body.events.length,3);assert.equal(preview.body.stats.missed,1);assert.equal(preview.body.events.some(e=>e.contract_id==='PRIVATE'),false);
+ const approval={action:'approve_care',task_id:task.id,revision:1,keys:['CARE1:3']};
+ assert.equal((await request(ids.lead,'POST',approval)).status,403);assert.equal((await request(ids.manager,'POST',{...approval,revision:0})).status,409);
+ assert.equal((await request(ids.staff,'POST',approval)).status,403);assert.equal((await request(ids.manager,'POST',approval)).status,400);assert.equal(tables.worker_runs.length,0);
+ tables.worker_devices[0].capabilities.push('care_top_zalo');const accepted=await request(ids.manager,'POST',approval);assert.equal(accepted.body.queued,1);assert.equal(tables.worker_runs[0].status,'queued');
+ assert.equal((await request(ids.manager,'POST',approval)).body.queued,0);assert.equal(tables.worker_runs.length,1);
+ assert.equal((await request(ids.staff,'POST',{action:'run',task_id:task.id,revision:1,request_id:'66666666-6666-4666-8666-666666666666'})).status,400);
+ tables.care_contacts[0].consent=false;assert.equal((await request(ids.staff,'POST',{action:'care_preview',task_id:task.id})).body.total,0);
+});

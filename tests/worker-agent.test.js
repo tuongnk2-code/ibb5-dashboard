@@ -43,3 +43,15 @@ test('workflow passes output locally in order, stops on failure, and never uploa
   finally{if(child&&child.exitCode===null){child.kill('SIGKILL');await new Promise(r=>child.once('exit',r));}await new Promise(r=>server.close(r));assert.ok(folder.startsWith(join(tmpdir(),'ibb5-worker-test-')));rmSync(folder,{recursive:true,force:true});}
  }
 });
+
+test('customer care requires explicit adapter support and passes one personalized recipient',async()=>{
+ for(const supportsOnlineCare of [false,true]){
+  const folder=mkdtempSync(join(tmpdir(),'ibb5-worker-test-')),marker=join(folder,'sent.txt'),configPath=join(folder,'ibb5-worker.local.json'),adapter=join(folder,'care.mjs');
+  writeFileSync(adapter,`import{writeFileSync}from'node:fs';let raw='';for await(const c of process.stdin)raw+=c;const job=JSON.parse(raw);if(job.care.phone!=='0990000998'||job.care.offset!==7||job.config.content!=='Personalized day 7')process.exit(4);writeFileSync(${JSON.stringify(marker)},'one recipient');console.log(JSON.stringify({status:'succeeded',summary:'Tool confirmed one recipient'}));`);
+  let claimed=false,completion=null,child;
+  const server=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;const body=JSON.parse(raw);let result={run:null,active:null};if(body.action==='poll'&&!claimed){assert.equal(body.capabilities.includes('care_top_zalo'),supportsOnlineCare);claimed=true;result.run={id:'00000000-0000-0000-0000-000000000022',task_snapshot:{name:'Day 7',channel:'top_zalo',config:{content:'Personalized day 7'},care:{phone:'0990000998',offset:7}}};}if(body.action==='complete'){completion=body;result={run:{status:body.status}};}res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));writeFileSync(configPath,JSON.stringify({server:'http://127.0.0.1:'+server.address().port,token:'dw_'+'A'.repeat(43),handlers:{top_zalo:{command:process.execPath,args:[adapter],supportsOnlineCare}}}));
+  try{child=spawn(process.execPath,[resolve('public/digital-worker/worker-agent.mjs'),configPath],{windowsHide:true,stdio:'ignore'});const end=Date.now()+15000;while(!completion){if(Date.now()>end)throw Error('Care timeout');await new Promise(r=>setTimeout(r,50));}assert.equal(completion.status,supportsOnlineCare?'succeeded':'failed');assert.equal(existsSync(marker),supportsOnlineCare);assert.equal(JSON.stringify(completion).includes('0990000998'),false);}
+  finally{if(child&&child.exitCode===null){child.kill('SIGKILL');await new Promise(r=>child.once('exit',r));}await new Promise(r=>server.close(r));assert.ok(folder.startsWith(join(tmpdir(),'ibb5-worker-test-')));rmSync(folder,{recursive:true,force:true});}
+ }
+});

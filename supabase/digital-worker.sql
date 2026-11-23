@@ -41,22 +41,36 @@ create policy worker_runs_api_only on public.worker_runs for all to authenticate
 -- without a paid scheduler and without replaying every missed daily occurrence.
 create or replace function public.claim_worker_run(p_device uuid) returns jsonb
 language plpgsql security invoker set search_path='' as $$
-declare d public.worker_devices%rowtype; t public.worker_tasks%rowtype; r public.worker_runs%rowtype;
+declare d public.worker_devices%rowtype; t public.worker_tasks%rowtype; r public.worker_runs%rowtype; care_row record;
 begin
  select * into d from public.worker_devices where id=p_device for update;
  if not found or d.revoked then raise exception 'Device unavailable'; end if;
  update public.worker_devices set last_seen_at=now() where id=d.id;
  if exists(select 1 from public.worker_runs where device_id=d.id and status='running') then return null; end if;
  for t in select * from public.worker_tasks where device_id=d.id and owner_id=d.owner_id and enabled and next_run_at<=now() and channel=any(d.capabilities) and (not(config?'steps') or ('workflow_v1'=any(d.capabilities) and not exists(select 1 from jsonb_array_elements(config->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) for update loop
-   if not exists(select 1 from public.worker_runs where task_id=t.id and status in('queued','running')) then
+   if t.config->'care_policy'->>'kind'='online_3_7_10' then
+     if ('care_'||t.channel)=any(d.capabilities) and (now() at time zone 'Asia/Ho_Chi_Minh')::time>=(t.config->'care_policy'->>'time')::time then
+       for care_row in select distinct value->>'id' as contract_id,((now() at time zone 'Asia/Ho_Chi_Minh')::date-public.worker_online_date(value->>'date'))::integer as day_offset
+         from public.dashboard_shared_state s cross join lateral jsonb_array_elements(s.data->'data') join public.profiles p on p.id=t.owner_id join public.care_contacts cc on cc.contract_id=value->>'id' and cc.consent and cc.phone<>''
+         where s.key='snapshot' and value->>'type'='Internet' and lower(trim(value->>'staff'))=lower(trim(p.acc))
+         and ((now() at time zone 'Asia/Ho_Chi_Minh')::date-public.worker_online_date(value->>'date')) in(3,7,10)
+         and lower(regexp_replace(trim(coalesce(value->>'status','')),'\s+',' ','g'))<>'đã chấm dứt hợp đồng'
+         and not exists(select 1 from public.worker_runs done where done.task_snapshot->'care'->>'kind'='online_3_7_10' and (done.task_snapshot->'care'->>'contract_id'=value->>'id' or done.task_snapshot->'care'->>'phone'=cc.phone) and done.task_snapshot->'care'->>'offset'=(((now() at time zone 'Asia/Ho_Chi_Minh')::date-public.worker_online_date(value->>'date'))::integer)::text) limit 500
+       loop perform public.enqueue_online_care(t.id,care_row.contract_id,care_row.day_offset,false,null); end loop;
+     end if;
+     update public.worker_tasks set next_run_at=now()+interval '15 minutes' where id=t.id;
+   elsif not exists(select 1 from public.worker_runs where task_id=t.id and status in('queued','running')) then
      insert into public.worker_runs(task_id,device_id,owner_id,request_id,task_snapshot)
        values(t.id,d.id,t.owner_id,'schedule:'||t.next_run_at::text,jsonb_build_object('name',t.name,'channel',t.channel,'config',t.config)) on conflict(task_id,request_id) do nothing;
      update public.worker_tasks set next_run_at=case when t.repeat_days=0 then null else t.next_run_at + (floor(extract(epoch from(now()-t.next_run_at))/(86400*t.repeat_days))+1)*t.repeat_days*interval '1 day' end,
        enabled=t.repeat_days<>0,revision=revision+1,updated_at=now() where id=t.id;
    end if;
  end loop;
+ update public.worker_runs set status='cancelled',summary='Mốc chăm sóc đã quá hoặc KH không còn đủ điều kiện. Cần kiểm tra và duyệt chăm bù nếu phù hợp.',finished_at=now()
+ where device_id=d.id and status='queued' and task_snapshot->'care'->>'kind'='online_3_7_10'
+ and (not public.worker_care_still_eligible(owner_id,task_snapshot) or ((task_snapshot->'care'->>'due_date')::date<(now() at time zone 'Asia/Ho_Chi_Minh')::date and not coalesce((task_snapshot->'care'->>'approved_late')::boolean,false)));
  select * into r from public.worker_runs where device_id=d.id and status='queued' and not cancel_requested
-   and task_snapshot->>'channel'=any(d.capabilities) and (not((task_snapshot->'config')?'steps') or ('workflow_v1'=any(d.capabilities) and not exists(select 1 from jsonb_array_elements(task_snapshot->'config'->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) order by created_at,id limit 1 for update skip locked;
+   and (not((task_snapshot)?'care') or ('care_'||(task_snapshot->>'channel'))=any(d.capabilities)) and task_snapshot->>'channel'=any(d.capabilities) and (not((task_snapshot->'config')?'steps') or ('workflow_v1'=any(d.capabilities) and not exists(select 1 from jsonb_array_elements(task_snapshot->'config'->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) order by created_at,id limit 1 for update skip locked;
  if not found then return null; end if;
  update public.worker_runs set status='running',started_at=now() where id=r.id returning * into r;
  return to_jsonb(r);
@@ -70,6 +84,7 @@ language plpgsql security invoker set search_path='' as $$
 declare t public.worker_tasks%rowtype; d public.worker_devices%rowtype; r public.worker_runs%rowtype;
 begin
  select * into strict t from public.worker_tasks where id=p_task for update;
+ if t.config?'care_policy' then raise exception 'Dùng Bật lịch CSKH hoặc duyệt mốc chăm bù; không chạy chung cả danh sách.'; end if;
  select * into d from public.worker_devices where id=t.device_id;
  if not found or d.revoked or d.owner_id<>t.owner_id or not(t.channel=any(d.capabilities)) or ((t.config?'steps') and (not('workflow_v1'=any(d.capabilities)) or exists(select 1 from jsonb_array_elements(t.config->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) then raise exception 'Tool chưa kết nối cho kênh này.'; end if;
  select * into r from public.worker_runs where task_id=t.id and request_id=p_request;
