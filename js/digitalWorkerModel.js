@@ -1,5 +1,6 @@
 import { canSeeReport } from './dailyReportModel.js';
-export const WORKER_CHANNELS={meta_facebook:'Meta Facebook',top_zalo:'Top Zalo',chot_care:'Chốt Care',sms_akabiz:'SMS AkaBiz',fbnumber:'FBnumber',fb_akabiz:'FB AkaBiz',facebook_search:'Lọc dữ liệu Facebook',zalo_campaign:'Chiến dịch Zalo',facebook_post:'Đăng bài Fanpage',email_campaign:'Chiến dịch email',other:'Quy trình khác'};
+export const WORKER_CHANNELS={meta_facebook:'Meta Facebook',top_zalo:'Top Zalo',chot_care:'Chốt Care',sms_akabiz:'SMS AkaBiz',fbnumber:'FBnumber',fb_akabiz:'FB AkaBiz',fpt_sop:'FPT SOP',facebook_search:'Lọc dữ liệu Facebook',zalo_campaign:'Chiến dịch Zalo',facebook_post:'Đăng bài Fanpage',email_campaign:'Chiến dịch email',other:'Quy trình khác'};
+export const WORKER_CHANNEL_URLS={fpt_sop:'https://portal-sop.fpt.vn/trang-chu'};
 export const WORKER_STATES={queued:'Chờ máy thực hiện',running:'Đang thực hiện',succeeded:'Đã hoàn tất',failed:'Cần kiểm tra',cancelled:'Đã dừng'};
 export const canViewWorker=(caller,owner)=>!!owner&&canSeeReport(caller,owner);
 export const canManageWorker=(caller,owner)=>!!owner&&(caller.role==='manager'||caller.id===owner.id);

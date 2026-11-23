@@ -9,7 +9,7 @@ create index worker_devices_owner on public.worker_devices(owner_id);
 create table public.worker_tasks (
  id uuid primary key, owner_id uuid not null references public.profiles(id), created_by uuid not null references public.profiles(id),
  device_id uuid references public.worker_devices(id), name text not null check(length(name) between 1 and 120),
- channel text not null check(channel in ('meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','facebook_search','zalo_campaign','facebook_post','email_campaign','other')),
+ channel text not null check(channel in ('meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','fpt_sop','facebook_search','zalo_campaign','facebook_post','email_campaign','other')),
  config jsonb not null check(jsonb_typeof(config)='object'),
  scheduled_at timestamptz, next_run_at timestamptz, repeat_days integer not null default 0 check(repeat_days in(0,1,7)),
  enabled boolean not null default false, revision integer not null default 1, created_at timestamptz not null default now(), updated_at timestamptz not null default now()

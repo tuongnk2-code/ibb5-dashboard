@@ -24,7 +24,7 @@ Ky thuat vien cau hinh handlers tren chinh may tinh. Vi du:
 }
 Duong dan tren chi la vi du, khong phai mot adapter da duoc cung cap.
 Khong lay command/args tu yeu cau tu xa. Chi su dung adapter da kiem tra tren may.
-Kenh thuc te: meta_facebook, top_zalo, chot_care, sms_akabiz, fbnumber, fb_akabiz.
+Kenh thuc te: meta_facebook, top_zalo, chot_care, sms_akabiz, fbnumber, fb_akabiz, fpt_sop.
 Kenh chung: facebook_search, zalo_campaign, facebook_post, email_campaign, other.
 Moi kenh can adapter rieng, khong tu coi cac tool khac nhau la cung mot giao dien.
 
@@ -57,3 +57,6 @@ Tam dung lich khong dung luot da giao; dung Yeu cau dung tai Ket qua.
 CHI PHI
 Bo ket noi khong co phi ban quyen rieng. Khong tu mua goi, nap tien, chay
 quang cao, hay kich hoat dich vu tra phi. Phi ha tang tinh theo su dung thuc te.
+
+FPT SOP: https://portal-sop.fpt.vn/trang-chu
+Can adapter va phien dang nhap hop le truoc khi tu dong thuc hien.

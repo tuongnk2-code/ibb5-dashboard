@@ -54,9 +54,13 @@ No complete status is inferred merely from enqueueing a task.
 
 The controller distinguishes Meta Facebook (`meta_facebook`), Top Zalo (`top_zalo`),
 Chốt Care (`chot_care`), SMS AkaBiz (`sms_akabiz`), FBnumber (`fbnumber`), and
-FB AkaBiz (`fb_akabiz`). These names are dispatch keys, not proof that a tool is
+FB AkaBiz (`fb_akabiz`), and FPT SOP (`fpt_sop`). These names are dispatch keys, not proof that a tool is
 connected. Each must have a locally configured handler before it can execute.
 Chốt Care is at https://care.chotnhanh.vn/; its authenticated workflow and the
 installed versions of the remaining tools must be inspected before adapters are
 implemented. No account passwords, cookies, or customer chat identifiers are
 shipped in this project.
+
+FPT SOP entry point: https://portal-sop.fpt.vn/trang-chu. The channel remains
+unavailable until its authorized local adapter is configured; registration does
+not imply login access or that SOP actions are already automated.

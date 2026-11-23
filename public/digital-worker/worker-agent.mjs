@@ -6,7 +6,7 @@ const configPath=resolve(process.argv[2]||'ibb5-worker.local.json');
 const config=JSON.parse(readFileSync(configPath,'utf8')),server=new URL(config.server);
 if(server.protocol!=='https:'&&!['127.0.0.1','localhost'].includes(server.hostname))throw Error('Máy chủ phải dùng HTTPS.');
 if(!/^dw_[A-Za-z0-9_-]{43}$/.test(config.token||''))throw Error('Tệp kết nối không hợp lệ.');
-const channelNames=['meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','facebook_search','zalo_campaign','facebook_post','email_campaign','other'];
+const channelNames=['meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','fpt_sop','facebook_search','zalo_campaign','facebook_post','email_campaign','other'];
 const handlers=Object.fromEntries(Object.entries(config.handlers||{}).filter(([key,value])=>channelNames.includes(key)&&value&&typeof value.command==='string'&&value.command&&Array.isArray(value.args)&&value.args.every(arg=>typeof arg==='string')&&value.enabled!==false));
 let wake=null;
 const capabilities=Object.keys(handlers),journalPath=configPath+'.journal',delay=ms=>new Promise(resolveDelay=>{const timer=setTimeout(()=>{wake=null;resolveDelay();},ms);wake=()=>{clearTimeout(timer);wake=null;resolveDelay();};});
