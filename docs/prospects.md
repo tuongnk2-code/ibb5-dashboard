@@ -30,3 +30,17 @@ Verification: `tests/prospects.test.cjs`, `tests/prospects.browser.cjs`, and the
 transaction-only `tests/prospects.rollback.sql`. The SQL test inserts synthetic
 records and rolls back, exercising exclusive receipt, current owner checks,
 manager reassignment, and atomic history. Never remove the rollback transaction.
+
+Care/report additions: Source is removed from intake and visible contact details;
+existing source values are preserved when editing older records. The process
+subtitle and private-account badge are hidden without changing authorization.
+Care 1, Care 2 and the five business outcomes are editable by the current handler
+or manager and recorded in atomic history. Each changed care/result field gets a
+server timestamp; unrelated saves preserve that field's previous timestamp.
+Existing records have no invented historical care dates.
+The CSV button refreshes authorized data and exports all inbox customers, ignoring
+current search/filter/pagination. It includes both care notes, individual update
+timestamps, outcome, owner, callback and latest update; cells are quoted and
+formula-prefixed text is escaped. CSV is UTF-8 with BOM for Excel.
+Apply prospects.sql, prospect-care-report.sql, prospect-care-timestamps.sql in
+order for a fresh setup. The transaction-only care SQL test always rolls back.

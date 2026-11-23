@@ -19,3 +19,13 @@ test('phones, followups, closing and summary stats use actual stored states',asy
  assert.equal(cleanProspectUpdate({stage:'won',note:'Đã chốt',next_followup_at:'2026-11-25T09:00Z'}).next_followup_at,null);
  assert.deepEqual(prospectStats([{stage:'new'},{stage:'received',next_followup_at:'2026-11-22T09:00Z'},{stage:'won',next_followup_at:'2026-11-22T09:00Z'}],Date.parse('2026-11-23T00:00Z')),{total:3,new:1,working:1,due:1,won:1});
 });
+
+test('care fields validate results and CSV includes all customers with safe cells and timestamps',async()=>{
+ const {cleanProspectUpdate,prospectCsv,PROSPECT_RESULTS}=await import('../js/prospectModel.js');
+ assert.equal(Object.keys(PROSPECT_RESULTS).length,5);
+ const update=cleanProspectUpdate({stage:'appointment',note:'x',care_1:'Tư vấn',care_2:'Khảo sát',result:'signed',next_followup_at:'2026-11-25T09:00:00+07:00'});
+ assert.equal(update.stage,'won');assert.equal(update.next_followup_at,null);assert.equal(update.care_1,'Tư vấn');
+ assert.throws(()=>cleanProspectUpdate({stage:'received',note:'x',result:'invalid'}));assert.throws(()=>cleanProspectUpdate({stage:'received',note:'x',care_1:'x'.repeat(3001)}));
+ const csv=prospectCsv([{name:'=CMD()',phone:'0990000001',care_1:'Đã gọi, KH hẹn',care_1_at:'2026-11-23T02:01:02Z',care_2:'Lắp Camera',result:'other_provider',result_at:'2026-11-23T03:00:00Z'},{name:'Khách B',result:'unsigned'}],[]);
+ assert.ok(csv.startsWith('\ufeff'));assert.match(csv,/Care lần 1/);assert.match(csv,/Cập nhật Care lần 2/);assert.match(csv,/Đã lắp bên khác/);assert.match(csv,/09:01:02/);assert.match(csv,/23\/11\/2026/);assert.ok(csv.includes("'=CMD()"));assert.match(csv,/Khách B/);
+});
