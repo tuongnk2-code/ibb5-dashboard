@@ -38,9 +38,12 @@ Care 1, Care 2 and the five business outcomes are editable by the current handle
 or manager and recorded in atomic history. Each changed care/result field gets a
 server timestamp; unrelated saves preserve that field's previous timestamp.
 Existing records have no invented historical care dates.
-The CSV button refreshes authorized data and exports all inbox customers, ignoring
-current search/filter/pagination. It includes both care notes, individual update
-timestamps, outcome, owner, callback and latest update; cells are quoted and
-formula-prefixed text is escaped. CSV is UTF-8 with BOM for Excel.
+The dashboard report is now an inline table with all 19 columns: customer and
+contact details, owner, workflow status, both care notes and their timestamps,
+outcome and its timestamp, callback, initial note, latest note, creation/update
+times, and profile actions. All matching rows are rendered without a 50-row limit.
+Filters and search apply to the table, which scrolls horizontally on both desktop
+and mobile with sticky column headings and customer name. The CSV download button
+was removed; existing CSV model helpers remain for compatibility.
 Apply prospects.sql, prospect-care-report.sql, prospect-care-timestamps.sql in
 order for a fresh setup. The transaction-only care SQL test always rolls back.
