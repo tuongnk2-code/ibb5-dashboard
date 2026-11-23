@@ -3,3 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Private machine credentials and execution journals
+ibb5-worker.local.json*
+*.local.json.journal*
