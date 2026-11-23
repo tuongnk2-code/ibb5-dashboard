@@ -50,3 +50,11 @@ test('API isolates owners, hashes device credentials, requires capability and ac
  caller=people[1];assert.equal((await invoke()).body.tasks.length,1);assert.equal((await invoke({action:'pause',task_id:task.id,revision:1})).code,403);
  store.worker_devices[0].revoked=true;assert.equal((await invoke({action:'poll'},'Bearer '+token)).code,403);
 });
+
+test('free-form planning requires configured AI, uses only controllable owners and performs no writes',async()=>{
+ const {store,admin}=database();let caller=people[1],calls=0;const oldKey=process.env.OPENAI_API_KEY;delete process.env.OPENAI_API_KEY;
+ const handler=createDigitalWorkerHandler(async()=>({admin,caller}),()=>admin,async context=>{calls++;assert.deepEqual(context.people.map(p=>p.id),[caller.id]);return {intent:'clarify',summary:'Cần bổ sung',questions:['Nội dung gửi là gì?']};});
+ async function invoke(){const response={setHeader(){},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};await handler({method:'POST',headers:{},body:{action:'plan',message:'Gửi chăm khách ngày mai',history:[]}},response);return response;}
+ try{assert.equal((await invoke()).code,503);assert.equal(calls,0);process.env.OPENAI_API_KEY='test-only';const result=await invoke();assert.equal(result.code,200);assert.equal(result.body.plan.intent,'clarify');assert.equal(store.worker_tasks.length,0);assert.equal(store.worker_runs.length,0);}
+ finally{if(oldKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=oldKey;}
+});

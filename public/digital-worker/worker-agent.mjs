@@ -9,7 +9,7 @@ if(!/^dw_[A-Za-z0-9_-]{43}$/.test(config.token||''))throw Error('Tệp kết n�
 const channelNames=['meta_facebook','top_zalo','chot_care','sms_akabiz','fbnumber','fb_akabiz','fpt_sop','facebook_search','zalo_campaign','facebook_post','email_campaign','other'];
 const handlers=Object.fromEntries(Object.entries(config.handlers||{}).filter(([key,value])=>channelNames.includes(key)&&value&&typeof value.command==='string'&&value.command&&Array.isArray(value.args)&&value.args.every(arg=>typeof arg==='string')&&value.enabled!==false));
 let wake=null;
-const capabilities=Object.keys(handlers),journalPath=configPath+'.journal',delay=ms=>new Promise(resolveDelay=>{const timer=setTimeout(()=>{wake=null;resolveDelay();},ms);wake=()=>{clearTimeout(timer);wake=null;resolveDelay();};});
+const capabilities=[...new Set([...Object.keys(handlers),...(Object.keys(handlers).some(key=>key!=='other')?['other','workflow_v1']:[])])],journalPath=configPath+'.journal',delay=ms=>new Promise(resolveDelay=>{const timer=setTimeout(()=>{wake=null;resolveDelay();},ms);wake=()=>{clearTimeout(timer);wake=null;resolveDelay();};});
 let journal=existsSync(journalPath)?JSON.parse(readFileSync(journalPath,'utf8')):null,stopping=false,child=null;
 function remember(value){const temporary=journalPath+'.tmp';writeFileSync(temporary,JSON.stringify(value),{mode:0o600});renameSync(temporary,journalPath);journal=value;}
 async function api(body){const response=await fetch(new URL('/api/digital-worker',server),{method:'POST',headers:{Authorization:'Bearer '+config.token,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(25000)});const result=await response.json();if(!response.ok){const error=Error(result.error||'Không kết nối được IBB5');error.status=response.status;throw error;}return result;}
@@ -17,13 +17,12 @@ function stopChild(){if(!child)return;const processToStop=child;if(process.platf
 async function flush(){if(!journal)return;const outcome=journal.outcome||{status:'failed',summary:'Chương trình kết nối bị gián đoạn. Không tự chạy lại; kiểm tra tool vì có thể đã thực hiện một phần.'};await api({action:'complete',run_id:journal.run_id,...outcome});remember(null);}
 async function execute(run){
  remember({run_id:run.id});
- const handler=handlers[run.task_snapshot.channel];
+ const steps=run.task_snapshot.config?.steps;
  let cancelled=false,uncertain=false,heartbeatBusy=false,finished=false;
  const heartbeat=setInterval(async()=>{if(heartbeatBusy)return;heartbeatBusy=true;try{const response=await api({action:'heartbeat',capabilities});if(!finished&&response.active?.id===run.id&&response.active.cancel_requested){cancelled=true;stopChild();}}catch(error){if(!finished&&[401,403].includes(error.status)){uncertain=true;stopping=true;stopChild();}}finally{heartbeatBusy=false;}},15000);
  let outcome;
  try{
-  if(!handler)throw Error('Chưa cấu hình bộ kết nối cho kênh này.');
-  outcome=await new Promise((resolveResult,reject)=>{
+  async function runStep(snapshot,index,previous){const handler=handlers[snapshot.channel];if(!handler)throw Error('Missing tool');return await new Promise((resolveResult,reject)=>{
    let output='',tooLarge=false,timedOut=false;
    const timeoutMs=Math.max(10000,Math.min(Number(handler.timeoutSeconds||600)*1000,3600000));
    child=spawn(handler.command,handler.args,{cwd:handler.cwd?resolve(dirname(configPath),handler.cwd):dirname(configPath),shell:false,windowsHide:true,stdio:['pipe','pipe','pipe']});
@@ -37,10 +36,15 @@ async function execute(run){
     if(cancelled||stopping)return resolveResult({status:'cancelled',summary:'Đã yêu cầu dừng bộ kết nối. Kiểm tra tại tool; các thao tác đã thực hiện không được hoàn tác.'});
     if(timedOut||tooLarge)return resolveResult({status:'failed',summary:timedOut?'Tool vượt thời gian cho phép. Kiểm tra trước khi chạy lại.':'Kết quả tool vượt giới hạn. Kiểm tra trước khi chạy lại.'});
     if(code!==0)return resolveResult({status:'failed',summary:'Bộ kết nối báo lỗi. Kiểm tra tool và phiên đăng nhập trước khi chạy lại.'});
-    try{const result=JSON.parse(output);if(!['succeeded','failed','cancelled'].includes(result.status)||typeof result.summary!=='string'||!result.summary.trim())throw Error('Invalid result');resolveResult({status:result.status,summary:result.summary.slice(0,2000)});}catch{resolveResult({status:'failed',summary:'Tool chưa trả về kết quả xác nhận hợp lệ; chưa ghi nhận thành công.'});}
+    try{const result=JSON.parse(output);if(!['succeeded','failed','cancelled'].includes(result.status)||typeof result.summary!=='string'||!result.summary.trim())throw Error('Invalid result');resolveResult({status:result.status,summary:result.summary.slice(0,2000),output:result.output??null});}catch{resolveResult({status:'failed',summary:'Tool chưa trả về kết quả xác nhận hợp lệ; chưa ghi nhận thành công.'});}
    });
-   child.stdin.end(JSON.stringify({run_id:run.id,idempotency_key:run.id,...run.task_snapshot}));
-  });
+   child.stdin.end(JSON.stringify({run_id:run.id,idempotency_key:index==null?run.id:run.id+':'+index,...snapshot,previous}));
+  });}
+  if(steps){
+   if(!Array.isArray(steps)||steps.length<1||steps.length>6||steps.some(step=>step.channel==='other'||!handlers[step.channel]))throw Error('Missing workflow tool');
+   let previous=null,completed=0;
+   for(let index=0;index<steps.length;index++){if(cancelled||stopping){outcome={status:'cancelled',summary:'Đã dừng sau '+completed+' bước. Kiểm tra tool trước khi chạy lại.'};break;}const step=steps[index];const result=await runStep({name:step.name,channel:step.channel,config:{keywords:step.keywords,sources:step.sources,content:step.content}},index,previous);if(result.status!=='succeeded'){outcome={status:result.status,summary:'Dừng tại bước '+(index+1)+' / '+steps.length+'. '+result.summary};break;}completed++;previous=result.output;outcome={status:'succeeded',summary:'Đã hoàn tất '+completed+' / '+steps.length+' bước. '+result.summary};}
+  }else{const result=await runStep(run.task_snapshot,null,null);outcome={status:result.status,summary:result.summary};}
  }catch{outcome={status:'failed',summary:'Không khởi chạy được bộ kết nối. Kiểm tra cấu hình trên máy.'};}
  finally{finished=true;clearInterval(heartbeat);}
  remember({run_id:run.id,outcome});await flush();

@@ -1,4 +1,5 @@
 const assert=require('node:assert/strict');
+process.env.OPENAI_API_KEY='test-only';
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const {fixture}=require('./digital-worker-fixture.cjs');
 (async()=>{
@@ -6,7 +7,7 @@ const {fixture}=require('./digital-worker-fixture.cjs');
  const server=await createServer({server:{host:'127.0.0.1',port:5272,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
  try{for(const [width,role] of [[390,'staff'],[320,'staff'],[1440,'manager']]){
-  const {people,tables,request,ids}=await fixture(),me=people.find(p=>p.id===ids[role]),page=await browser.newPage({viewport:{width,height:950}}),errors=[];
+  const {people,tables,request,ids}=await fixture({planner:async context=>context.message.includes('thiếu')?{intent:'clarify',summary:'Cần bổ sung',questions:['Nội dung gửi là gì?']}:{intent:'create',summary:'Lọc Facebook rồi chuẩn bị Top Zalo',questions:[],owner_id:context.caller.id,name:'Quy trình bằng lời',channel:'other',config:{content:'Lọc rồi tạo bản nháp, chưa gửi',keywords:'nhà mới',sources:'Nhóm đã chọn'},scheduled_at:'2027-01-02T08:00:00+07:00',repeat_days:1,steps:[{name:'Lọc Facebook',channel:'meta_facebook',keywords:'nhà mới',sources:'Nhóm đã chọn',content:'Lọc nguồn được phép'},{name:'Chuẩn bị Top Zalo',channel:'top_zalo',keywords:'',sources:'Đầu ra bước 1',content:'Chuẩn bị bản nháp, chưa gửi'}]}}),me=people.find(p=>p.id===ids[role]),page=await browser.newPage({viewport:{width,height:950}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
   await page.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:`export async function getSession(){return {access_token:'${me.id}'}};export async function signOut(){};export async function callAdminUsersApi(){return {profiles:[]}}`}));
   await page.route('**/js/api.js',r=>r.fulfill({contentType:'application/javascript',body:'import * as data from "/js/mockData.sample.js";export async function fetchDashboardData(){return data}'}));
@@ -24,6 +25,11 @@ const {fixture}=require('./digital-worker-fixture.cjs');
   await root.locator('[data-action="results"]').click();assert.match(await root.locator('.dw-body').textContent(),/Chờ máy thực hiện/);await root.locator('[data-action="cancel"]').click();await confirm.locator('[data-dw="confirm"]').click();await confirm.waitFor({state:'hidden'});assert.equal(tables.worker_runs[0].status,'cancelled');
   await root.locator('[data-tab="tasks"]').click();await root.locator('[data-action="enable"]').click();await confirm.locator('[data-dw="confirm"]').click();await confirm.waitFor({state:'hidden'});assert.equal(tables.worker_tasks[0].enabled,true);
   await root.locator('[data-action="pause"]').click();await confirm.locator('[data-dw="confirm"]').click();await confirm.waitFor({state:'hidden'});assert.equal(tables.worker_tasks[0].enabled,false);
+  if(width===390){
+   await root.locator('#dwCommand').fill('Tạo quy trình còn thiếu nội dung');await root.locator('[data-dw="command"]').click();await page.waitForFunction(()=>document.querySelector('.dw-message').textContent.includes('Nội dung gửi là gì?'));assert.equal(tables.worker_tasks.length,1);
+   await root.locator('#dwCommand').fill('Mai 8 giờ lọc Facebook theo nhà mới rồi chuẩn bị Top Zalo');await root.locator('[data-dw="command"]').click();await form.waitFor();assert.equal(tables.worker_tasks.length,1);assert.equal(await form.locator('[data-step-content]').count(),2);assert.equal(await form.locator('[name="channel"]').inputValue(),'other');assert.equal(await form.locator('[name="name"]').inputValue(),'Quy trình bằng lời');
+   await form.locator('[data-step-content="1"]').fill('Nội dung đã chỉnh, chưa gửi');await form.locator('[type="submit"]').click();await form.waitFor({state:'hidden'});assert.equal(tables.worker_tasks.length,2);assert.equal(tables.worker_tasks[1].config.steps[1].content,'Nội dung đã chỉnh, chưa gửi');assert.equal(tables.worker_tasks[1].enabled,false);assert.equal(tables.worker_runs.length,1);
+  }
   assert.ok(await root.evaluate(el=>el.scrollWidth<=el.clientWidth+2),'worker fits phone width');assert.deepEqual(errors,[]);
   if(process.env.WORKER_SCREENSHOTS){await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:process.env.WORKER_SCREENSHOTS+'/digital-worker-'+width+'.png',fullPage:false});}
   await page.close();

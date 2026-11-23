@@ -29,3 +29,17 @@ test('local runner executes a fixed adapter once and retries only its acknowledg
   assert.equal(completions,2);assert.equal(readFileSync(counter,'utf8'),'once');assert.equal(claimed,true);
  }finally{await stop();await new Promise(r=>server.close(r));assert.ok(folder.startsWith(join(tmpdir(),'ibb5-worker-test-')));rmSync(folder,{recursive:true,force:true});}
 });
+
+test('workflow passes output locally in order, stops on failure, and never uploads intermediate data',async()=>{
+ for(const failFirst of [false,true]){
+  const folder=mkdtempSync(join(tmpdir(),'ibb5-worker-test-')),log=join(folder,'steps.txt'),configPath=join(folder,'ibb5-worker.local.json'),adapter=join(folder,'steps.mjs');
+  writeFileSync(adapter,`import{appendFileSync}from'node:fs';let raw='';for await(const c of process.stdin)raw+=c;const task=JSON.parse(raw);const first=task.channel==='meta_facebook';if(!first&&task.previous?.marker!=='PRIVATE_LOCAL')process.exit(4);appendFileSync(${JSON.stringify(log)},first?'A':'B');console.log(JSON.stringify({status:first&&${failFirst}?'failed':'succeeded',summary:first?'Scan confirmed':'Prepared confirmed',output:{marker:'PRIVATE_LOCAL'}}));`);
+  let claimed=false,completion=null,child;
+  const run={id:'00000000-0000-0000-0000-000000000021',task_snapshot:{name:'Workflow',channel:'other',config:{steps:[{name:'Scan',channel:'meta_facebook',content:'Read allowed source'},{name:'Prepare',channel:'top_zalo',content:'Prepare only'}]}}};
+  const server=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;const body=JSON.parse(raw);let result={run:null,active:null};if(body.action==='poll'&&!claimed){assert.ok(body.capabilities.includes('workflow_v1'));claimed=true;result.run=run;}if(body.action==='complete'){completion=body;result={run:{status:body.status}};}res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  writeFileSync(configPath,JSON.stringify({server:'http://127.0.0.1:'+server.address().port,token:'dw_'+'A'.repeat(43),pollSeconds:15,handlers:{meta_facebook:{command:process.execPath,args:[adapter]},top_zalo:{command:process.execPath,args:[adapter]}}}));
+  try{child=spawn(process.execPath,[resolve('public/digital-worker/worker-agent.mjs'),configPath],{windowsHide:true,stdio:'ignore'});const end=Date.now()+15000;while(!completion){if(Date.now()>end)throw Error('Workflow timeout');await new Promise(r=>setTimeout(r,50));}assert.equal(readFileSync(log,'utf8'),failFirst?'A':'AB');assert.equal(completion.status,failFirst?'failed':'succeeded');assert.equal(JSON.stringify(completion).includes('PRIVATE_LOCAL'),false);}
+  finally{if(child&&child.exitCode===null){child.kill('SIGKILL');await new Promise(r=>child.once('exit',r));}await new Promise(r=>server.close(r));assert.ok(folder.startsWith(join(tmpdir(),'ibb5-worker-test-')));rmSync(folder,{recursive:true,force:true});}
+ }
+});

@@ -39,7 +39,7 @@ create policy worker_runs_api_only on public.worker_runs for all to authenticate
 
 -- The device poll is also the scheduler: schedules work when the PC is available,
 -- without a paid scheduler and without replaying every missed daily occurrence.
-create function public.claim_worker_run(p_device uuid) returns jsonb
+create or replace function public.claim_worker_run(p_device uuid) returns jsonb
 language plpgsql security invoker set search_path='' as $$
 declare d public.worker_devices%rowtype; t public.worker_tasks%rowtype; r public.worker_runs%rowtype;
 begin
@@ -47,7 +47,7 @@ begin
  if not found or d.revoked then raise exception 'Device unavailable'; end if;
  update public.worker_devices set last_seen_at=now() where id=d.id;
  if exists(select 1 from public.worker_runs where device_id=d.id and status='running') then return null; end if;
- for t in select * from public.worker_tasks where device_id=d.id and owner_id=d.owner_id and enabled and next_run_at<=now() and channel=any(d.capabilities) for update loop
+ for t in select * from public.worker_tasks where device_id=d.id and owner_id=d.owner_id and enabled and next_run_at<=now() and channel=any(d.capabilities) and (not(config?'steps') or ('workflow_v1'=any(d.capabilities) and not exists(select 1 from jsonb_array_elements(config->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) for update loop
    if not exists(select 1 from public.worker_runs where task_id=t.id and status in('queued','running')) then
      insert into public.worker_runs(task_id,device_id,owner_id,request_id,task_snapshot)
        values(t.id,d.id,t.owner_id,'schedule:'||t.next_run_at::text,jsonb_build_object('name',t.name,'channel',t.channel,'config',t.config)) on conflict(task_id,request_id) do nothing;
@@ -56,7 +56,7 @@ begin
    end if;
  end loop;
  select * into r from public.worker_runs where device_id=d.id and status='queued' and not cancel_requested
-   and task_snapshot->>'channel'=any(d.capabilities) order by created_at,id limit 1 for update skip locked;
+   and task_snapshot->>'channel'=any(d.capabilities) and (not((task_snapshot->'config')?'steps') or ('workflow_v1'=any(d.capabilities) and not exists(select 1 from jsonb_array_elements(task_snapshot->'config'->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) order by created_at,id limit 1 for update skip locked;
  if not found then return null; end if;
  update public.worker_runs set status='running',started_at=now() where id=r.id returning * into r;
  return to_jsonb(r);
@@ -65,13 +65,13 @@ revoke all on function public.claim_worker_run(uuid) from public,anon,authentica
 grant execute on function public.claim_worker_run(uuid) to service_role;
 
 -- Task locking serializes manual runs, pause and schedule claims.
-create function public.enqueue_worker_run(p_task uuid,p_request text,p_revision integer) returns jsonb
+create or replace function public.enqueue_worker_run(p_task uuid,p_request text,p_revision integer) returns jsonb
 language plpgsql security invoker set search_path='' as $$
 declare t public.worker_tasks%rowtype; d public.worker_devices%rowtype; r public.worker_runs%rowtype;
 begin
  select * into strict t from public.worker_tasks where id=p_task for update;
  select * into d from public.worker_devices where id=t.device_id;
- if not found or d.revoked or d.owner_id<>t.owner_id or not(t.channel=any(d.capabilities)) then raise exception 'Tool chưa kết nối cho kênh này.'; end if;
+ if not found or d.revoked or d.owner_id<>t.owner_id or not(t.channel=any(d.capabilities)) or ((t.config?'steps') and (not('workflow_v1'=any(d.capabilities)) or exists(select 1 from jsonb_array_elements(t.config->'steps') step where not coalesce(step->>'channel'=any(d.capabilities),false)))) then raise exception 'Tool chưa kết nối cho kênh này.'; end if;
  select * into r from public.worker_runs where task_id=t.id and request_id=p_request;
  if found then return to_jsonb(r); end if;
  if p_revision is distinct from t.revision then raise exception 'Tác vụ đã thay đổi sau khi xem trước. Tải lại và xác nhận lại.'; end if;

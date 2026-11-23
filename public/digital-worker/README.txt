@@ -60,3 +60,11 @@ quang cao, hay kich hoat dich vu tra phi. Phi ha tang tinh theo su dung thuc te.
 
 FPT SOP: https://portal-sop.fpt.vn/trang-chu
 Can adapter va phien dang nhap hop le truoc khi tu dong thuc hien.
+
+QUY TRINH NHIEU BUOC (workflow_v1)
+- Nang cap bo ket noi nay de nhan quy trinh nhieu buoc.
+- Moi buoc can handler rieng. Thieu bat ky kenh nao thi khong nhan viec.
+- Adapter co the tra truong output (JSON nho) de chuyen cho buoc tiep theo.
+- Buoc tiep theo doc truong previous tu stdin. Du lieu nay chi di tren may.
+- Ket qua dua len IBB5 chi gom status va summary, khong gom output trung gian.
+- Dung ngay khi mot buoc loi. Khong tu chay lai cac buoc da lam khi gian doan.

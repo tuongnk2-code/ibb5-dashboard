@@ -1,4 +1,4 @@
-exports.fixture=async()=>{
+exports.fixture=async(options={})=>{
  const {createDigitalWorkerHandler}=await import('../api/digital-worker.js');
  const ids={manager:'11111111-1111-4111-8111-111111111111',staff:'22222222-2222-4222-8222-222222222222',outside:'33333333-3333-4333-8333-333333333333',lead:'44444444-4444-4444-8444-444444444444'};
  const people=[{id:ids.manager,role:'manager',acc:'DNG.Manager',full_name:'Trưởng phòng'},{id:ids.staff,role:'staff',acc:'DNG.ManLM3',full_name:'Lê Minh Mẫn'},{id:ids.outside,role:'staff',acc:'DNG.Vypv',full_name:'Phan Văn Vĩ'},{id:ids.lead,role:'lead',acc:'DNG.HoaNTB6',full_name:'Nguyễn Thị Bích Hòa'}];
@@ -15,7 +15,7 @@ exports.fixture=async()=>{
   let run=tables.worker_runs.find(r=>r.task_id===task.id&&r.request_id===body.p_request);
   if(!run){if(body.p_revision!==task.revision)return {error:{code:'P0001',message:'Tác vụ đã thay đổi'}};if(tables.worker_runs.some(r=>r.task_id===task.id&&['queued','running'].includes(r.status)))return {error:{code:'P0001',message:'Tác vụ đang chạy'}};run={id:require('node:crypto').randomUUID(),task_id:task.id,device_id:device.id,owner_id:task.owner_id,request_id:body.p_request,task_snapshot:{name:task.name,channel:task.channel,config:structuredClone(task.config)},status:'queued',summary:'',created_at:new Date().toISOString()};tables.worker_runs.push(run);}return {data:structuredClone(run)};
  }};
- const handler=createDigitalWorkerHandler(async req=>{const caller=people.find(p=>req.headers.authorization==='Bearer '+p.id);return caller?{caller,admin}:{error:'Thiếu phiên đăng nhập.',status:401};},()=>admin);
+ const handler=createDigitalWorkerHandler(async req=>{const caller=people.find(p=>req.headers.authorization==='Bearer '+p.id);return caller?{caller,admin}:{error:'Thiếu phiên đăng nhập.',status:401};},()=>admin,options.planner);
  const request=async(user,method='GET',body)=>{let status=200,payload;const res={setHeader(){},status(value){status=value;return res;},json(value){payload=value;return res;}};await handler({method,headers:{authorization:'Bearer '+user},body},res);return {status,body:payload};};
  return {ids,people,tables,request};
 };

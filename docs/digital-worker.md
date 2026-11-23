@@ -64,3 +64,25 @@ shipped in this project.
 FPT SOP entry point: https://portal-sop.fpt.vn/trang-chu. The channel remains
 unavailable until its authorized local adapter is configured; registration does
 not imply login access or that SOP actions are already automated.
+
+## Free-form planning and sequential workflows
+
+The authenticated `plan` action reuses the existing server-only OPENAI_API_KEY /
+OPENAI_MODEL configuration. It returns a strict, validated draft and never writes
+or executes a task. Only identities the caller can control are sent to the planner;
+customer data, device credentials, and existing social sessions are not included.
+Missing details lead to follow-up questions. No API key is bundled in the client.
+
+The user reviews/edits owner, steps, keywords, sources, content, device and schedule
+before explicitly saving a paused task. A workflow is one task (`other`) with up
+to six steps. Each step uses a named local adapter. The upgraded runner announces
+`workflow_v1`; both queue creation and claiming require it plus every step channel.
+An older runner cannot accept workflows. Steps run sequentially, passing bounded
+JSON output to the next local adapter through `previous`. Intermediate output is
+not uploaded as a result or persisted in the cloud. The first failure stops the
+workflow. Interruption does not automatically replay completed steps.
+
+Without server AI configuration, the UI explicitly reports that free-form planning
+is unavailable; existing fixed commands and manual task creation remain usable.
+AI-provider tests use mocked responses. No production provider key or tool session
+is created automatically.
