@@ -20,6 +20,13 @@ test('aged follow-up uses strictly more than seven calendar days and the same el
  assert.deepEqual(agedFollowupContracts(rows,notes,'2026-11-18').map(row=>row.id),['EIGHT','INCOMPLETE']);
 });
 
+test('planned cancellation remains available for manager review even after source Online',()=>{
+ const row={id:'PROPOSED',type:'Internet',created:'2026-11-01',date:'2026-11-18'};
+ const note={expected:'',timeSlot:'',action:'Khác',result:'Dự Kiến Hủy',source:'Web',cancelReason:'Cần TP xem xét'};
+ assert.deepEqual(pendingFollowupContracts([row],{PROPOSED:note},'2026-11-20').map(r=>r.id),['PROPOSED']);
+ assert.equal(pendingFollowupContracts([row],{PROPOSED:{...note,cancellationApproved:true}},'2026-11-20').length,0);
+});
+
 test('manager continuation survives every staff update and source Online until manager cancellation',()=>{
  const row={id:'CONTINUE',type:'Internet',created:'2026-11-01',date:'2026-11-18'};
  const note={expected:'2026-11-18',timeSlot:'8h - 10h',action:'Khác',result:'Đã Online',source:'Web',cancelReason:'Lý do ban đầu',processingRequestedAt:'2026-11-17T01:00:00Z',processingRespondedAt:'2026-11-18T01:00:00Z'};

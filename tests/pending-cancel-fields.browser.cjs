@@ -30,12 +30,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
      await form.locator('[name="source"]').selectOption('Web');assert.equal(await form.evaluate(el=>el.checkValidity()),false);await form.locator('[name="cancelReason"]').fill('Khách yêu cầu');assert.equal(await form.evaluate(el=>el.checkValidity()),true);await form.locator('[type="submit"]').click();await page.locator('#pendingMobileEditor').waitFor({state:'hidden'});
     }else{
      await row.locator('.p-result').selectOption(result);
+     assert.equal(await row.locator('.p-manager-decision').count(),1,'both cancellation selections show TP decisions');
+     assert.equal(await row.locator('.p-manager-decision').isDisabled(),true,'save reason before manager review');
      assert.equal(await row.locator('td').nth(4).locator('.p-result').count(),1);assert.equal(await row.locator('.p-date').isVisible(),false);assert.equal(await row.locator('.p-time-slot').isVisible(),false);await row.locator('.p-result').selectOption('Chưa Online');assert.equal(await row.locator('.p-date').evaluate(el=>el.hidden),false);assert.equal(await row.locator('.p-time-slot').evaluate(el=>el.hidden),false);await row.locator('.p-result').selectOption(result);
      await row.locator('.p-note').selectOption('Khác');assert.equal(await row.locator('.p-cancel-reason').isVisible(),true);assert.equal(await row.locator('.p-cancel-reason').evaluate(el=>el.required),true);
      await row.locator('.p-save').click();assert.equal(saved.length,id==='C1'?0:1);assert.match(await row.locator('.pending-validation-message').textContent(),/Nguồn thông tin/);
      await row.locator('.p-source').selectOption('Web');await row.locator('.p-save').click();assert.equal(saved.length,id==='C1'?0:1);assert.match(await row.locator('.pending-validation-message').textContent(),/Lý do hủy\/dự kiến hủy/);await row.locator('.p-cancel-reason').fill('Khách yêu cầu');await row.locator('.p-save').click();await row.locator('.p-save').filter({hasText:'Đã lưu'}).waitFor();
     }
     const last=saved.at(-1);assert.equal(last.id,id);assert.equal(last.expected,'');assert.equal(last.timeSlot,'');assert.equal(last.action,'Khác');assert.equal(last.source,'Web');assert.equal(last.cancelReason,'Khách yêu cầu');
+    if(!mobile)assert.equal(await row.locator('.p-manager-decision').isDisabled(),false,'saved proposed cancellation is ready for manager review');
    }
    assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await ctx.close();
   }

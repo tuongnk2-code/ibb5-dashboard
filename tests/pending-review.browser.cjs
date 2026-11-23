@@ -4,14 +4,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
  const {createServer}=await import('../node_modules/vite/dist/node/index.js');const server=await createServer({server:{host:'127.0.0.1',port:5244,strictPort:true}});await server.listen();
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
- try{for(const [role,width] of [['manager',1440],['manager',390],['staff',390],['lead',390]]){
+ try{for(const [role,width,cancelResult] of [['manager',1440,'Hủy'],['manager',390,'Hủy'],['staff',390,'Hủy'],['lead',390,'Hủy'],['manager',1440,'Dự Kiến Hủy'],['manager',390,'Dự Kiến Hủy'],['staff',390,'Dự Kiến Hủy'],['lead',390,'Dự Kiến Hủy']]){
   const page=await browser.newPage({viewport:{width,height:950}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
-  await page.addInitScript(()=>{
+  await page.addInitScript(cancelResult=>{
    window.IBB5_IMPORTED_DATA=['RETURN','APPROVE'].map(id=>({id,type:'Internet',staff:'DNG.ManLM3',room:'IBB5',created:'2026-11-01',date:'',customer:'Khách '+id}));
-   window.IBB5_PENDING_NOTES=Object.fromEntries(['RETURN','APPROVE'].map(id=>[id,{expected:'',timeSlot:'',action:'Khác',result:'Hủy',source:'Web',cancelReason:'Khách muốn trao đổi lại',updated:'2026-11-16T01:00:00Z'}]));
+   window.IBB5_PENDING_NOTES=Object.fromEntries(['RETURN','APPROVE'].map(id=>[id,{expected:'',timeSlot:'',action:'Khác',result:cancelResult,source:'Web',cancelReason:'Khách muốn trao đổi lại',updated:'2026-11-16T01:00:00Z'}]));
    window.IBB5_SHARED_STATE={notes:window.IBB5_PENDING_NOTES,commitments:{},revisions:{'pending:RETURN':1,'pending:APPROVE':1}};window.reviewCalls=[];
    window.IBB5_SYNC={pending:async(id,values)=>{Object.assign(window.IBB5_PENDING_NOTES[id],values,{processingRespondedAt:new Date().toISOString(),updated:new Date().toISOString()});window.IBB5_SHARED_STATE.revisions['pending:'+id]++;document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:'+id]}}));},continuePending:async(id,revision)=>{window.reviewCalls.push({kind:'continuePending',id,revision});Object.assign(window.IBB5_PENDING_NOTES[id],{result:'Chưa Online',processingRequestedAt:new Date().toISOString(),processingRequestedBy:'manager',processingRespondedAt:null});window.IBB5_SHARED_STATE.revisions['pending:'+id]++;document.dispatchEvent(new CustomEvent('ibb5-shared-updated'));},cancelPending:async(id,revision)=>{window.reviewCalls.push({kind:'cancelPending',id,revision});window.IBB5_PENDING_NOTES[id].cancellationApproved=true;window.IBB5_SHARED_STATE.revisions['pending:'+id]++;document.dispatchEvent(new CustomEvent('ibb5-shared-updated'));}};
-  });
+  },cancelResult);
   await page.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:'export async function getSession(){return {access_token:"test"}};export async function signOut(){};export async function callAdminUsersApi(){return {profiles:[]}}'}));
   await page.route('**/js/api.js',r=>r.fulfill({contentType:'application/javascript',body:'import * as data from "/js/mockData.sample.js";export async function fetchDashboardData(){return data}'}));
   await page.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:`window.IBB5_CURRENT_PROFILE={id:'test',role:'${role}',acc:'DNG.ManLM3'};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';await import('/js/main.js');`}));

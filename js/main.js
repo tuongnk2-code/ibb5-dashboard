@@ -317,7 +317,7 @@ const isHiddenMode=mode=>mode==='hidden'||mode==='hidden-cancelled';
 const pendingDrafts=new Map(),draftFields={expected:'.p-date',timeSlot:'.p-time-slot',action:'.p-note',result:'.p-result',source:'.p-source',cancelReason:'.p-cancel-reason'};
 
 function isFilled(id){return pendingFollowupFilled(notes[id]);}
-function isAutoHidden(row){const asof=el('pendAsOf').value;return !isCancelled(row.id)&&!hasProcessingRequest(notes[row.id])&&validDay(row.created)&&row.created<=asof&&validDay(row.date)&&row.date<=asof&&isFilled(row.id)&&!isCancellationResult(notes[row.id]?.result);}
+function isAutoHidden(row){const asof=el('pendAsOf').value;return !isCancelled(row.id)&&!hasProcessingRequest(notes[row.id])&&validDay(row.created)&&row.created<=asof&&validDay(row.date)&&row.date<=asof&&isFilled(row.id)&&!requiresCancellationReason(notes[row.id]?.result);}
 function unresolved(){const asof=el('pendAsOf').value;return distinct.filter(x=>!isCancelled(x.id)&&x.created&&x.created<=asof&&(!x.date||x.date>asof))}
 function pending(){return pendingFollowupContracts(distinct,notes,el('pendAsOf').value);}
 function status(x){const d=(notes[x.id]||{}).expected,asof=el('pendAsOf').value;if(!d)return 'missing';return d===asof?'due':d<asof?'overdue':'waiting'}
@@ -345,7 +345,7 @@ a=a.filter(x=>{
  if(isHiddenMode(mode))return true;
  if(mode==='all')return true;
  if(mode==='unupdated')return !!x.created&&x.created<=asof&&!String(notes[x.id]?.result||'').trim();
- if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&isCancellationResult(notes[x.id]?.result);
+ if(mode==='awaiting-cancellation')return !!x.created&&x.created<=asof&&requiresCancellationReason(notes[x.id]?.result);
  if(mode==='continue-processing')return !!x.created&&x.created<=asof&&hasProcessingRequest(notes[x.id]);
  // Specific pending views exclude contracts already Online, including incomplete follow-ups found by search.
  if(!x.created||x.created>asof||(x.date&&x.date<=asof))return false;
@@ -369,7 +369,7 @@ header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;con
 function cancellationApproval(id,result,showTime=true){
  if(isCancelled(id))return '<span class="p-manager-only">Đã duyệt hủy</span>';
  const continuing=hasProcessingRequest(notes[id]),badge='<span class="p-continue-status" title="Hợp đồng tiếp tục được theo dõi đến khi Trưởng phòng duyệt hủy">Y/C xử lý tiếp</span>'+processingRequestedTime(notes[id]);
- if(!isCancellationResult(result)&&!continuing)return '';
+ if(!requiresCancellationReason(result)&&!continuing)return '';
  if(!isManager())return continuing?badge:'<span class="p-manager-only">Chỉ Trưởng phòng</span>';
  const disabled=pendingDrafts.has(id)||(!continuing&&!notes[id]?.cancelReason?.trim());
  return '<select class="p-manager-decision" aria-label="TP xử lý '+escapeHTML(id)+'" '+(disabled?'disabled title="Lưu kết quả và lý do hủy trước khi TP xử lý"':'')+'><option value="">Chọn xử lý</option><option value="cancel">Duyệt hủy</option><option value="continue" '+(continuing?'selected':'')+'>Y/C xử lý tiếp</option></select>'+(continuing&&showTime?processingRequestedTime(notes[id]):'');
@@ -424,11 +424,11 @@ function openPendingEditor(id){
  '<label>Mốc hẹn Online<select name="timeSlot" required>'+opts(TIME_SLOTS,n.timeSlot||'')+'</select></label>'+
  '<label>Nguyên nhân hẹn Online<select name="action" required>'+opts(REASONS,n.action||'')+'</select></label>'+
  '<label>Nguồn thông tin<select name="source" required>'+opts(SOURCES,n.source||'')+'</select></label>'+
- (isManager()&&!isCancelled(id)&&(isCancellationResult(n.result)||hasProcessingRequest(n))?'<label>TP xử lý'+cancellationApproval(id,n.result,false)+'</label>':'')+'<div class="pm-actions"><button type="button" class="pm-close">Hủy</button><button type="submit" class="primary">Lưu cập nhật</button></div></form>';
+ (isManager()&&!isCancelled(id)?'<label>TP xử lý'+cancellationApproval(id,requiresCancellationReason(n.result)?n.result:'Hủy',false)+'</label>':'')+'<div class="pm-actions"><button type="button" class="pm-close">Hủy</button><button type="submit" class="primary">Lưu cập nhật</button></div></form>';
  mobileEditor.querySelectorAll('.pm-close').forEach(button=>button.onclick=()=>mobileEditor.close());
  mobileEditor.querySelector('form').onsubmit=async event=>{event.preventDefault();if(!event.target.reportValidity())return;const values=Object.fromEntries(new FormData(event.target)),submit=event.target.querySelector('[type="submit"]');submit.disabled=true;if(await savePendingEntry(id,values,editorRevision)){mobileEditor.close();mobileStatus.textContent='Đã lưu cập nhật '+id+(window.IBB5_SYNC?' lên hệ thống dùng chung.':' trên thiết bị này.');mobileStatus.hidden=false;const button=[...el('pendRows').querySelectorAll('.p-mobile-edit')].find(b=>b.closest('tr').dataset.id===id);button?.focus();}submit.disabled=false;};
  const decision=mobileEditor.querySelector('.p-manager-decision');if(decision)decision.onchange=()=>applyPendingDecision(id,decision,editorRevision);
- const updateMobileResult=()=>{const result=mobileEditor.querySelector('[name="result"]').value,cancelled=requiresCancellationReason(result);for(const name of ['expected','timeSlot']){const input=mobileEditor.querySelector('[name="'+name+'"]');input.required=!skipsOnlineAppointment(result);input.closest('label').hidden=!input.required;}mobileEditor.querySelector('.pm-cancel-reason').hidden=!cancelled;mobileEditor.querySelector('[name="cancelReason"]').required=cancelled;if(decision)decision.closest('label').hidden=!isCancellationResult(result)&&!hasProcessingRequest(n);};updateMobileResult();mobileEditor.querySelector('[name="result"]').addEventListener('change',updateMobileResult);for(const type of ['input','change'])mobileEditor.querySelector('form').addEventListener(type,event=>{if(decision&&event.target!==decision)decision.disabled=true;});
+ const updateMobileResult=()=>{const result=mobileEditor.querySelector('[name="result"]').value,cancelled=requiresCancellationReason(result);for(const name of ['expected','timeSlot']){const input=mobileEditor.querySelector('[name="'+name+'"]');input.required=!skipsOnlineAppointment(result);input.closest('label').hidden=!input.required;}mobileEditor.querySelector('.pm-cancel-reason').hidden=!cancelled;mobileEditor.querySelector('[name="cancelReason"]').required=cancelled;if(decision)decision.closest('label').hidden=!requiresCancellationReason(result)&&!hasProcessingRequest(n);};updateMobileResult();mobileEditor.querySelector('[name="result"]').addEventListener('change',updateMobileResult);for(const type of ['input','change'])mobileEditor.querySelector('form').addEventListener(type,event=>{if(decision&&event.target!==decision)decision.disabled=true;});
  if(isCancelled(id)){mobileEditor.querySelectorAll('input,select,textarea,[type="submit"]').forEach(input=>input.disabled=true);}
  mobileEditor.showModal();
 }

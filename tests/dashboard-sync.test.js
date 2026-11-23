@@ -173,6 +173,22 @@ test('shared dashboard API migrates once, enforces ownership and detects concurr
     assert.equal((await invoke('POST',{kind:'pending',id:'NOV',revision:0,value:cancel})).code,200);
     assert.equal((await invoke('POST',{kind:'continuePending',id:'NOV',revision:1})).code,409);
 
+    // A proposed cancellation follows the same manager-only review workflow.
+    for(const id of ['PROPOSE_APPROVE','PROPOSE_RETURN']){
+      rows.get('snapshot').data.data.push({id,type:'Internet',staff:'DNG.ManLM3',created:'2026-11-01',date:'',status:'Bình thường'});
+      caller={id:'staff',role:'staff',acc:'DNG.ManLM3'};
+      assert.equal((await invoke('POST',{kind:'pending',id,revision:0,value:{...cancel,result:'Dự Kiến Hủy'}})).code,200);
+      assert.equal((await invoke('POST',{kind:'cancelPending',id,revision:1})).code,403);
+      caller={id:'manager',role:'manager'};
+      const kind=id==='PROPOSE_APPROVE'?'cancelPending':'continuePending';
+      assert.equal((await invoke('POST',{kind,id,revision:0})).code,409);
+      assert.equal((await invoke('POST',{kind,id,revision:1})).code,200);
+      const reviewed=(await invoke('GET')).body.notes[id];
+      assert.equal(reviewed.cancelReason,cancel.cancelReason);
+      if(kind==='cancelPending'){assert.equal(reviewed.result,'Hủy');assert.equal(reviewed.cancellationApproved,true);}
+      else{assert.equal(reviewed.result,'Chưa Online');assert.ok(reviewed.processingRequestedAt);}
+    }
+
 
 
   } finally { globalThis.fetch = oldFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }

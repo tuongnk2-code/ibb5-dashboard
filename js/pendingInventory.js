@@ -1,4 +1,4 @@
-import { isCancellationResult, skipsOnlineAppointment, requiresCancellationReason, hasProcessingRequest } from './dashboardStateModel.js';
+import { skipsOnlineAppointment, requiresCancellationReason, hasProcessingRequest } from './dashboardStateModel.js';
 
 export function pendingFollowupFilled(note = {}) {
   return ['action', 'result', 'source', ...(skipsOnlineAppointment(note.result) ? [] : ['expected', 'timeSlot'])].every(key => String(note[key] || '').trim())
@@ -12,7 +12,7 @@ export function pendingFollowupContracts(rows, notes, asOf) {
   return [...net.values()].filter(row => {
     const note = notes[row.id] || {};
     return !note.cancellationApproved && row.created && row.created <= asOf
-      && (hasProcessingRequest(note) || (!row.date || row.date > asOf) || !pendingFollowupFilled(note) || isCancellationResult(note.result));
+      && (hasProcessingRequest(note) || (!row.date || row.date > asOf) || !pendingFollowupFilled(note) || requiresCancellationReason(note.result));
   });
 }
 
