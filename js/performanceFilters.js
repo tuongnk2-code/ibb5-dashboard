@@ -1,4 +1,4 @@
-export const PERF_FIELDS=['acc','tenure','goal','sold','online','prev','growth','pct','projected','missing','need','pending','aged'];
+export const PERF_FIELDS=['acc','tenure','goal','sold','online','prev','growth','pct','projected','missing','need','pending','aged','expected'];
 export function matchesPerformanceFilters(fields,filters){
  return PERF_FIELDS.every(field=>{
   const filter=filters[field];if(!filter)return true;const value=fields[field];

@@ -231,11 +231,15 @@ function perfRender(){
  $('perfSoldTitle').title='HĐ NET có ngày tạo trong tháng đến ngày theo dõi và Tình trạng “Bình thường” theo dữ liệu NET cập nhật mới nhất.';
  const soldRows=normalNetSales(all);
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
+ const expectedDay=$('psDay')?.value||asof,expectedCutoff=$('pendAsOf')?.value||asof;
+ const expectedRows=scheduledOnlineContracts(all,IBB_CALC.notes(),expectedCutoff,expectedDay,{netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)});
+ const expectedTitle=$('perfExpectedTitle');if(expectedTitle)expectedTitle.title='Chỉ đếm HĐ màu xanh còn theo dõi ngày '+expectedDay.split('-').reverse().join('/')+'; không tính HĐ đỏ quá hẹn.';
  const records=new Map(list.map(p=>{
   const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()),sold=soldRows.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()&&x.created>=start&&x.created<=asof).length,online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0,pending=pendingFollowupContracts(a,IBB_CALC.notes(),asof).length,aged=agedFollowupContracts(a,IBB_CALC.notes(),asof).length,goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null,missing=goal===null?null:Math.max(0,goal-online);
-  const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged];
+  const expected=expectedRows.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()).length;
+  const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged,expected];
   const fields=Object.fromEntries(PERF_FIELDS.map((field,index)=>[field,{raw:values[index],display:index===6?periodGrowth(online,havePrev?prev:null):[7,8].includes(index)?values[index]===null?'—':formatPercent(values[index]):typeof values[index]==='number'?fmt(values[index]):values[index]??'—'}]));
-  return [p.acc,{sold,online,prev,pending,aged,goal,fields}];
+  return [p.acc,{sold,online,prev,pending,aged,expected,goal,fields}];
  }));
  const headers=[...document.querySelectorAll('#performance .perf-table thead th')];
  headers.forEach((header,index)=>{
@@ -250,16 +254,16 @@ function perfRender(){
  list=sortPerformancePeople(list,records,perfColumnSort);
  let filterStatus=$('perfFilterStatus');if(!filterStatus){filterStatus=document.createElement('div');filterStatus.id='perfFilterStatus';filterStatus.setAttribute('data-capture-ui','');filterStatus.innerHTML='<span role="status"></span><button type="button" id="perfClearFilters">Đặt lại cột</button>';$('perfTableCapture').before(filterStatus);$('perfClearFilters').onclick=()=>{for(const field of PERF_FIELDS)delete perfColumnFilters[field];perfColumnSort={};perfRender();};}
  const active=PERF_FIELDS.some(field=>perfColumnFilters[field])||!!perfColumnSort.field;filterStatus.hidden=!active;filterStatus.querySelector('span').textContent='Đang hiển thị '+list.length+' / '+beforeCount+' nhân sự · Tổng tính theo bộ lọc.'+(perfColumnSort.field?' Sắp xếp '+headers[PERF_FIELDS.indexOf(perfColumnSort.field)].querySelector('.perf-column-title').textContent+' '+(perfColumnSort.direction==='asc'?'tăng':'giảm')+' dần trong từng bầy.':'');
- const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
- const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td></tr>'};
+ const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0,expected:0});let overall=zero(),group=zero(),groupId='',out=[];
+ const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td><td>'+t.expected+'</td></tr>'};
  for(const p of list){if(groupId!==p.team){if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));groupId=p.team;group=zero();}
-  const {sold,online,prev,pending,aged,goal}=records.get(p.acc);
-  for(const s of [overall,group]){s.sold+=sold;s.online+=online;s.prev+=prev;s.pending+=pending;s.aged+=aged;if(goal!==null){s.goal+=goal;s.approved++;}}
+  const {sold,online,prev,pending,aged,expected,goal}=records.get(p.acc);
+  for(const s of [overall,group]){s.sold+=sold;s.online+=online;s.prev+=prev;s.pending+=pending;s.aged+=aged;s.expected+=expected;if(goal!==null){s.goal+=goal;s.approved++;}}
   const growth=periodGrowth(online,havePrev?prev:null),pct=goal>0?formatPercent(online/goal*100):'—',projected=goal>0&&elapsed?formatPercent((online/elapsed*allDays)/goal*100):'—';const missing=goal===null?null:Math.max(0,goal-online),need=missing!==null&&calendarRemaining?fmt(missing/calendarRemaining):'—';
-  out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td></tr>');
- }if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));$('perfRows').innerHTML=out.join('')||'<tr><td colspan="13">Không có nhân sự phù hợp</td></tr>';$('perfFoot').innerHTML=summary('TỔNG PHÒNG ('+list.length+' NS)',overall,true);
+  out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td><td>'+expected+'</td></tr>');
+ }if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));$('perfRows').innerHTML=out.join('')||'<tr><td colspan="14">Không có nhân sự phù hợp</td></tr>';$('perfFoot').innerHTML=summary('TỔNG PHÒNG ('+list.length+' NS)',overall,true);
  for(const row of [...$('perfRows').rows,...$('perfFoot').rows]){
-  if(row.cells.length!==13)continue;
+  if(row.cells.length!==14)continue;
   const person=row.querySelector('.person'),teamNumber=row.classList.contains('perf-team-total')?row.cells[0].textContent.match(/(\d+)$/)?.[1]:null;
   const accs=person?[person.textContent]:list.filter(p=>!teamNumber||String(p.team)===teamNumber).map(p=>p.acc);
   row.dataset.perfAccs=JSON.stringify(accs);
@@ -275,6 +279,10 @@ function openPerformanceContracts(cell){
  performanceSelection={kind:cell.dataset.perfContracts,accs:JSON.parse(row.dataset.perfAccs),label:row.cells[0].textContent.trim(),asOf,start:month+'-01',previousCut,previousMonth:previousCut.slice(0,7),room:$('room').value};
  performanceDetails.open();
 }
+['ibb5-shared-updated','ibb5-snapshot-updated'].forEach(event=>document.addEventListener(event,()=>queueMicrotask(perfRender)));
+window.addEventListener('focus',perfRender);
+setInterval(()=>{if(!document.hidden&&document.getElementById('performance').classList.contains('page-active'))perfRender();},30000);
+['psDay','pendAsOf','pendDailyDate'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>perfRender()));
 document.getElementById('performance').addEventListener('click',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell)openPerformanceContracts(cell);});
 document.getElementById('performance').addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;if(select.value.startsWith('sort:'))perfColumnSort=select.value==='sort:none'?{}:{field:select.dataset.perfField,direction:select.value.slice(5)};else perfColumnFilters[select.dataset.perfField]=select.value;perfRender();});
 document.getElementById('performance').addEventListener('keydown',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell&&['Enter',' '].includes(event.key)){event.preventDefault();openPerformanceContracts(cell);}});
