@@ -2,3 +2,8 @@
 
 .channel-share-progress,.ana-progress{min-width:0;width:100%}.channel-share-progress .metric-progress{height:18px!important}.ana-progress .metric-progress{height:16px!important}#anaShareTotal [data-metric-percent]{width:110px}.channel-share-insight [data-metric-percent]{display:block;width:100%;margin-top:5px}
 #overview #forecastRatio .metric-progress{height:30px!important}#overview #forecastRatio .metric-progress-text{white-space:normal;line-height:1.2!important;font-size:9px!important;padding:2px 4px!important}
+/* Headline overview percentages must read like the other large KPI values. */
+#overview :is(#growth,#dailyProgress,#pnRate,#managed) .metric-progress{height:64px!important;border-radius:14px}
+#overview :is(#growth,#dailyProgress,#pnRate,#managed) .metric-progress-fill{border-radius:14px}
+#overview :is(#growth,#dailyProgress,#pnRate,#managed) .metric-progress-text{font-size:48px!important;font-weight:900!important;padding:0 6px!important;font-variant-numeric:tabular-nums}
+@media(max-width:650px){#overview :is(#growth,#dailyProgress,#pnRate,#managed) .metric-progress{height:48px!important;border-radius:10px}#overview :is(#growth,#dailyProgress,#pnRate,#managed) .metric-progress-text{font-size:34px!important}}
