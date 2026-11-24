@@ -950,7 +950,7 @@ const order=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trin
 const root=el('ibbDayPerf');if(!root)return;
 el('dpView').insertAdjacentHTML('afterend','<select id="dpMetric" aria-label="Chọn loại HĐ hiển thị" title="Loại hợp đồng"><option value="both">Bán & Online</option><option value="sold">Chỉ HĐ bán</option><option value="online">Chỉ HĐ Online</option></select>');
 const metricKinds=metric=>metric==='sold'?['sold']:metric==='online'?['online']:['sold','online'];
-const metricLabel=kind=>kind==='sold'?'Bán':kind==='expected'?'HĐ Online dự kiến':'Online';
+const metricLabel=kind=>kind==='sold'?'Bán':kind==='expected'?'Online dự kiến còn lại':'Online';
 let current={};
 function fromReportDate(){const base=el('to')?.value||reportDay(),m=base.slice(0,7),end=monthEnd(m);el('dpMonth').value=m;el('dpDay').min=m+'-01';el('dpDay').max=end;el('dpDay').value=base.startsWith(m)?base:end;}
 function distinctNet(){return dailyPerformanceContracts(operationalData(),IBB_CALC.notes());}
@@ -1008,7 +1008,7 @@ function render(){
  // Only the Acc column is fixed; daily columns scroll horizontally.
  el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th>'+
   (mode==='day'?`<th colspan="${kinds.length+1}">${metric==='both'?'NGÀY ':''}${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="${kinds.length}" title="Ngày ${String(n).padStart(2,'0')}/${m.slice(5)}/${m.slice(0,4)}">${metric==='both'?'Ngày '+String(n).padStart(2,'0'):String(n).padStart(2,'0')+'/'+m.slice(5)}</th>`).join(''))+'</tr><tr>'+
-  (mode==='day'?kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')+'<th class="dp-expected-header" title="Chỉ đếm HĐ màu xanh còn theo dõi, không tính HĐ đỏ quá hẹn">HĐ Online dự kiến</th>':days.map(()=>kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')).join(''))+'</tr>';
+  (mode==='day'?kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')+'<th class="dp-expected-header" title="Chỉ đếm HĐ màu xanh còn theo dõi, không tính HĐ đỏ quá hẹn">Online dự kiến còn lại</th>':days.map(()=>kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')).join(''))+'</tr>';
  let body='';const person=p=>`<td class="dp-staff dp-staff-acc-only"><strong>${esc(p.acc||p.name)}</strong></td>`;
  for(const t of team?[team]:['1','2','3']){
   const members=rows.filter(p=>p.team===t);for(const p of members)body+='<tr>'+person(p)+rowHtml(p,mode,idx,days)+'</tr>';
@@ -1023,7 +1023,7 @@ function render(){
  el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
 }
 function exportCSV(){const v=current;const {m,day,mode,team,days,rows,metric}=v;if(!rows)return;const kinds=metricKinds(metric);
- const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày',...kinds.map(kind=>kind==='sold'?'Bán mới':metricLabel(kind)),...kinds.map(kind=>kind==='sold'?'Mã HĐ đã lên':'Mã HĐ đã Online'),'HĐ Online dự kiến','Mã HĐ Online dự kiến']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>kinds.map(kind=>d+' '+metricLabel(kind)))]];
+ const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày',...kinds.map(kind=>kind==='sold'?'Bán mới':metricLabel(kind)),...kinds.map(kind=>kind==='sold'?'Mã HĐ đã lên':'Mã HĐ đã Online'),'Online dự kiến còn lại','Mã HĐ Online dự kiến còn lại']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>kinds.map(kind=>d+' '+metricLabel(kind)))]];
  function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,...kinds.map(kind=>r[kind][idx]||0),...kinds.map(kind=>acc?visibleContracts(kind==='expected'?(v.expectedContracts[day]||[]):v.contracts).filter(row=>norm(row.staff)===norm(acc)&&(kind==='expected'||row[kind==='sold'?'created':'date']===day)).map(row=>String(row.id).trim().toUpperCase()).join(' | '):''),r.expected[idx]||0,acc?visibleContracts(v.expectedContracts[day]||[]).filter(row=>norm(row.staff)===norm(acc)).map(row=>String(row.id).trim().toUpperCase()).join(' | '):'']:[team,name,acc,...days.flatMap((_,i)=>kinds.map(kind=>r[kind][i]||0))]);}
  for(const t of team?[team]:['1','2','3']){const people=rows.filter(p=>p.team===t);people.forEach(p=>push('Bầy '+t,p.name,p.acc,p));push('Bầy '+t,'TỔNG BẦY '+t,'',total(people,days));}
  push('Tổng',team?'TỔNG BẦY '+team:'TỔNG PHÒNG','',total(rows,days));

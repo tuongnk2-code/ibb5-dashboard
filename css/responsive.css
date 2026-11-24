@@ -747,3 +747,6 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #performance .dp-day-layout .dp-contract-card td .dp-contract-acc{font-size:10px}
 @media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){#performance .dp-day-layout #dpTable :is(th,td){padding:3px}#performance .dp-day-layout #dpTable .dp-staff strong{font-size:10px}}
+/* Align the three daily tables and remove the requested legend/scope copy. */
+#performance #dpTableCapture>.dp-legend{display:none!important}
+@media(min-width:1201px){#performance .dp-day-layout{grid-template-columns:calc((100% - 24px)/3) minmax(0,1fr)}#performance .dp-day-layout #dpTableCapture,#performance .dp-day-layout .dp-contract-details{align-self:start}}
