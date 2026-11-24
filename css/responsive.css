@@ -750,3 +750,15 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 /* Align the three daily tables and remove the requested legend/scope copy. */
 #performance #dpTableCapture>.dp-legend{display:none!important}
 @media(min-width:1201px){#performance .dp-day-layout{grid-template-columns:calc((100% - 24px)/3) minmax(0,1fr)}#performance .dp-day-layout #dpTableCapture,#performance .dp-day-layout .dp-contract-details{align-self:start}}
+/* Keep overview title, capture action and filters on one desktop line. */
+@media(min-width:1201px){
+ #overview #ibbCaptureOverview>.heading{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;margin-bottom:14px}
+ #overview #ibbCaptureOverview>.heading>div:first-child{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:0}
+ #overview #ibbCaptureOverview>.heading h2{font-size:clamp(15px,1.15vw,19px);white-space:nowrap;margin:0!important}
+ #overview #ibbCaptureOverview>.heading .ibb-shot-btn{margin:0!important;white-space:nowrap;padding:8px 9px;font-size:10px}
+ #overview #ibbCaptureOverview>.heading>.filters{flex-wrap:nowrap;gap:6px;margin-left:auto}
+ #overview #ibbCaptureOverview>.heading>.filters label{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;margin:0;font-size:11px}
+ #overview #ibbCaptureOverview>.heading>.filters input{width:108px;min-width:0;padding:7px 5px;font-size:11px}
+ #overview #ibbCaptureOverview>.heading>.filters select{width:120px;min-width:0;padding:7px;font-size:11px}
+ #overview #ibbCaptureOverview>.heading>.filters button{padding:8px;font-size:11px;white-space:nowrap}
+}
