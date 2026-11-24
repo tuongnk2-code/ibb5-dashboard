@@ -14,7 +14,7 @@ if (panel && button) {
     applySize(size);
   }
   function applySize(next) {
-    const minimum = phone.matches ? 12 : 16;
+    const minimum = 12;
     const maximum = phone.matches ? 24 : 32;
     size = Math.max(minimum, Math.min(maximum, next));
     document.documentElement.style.setProperty('--perf-font-size', size + 'px');

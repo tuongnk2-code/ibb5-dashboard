@@ -4,6 +4,7 @@ const assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWR
 
  await page.waitForFunction(()=>document.querySelector('.table-zoom-controls'));
  assert.equal(await page.locator('#performance>.heading .perf-font-controls').count(),1);
+ await page.evaluate(()=>location.hash='performance');if(width===1440){for(let i=0;i<3;i++)await page.locator('#perfFontDecrease').click();assert.equal(await page.locator('#perfFontSize').textContent(),'14px');await page.locator('#perfFontDecrease').click();assert.equal(await page.locator('#perfFontSize').textContent(),'12px');assert.equal(await page.locator('#perfFontDecrease').isDisabled(),true);await page.locator('#perfFontIncrease').click();assert.equal(await page.locator('#perfFontSize').textContent(),'14px');}
  assert.equal(await page.locator('.perf-table').evaluate(el=>el.hasAttribute('data-table-zoom')),false);
  await page.evaluate(()=>location.hash='performance');const id='dpTable';const table=page.locator('#'+id);
  await page.locator('#'+id).scrollIntoViewIfNeeded();const key=await table.evaluate(el=>{const scope=el.closest('.panel[id]');return scope.id+':'+el.id;}); const target=page.locator('.table-zoom-controls[data-table-zoom-for="'+key+'"]');
