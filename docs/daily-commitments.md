@@ -49,3 +49,10 @@ height. It recalculates after renders, status messages and window/root resizing.
 The inner vertical scroll cap is removed. Tests assert the footer fits inside
 1366x768 and 1280x720 screens and the table has no vertical overflow. Narrow
 phone screens retain larger editable controls and horizontal scrolling.
+
+Shortage cells use a continuous red/amber/green background based on actual /
+commitment, capped at 100%. Unknown data and zero targets remain neutral. The
+number remains the actual shortage; the tooltip exposes the completion percentage
+and counts. Team/room completion uses (known target - sum of individual deficits)
+so one over-performing employee cannot hide another's shortfall. A small gradient
+legend sits beside the Thiếu header without increasing row height.
