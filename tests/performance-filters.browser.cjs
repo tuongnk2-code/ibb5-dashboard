@@ -16,7 +16,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.route('**/js/app-gate.js',r=>r.fulfill({contentType:'application/javascript',body:"window.IBB5_CURRENT_PROFILE={id:'test',role:'manager',acc:'DNG.ManLM3'};document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='';await import('/js/main.js');"}));
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5244/#performance');await page.waitForFunction(()=>typeof window.IBB5_MONTHLY_TARGET==='function');await page.locator('#to').evaluate(el=>{el.value='2026-11-17';el.dispatchEvent(new Event('change'));});
   const table=page.locator('#performance .perf-table'),filter=field=>table.locator('[data-perf-field="'+field+'"]'),people=table.locator('tbody .person');
-  assert.equal(await filter('acc').count(),1);assert.equal(await table.locator('thead select').count(),14);assert.equal(await people.count(),17);
+  assert.equal(await filter('acc').count(),1);assert.equal(await table.locator('thead select').count(),13);assert.equal(await people.count(),17);
   await filter('online').selectOption('positive');assert.equal(await people.count(),3);assert.equal(await page.locator('#perfFoot td').nth(4).textContent(),'4');
   await page.locator('#perfTeam').selectOption('2');assert.equal(await people.count(),2);assert.equal(await page.locator('#perfFoot td').nth(4).textContent(),'3');
   await filter('pct').selectOption('sort:desc');assert.deepEqual(await people.allTextContents(),['DNG.Namnh170','DNG.Hoantt']);assert.equal(await filter('online').inputValue(),'positive');assert.equal(await page.locator('#perfFoot td').nth(4).textContent(),'3');
@@ -25,7 +25,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await table.locator('tfoot [data-perf-contracts="online"]').click();assert.equal(await page.locator('#performanceContractDialog tbody tr').count(),2);await page.locator('#performanceContractDialog [data-aged-close]').click();
   await page.locator('#perfSearch').fill('Namnh');assert.equal(await people.count(),0);assert.match(await table.locator('tbody').innerText(),/Không có nhân sự/);await page.locator('#perfSearch').fill('');assert.equal(await people.count(),1);
   await page.evaluate(()=>{window.IBB5_IMPORTED_DATA.push({id:'NEW',staff:'DNG.Hoantt',type:'Internet',room:'IBB5',created:'2026-11-17',date:'2026-11-17'});document.dispatchEvent(new CustomEvent('ibb5-snapshot-updated'));document.dispatchEvent(new CustomEvent('ibb5-shared-updated'));});assert.equal(await filter('pct').inputValue(),'under100');assert.equal(await page.locator('#perfFoot td').nth(4).textContent(),'3');
-  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#perfExport').click()]);const csv=await fs.readFile(await download.path(),'utf8');assert.match(csv,/DNG.Hoantt/);assert.doesNotMatch(csv,/DNG.Namnh170|Lớn hơn 0|Dưới 100%|Tất cả/);assert.equal(csv.split('\r\n')[0].split(',').length,14);
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#perfExport').click()]);const csv=await fs.readFile(await download.path(),'utf8');assert.match(csv,/DNG.Hoantt/);assert.doesNotMatch(csv,/DNG.Namnh170|Lớn hơn 0|Dưới 100%|Tất cả/);assert.equal(csv.split('\r\n')[0].split(',').length,13);
   await page.locator('#perfExpand').click();await page.locator('#perfClearFilters').click();assert.equal(await people.count(),3);await filter('tenure').selectOption('eq:13+');assert.equal(await people.count(),3);assert.equal(await page.locator('#perfFilterStatus').isVisible(),true);await page.locator('#perfExpand').click();
   await page.locator('#performance .heading').scrollIntoViewIfNeeded();await page.evaluate(()=>{const y=document.querySelector('#performance .perf-table').getBoundingClientRect().top+scrollY+80;scrollTo(0,y);});await page.waitForTimeout(150);await page.evaluate(()=>dispatchEvent(new Event('scroll')));await page.locator('#perfStickyClone').waitFor({state:'visible'});
   await page.locator('#perfStickyClone [data-perf-field="acc"]').selectOption('sort:desc');assert.deepEqual(await people.allTextContents(),['DNG.Nhannt137','DNG.Namnh170','DNG.Hoantt']);assert.equal(await table.locator('th[aria-sort="descending"]').count(),1);
@@ -34,7 +34,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.locator('#performance .heading').scrollIntoViewIfNeeded();assert.equal(await filter('acc').evaluate(el=>{const rect=el.getBoundingClientRect();return document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.closest('[data-perf-field]')?.dataset.perfField;}),'acc');
   if(process.env.PERF_SCREENSHOT_DIR)await page.locator('#perfTableCapture').screenshot({path:process.env.PERF_SCREENSHOT_DIR+'/performance-filters-'+width+'.png'});
   assert.deepEqual(errors,[]);await page.close();
- }console.log('PASS: 14 intersecting filters, filtered totals/details/CSV, upstream filters, live updates, sticky controls and desktop/mobile');}
+ }console.log('PASS: 13 intersecting filters, filtered totals/details/CSV, upstream filters, live updates, sticky controls and desktop/mobile');}
  finally{await browser.close();await server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

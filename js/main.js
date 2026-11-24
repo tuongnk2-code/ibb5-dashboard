@@ -231,15 +231,11 @@ function perfRender(){
  $('perfSoldTitle').title='HĐ NET có ngày tạo trong tháng đến ngày theo dõi và Tình trạng “Bình thường” theo dữ liệu NET cập nhật mới nhất.';
  const soldRows=normalNetSales(all);
  const unique=IBB_CALC.unique,fmt=n=>n===null?'—':n.toLocaleString('vi-VN',{maximumFractionDigits:0}),num=n=>n===null?'—':n;
- const expectedDay=$('psDay')?.value||asof,expectedCutoff=$('pendAsOf')?.value||asof;
- const expectedRows=scheduledOnlineContracts(all,IBB_CALC.notes(),expectedCutoff,expectedDay,{netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)});
- const expectedTitle=$('perfExpectedTitle');if(expectedTitle)expectedTitle.title='Chỉ đếm HĐ màu xanh còn theo dõi ngày '+expectedDay.split('-').reverse().join('/')+'; không tính HĐ đỏ quá hẹn.';
  const records=new Map(list.map(p=>{
   const a=all.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()),sold=soldRows.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()&&x.created>=start&&x.created<=asof).length,online=unique(a.filter(x=>x.date>=start&&x.date<=asof)),prev=havePrev?unique(a.filter(x=>x.date?.slice(0,7)===pm&&x.date<=prevCut)):0,pending=pendingFollowupContracts(a,IBB_CALC.notes(),asof).length,aged=agedFollowupContracts(a,IBB_CALC.notes(),asof).length,goal=Number.isInteger(cm[p.acc])?cm[p.acc]:null,missing=goal===null?null:Math.max(0,goal-online);
-  const expected=expectedRows.filter(x=>String(x.staff||'').trim().toLowerCase()===p.acc.trim().toLowerCase()).length;
-  const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged,expected];
+  const values=[p.acc,p.tenure.replace(/\s*tháng$/iu,''),goal,sold,online,havePrev?prev:null,havePrev?online-prev:null,goal>0?online/goal*100:null,goal>0&&elapsed?online/elapsed*allDays/goal*100:null,missing,missing!==null&&calendarRemaining?missing/calendarRemaining:null,pending,aged];
   const fields=Object.fromEntries(PERF_FIELDS.map((field,index)=>[field,{raw:values[index],display:index===6?periodGrowth(online,havePrev?prev:null):[7,8].includes(index)?values[index]===null?'—':formatPercent(values[index]):typeof values[index]==='number'?fmt(values[index]):values[index]??'—'}]));
-  return [p.acc,{sold,online,prev,pending,aged,expected,goal,fields}];
+  return [p.acc,{sold,online,prev,pending,aged,goal,fields}];
  }));
  const headers=[...document.querySelectorAll('#performance .perf-table thead th')];
  headers.forEach((header,index)=>{
@@ -254,16 +250,16 @@ function perfRender(){
  list=sortPerformancePeople(list,records,perfColumnSort);
  let filterStatus=$('perfFilterStatus');if(!filterStatus){filterStatus=document.createElement('div');filterStatus.id='perfFilterStatus';filterStatus.setAttribute('data-capture-ui','');filterStatus.innerHTML='<span role="status"></span><button type="button" id="perfClearFilters">Đặt lại cột</button>';$('perfTableCapture').before(filterStatus);$('perfClearFilters').onclick=()=>{for(const field of PERF_FIELDS)delete perfColumnFilters[field];perfColumnSort={};perfRender();};}
  const active=PERF_FIELDS.some(field=>perfColumnFilters[field])||!!perfColumnSort.field;filterStatus.hidden=!active;filterStatus.querySelector('span').textContent='Đang hiển thị '+list.length+' / '+beforeCount+' nhân sự · Tổng tính theo bộ lọc.'+(perfColumnSort.field?' Sắp xếp '+headers[PERF_FIELDS.indexOf(perfColumnSort.field)].querySelector('.perf-column-title').textContent+' '+(perfColumnSort.direction==='asc'?'tăng':'giảm')+' dần trong từng bầy.':'');
- const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0,expected:0});let overall=zero(),group=zero(),groupId='',out=[];
- const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td><td>'+t.expected+'</td></tr>'};
+ const zero=()=>({sold:0,online:0,prev:0,pending:0,aged:0,goal:0,approved:0,missing:0});let overall=zero(),group=zero(),groupId='',out=[];
+ const summary=(label,t,isGrand)=>{const eligible=t.approved>0&&t.goal>0;const pct=eligible?formatPercent(t.online/t.goal*100):'—',proj=eligible&&elapsed?formatPercent((t.online/elapsed*allDays)/t.goal*100):'—';const growth=periodGrowth(t.online,havePrev?t.prev:null);const missing=eligible?Math.max(0,t.goal-t.online):null,need=eligible&&calendarRemaining?fmt(missing/calendarRemaining):'—';return '<tr class="'+(isGrand?'perf-grand-total':'perf-team-total')+'"><td>'+label+'</td><td>—</td><td>'+(t.approved?t.goal:'—')+'</td><td>'+t.sold+'</td><td>'+t.online+'</td><td>'+(havePrev?t.prev:'—')+'</td><td>'+growth+'</td><td>'+pct+'</td><td>'+proj+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+t.pending+'</td><td>'+t.aged+'</td></tr>'};
  for(const p of list){if(groupId!==p.team){if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));groupId=p.team;group=zero();}
-  const {sold,online,prev,pending,aged,expected,goal}=records.get(p.acc);
-  for(const s of [overall,group]){s.sold+=sold;s.online+=online;s.prev+=prev;s.pending+=pending;s.aged+=aged;s.expected+=expected;if(goal!==null){s.goal+=goal;s.approved++;}}
+  const {sold,online,prev,pending,aged,goal}=records.get(p.acc);
+  for(const s of [overall,group]){s.sold+=sold;s.online+=online;s.prev+=prev;s.pending+=pending;s.aged+=aged;if(goal!==null){s.goal+=goal;s.approved++;}}
   const growth=periodGrowth(online,havePrev?prev:null),pct=goal>0?formatPercent(online/goal*100):'—',projected=goal>0&&elapsed?formatPercent((online/elapsed*allDays)/goal*100):'—';const missing=goal===null?null:Math.max(0,goal-online),need=missing!==null&&calendarRemaining?fmt(missing/calendarRemaining):'—';
-  out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td><td>'+expected+'</td></tr>');
- }if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));$('perfRows').innerHTML=out.join('')||'<tr><td colspan="14">Không có nhân sự phù hợp</td></tr>';$('perfFoot').innerHTML=summary('TỔNG PHÒNG ('+list.length+' NS)',overall,true);
+  out.push('<tr><td class="perf-person-cell"><div class="person">'+esc(p.acc)+'</div></td><td>'+esc(p.tenure.replace(/\s*tháng$/iu,''))+'</td><td>'+num(goal)+'</td><td>'+sold+'</td><td><b>'+online+'</b></td><td>'+(havePrev?prev:'—')+'</td><td'+(havePrev&&online<prev?' class="perf-growth-negative" title="Cảnh báo: Online giảm so với cùng kỳ tháng trước"':'')+'>'+growth+'</td><td>'+pct+'</td><td>'+projected+'</td><td>'+num(missing)+'</td><td>'+need+'</td><td>'+pending+'</td><td>'+aged+'</td></tr>');
+ }if(groupId)out.push(summary('TỔNG BẦY '+groupId,group,false));$('perfRows').innerHTML=out.join('')||'<tr><td colspan="13">Không có nhân sự phù hợp</td></tr>';$('perfFoot').innerHTML=summary('TỔNG PHÒNG ('+list.length+' NS)',overall,true);
  for(const row of [...$('perfRows').rows,...$('perfFoot').rows]){
-  if(row.cells.length!==14)continue;
+  if(row.cells.length!==13)continue;
   const person=row.querySelector('.person'),teamNumber=row.classList.contains('perf-team-total')?row.cells[0].textContent.match(/(\d+)$/)?.[1]:null;
   const accs=person?[person.textContent]:list.filter(p=>!teamNumber||String(p.team)===teamNumber).map(p=>p.acc);
   row.dataset.perfAccs=JSON.stringify(accs);
@@ -279,10 +275,6 @@ function openPerformanceContracts(cell){
  performanceSelection={kind:cell.dataset.perfContracts,accs:JSON.parse(row.dataset.perfAccs),label:row.cells[0].textContent.trim(),asOf,start:month+'-01',previousCut,previousMonth:previousCut.slice(0,7),room:$('room').value};
  performanceDetails.open();
 }
-['ibb5-shared-updated','ibb5-snapshot-updated'].forEach(event=>document.addEventListener(event,()=>queueMicrotask(perfRender)));
-window.addEventListener('focus',perfRender);
-setInterval(()=>{if(!document.hidden&&document.getElementById('performance').classList.contains('page-active'))perfRender();},30000);
-['psDay','pendAsOf','pendDailyDate'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>perfRender()));
 document.getElementById('performance').addEventListener('click',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell)openPerformanceContracts(cell);});
 document.getElementById('performance').addEventListener('change',event=>{const select=event.target.closest('.perf-column-filter');if(!select)return;if(select.value.startsWith('sort:'))perfColumnSort=select.value==='sort:none'?{}:{field:select.dataset.perfField,direction:select.value.slice(5)};else perfColumnFilters[select.dataset.perfField]=select.value;perfRender();});
 document.getElementById('performance').addEventListener('keydown',event=>{const cell=event.target.closest('[data-perf-contracts]');if(cell&&['Enter',' '].includes(event.key)){event.preventDefault();openPerformanceContracts(cell);}});
@@ -958,13 +950,13 @@ const order=['dng.vypv','dng.oanhlth3','dng.chuonghm','dng.nguyentp10','dng.trin
 const root=el('ibbDayPerf');if(!root)return;
 el('dpView').insertAdjacentHTML('afterend','<select id="dpMetric" aria-label="Chọn loại HĐ hiển thị" title="Loại hợp đồng"><option value="both">Bán & Online</option><option value="sold">Chỉ HĐ bán</option><option value="online">Chỉ HĐ Online</option></select>');
 const metricKinds=metric=>metric==='sold'?['sold']:metric==='online'?['online']:['sold','online'];
-const metricLabel=kind=>kind==='sold'?'Bán':'Online';
+const metricLabel=kind=>kind==='sold'?'Bán':kind==='expected'?'HĐ Online dự kiến':'Online';
 let current={};
 function fromReportDate(){const base=el('to')?.value||reportDay(),m=base.slice(0,7),end=monthEnd(m);el('dpMonth').value=m;el('dpDay').min=m+'-01';el('dpDay').max=end;el('dpDay').value=base.startsWith(m)?base:end;}
 function distinctNet(){return dailyPerformanceContracts(operationalData(),IBB_CALC.notes());}
 function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('dpView').value,team=el('dpTeam')?.value||'',search=norm(el('dpSearch')?.value||''),room=el('room')?.value||'';
  const max=+monthEnd(m).slice(-2),days=Array.from({length:max},(_,i)=>i+1),people=PERSONNEL.filter(p=>(!team||String(p.team)===team)&&(!search||norm(p.name+' '+p.acc).includes(search))).sort((a,b)=>{if(+a.team!==+b.team)return +a.team-+b.team;const x=order.indexOf(norm(a.acc)),y=order.indexOf(norm(b.acc));return (x<0?999:x)-(y<0?999:y)});
- const persons=new Map(people.map(p=>[norm(p.acc),{...p,team:String(p.team),sold:Array(max).fill(0),online:Array(max).fill(0)}]));
+ const persons=new Map(people.map(p=>[norm(p.acc),{...p,team:String(p.team),sold:Array(max).fill(0),online:Array(max).fill(0),expected:Array(max).fill(0)}]));
  // Use precisely the same personnel roster and team membership as the main Hiệu suất nhân sự table.
  const contracts=distinctNet().filter(x=>(!room||x.room===room)&&persons.has(norm(x.staff)));
  for(const x of contracts){
@@ -974,13 +966,15 @@ function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('
   if(x.created?.slice(0,7)===m&&+x.created.slice(-2)>=1&&+x.created.slice(-2)<=max)p.sold[+x.created.slice(-2)-1]++;
   if(x.date?.slice(0,7)===m&&+x.date.slice(-2)>=1&&+x.date.slice(-2)<=max)p.online[+x.date.slice(-2)-1]++;
  }
- return {m,day,mode,team,search,days,contracts,metric:el('dpMetric').value,rows:[...persons.values()]};
+ const appointmentRows=operationalData().filter(row=>(!room||row.room===room)&&persons.has(norm(row.staff)));
+ const expectedContracts={};for(const n of days){const expectedDay=m+'-'+String(n).padStart(2,'0');const eligible=scheduledOnlineContracts(appointmentRows,IBB_CALC.notes(),el('pendAsOf')?.value||day,expectedDay,{netUpdatedAt:latestNetUpdate(window.IBB5_IMPORT_META)});expectedContracts[expectedDay]=eligible;for(const row of eligible)persons.get(norm(row.staff)).expected[n-1]++;}
+ return {m,day,mode,team,search,days,contracts,expectedContracts,metric:el('dpMetric').value,rows:[...persons.values()]};
 }
-const total=(arr,days)=>({sold:days.map((_,i)=>arr.reduce((s,p)=>s+(p.sold[i]||0),0)),online:days.map((_,i)=>arr.reduce((s,p)=>s+(p.online[i]||0),0))});
+const total=(arr,days)=>({expected:days.map((_,i)=>arr.reduce((s,p)=>s+(p.expected[i]||0),0)),sold:days.map((_,i)=>arr.reduce((s,p)=>s+(p.sold[i]||0),0)),online:days.map((_,i)=>arr.reduce((s,p)=>s+(p.online[i]||0),0))});
 function rowHtml(p,mode,idx,days){
  const cell=(kind,value,warn)=>'<td class="dp-'+kind+(warn&&value<1?' dp-below-one':'')+'"'+(warn&&value<1?' title="Chưa có HĐ '+(kind==='sold'?'bán mới':'Online')+' trong ngày"':'')+'>'+value+'</td>';
  const kinds=metricKinds(current.metric);
- if(mode==='day')return kinds.map(kind=>cell(kind,p[kind][idx]||0,!!p.acc)).join('');
+ if(mode==='day')return kinds.map(kind=>cell(kind,p[kind][idx]||0,!!p.acc)).join('')+cell('expected',p.expected[idx]||0,false);
  return days.map((day,i)=>{const warn=!!p.acc&&(current.m+'-'+String(day).padStart(2,'0')<=reportDay());return kinds.map(kind=>cell(kind,p[kind][i]||0,warn)).join('')}).join('');
 }
 function kpi(title,val,cl=''){return `<div class="dp-kpi ${cl}"><small>${esc(title)}</small><strong>${esc(val)}</strong></div>`}
@@ -1013,8 +1007,8 @@ function render(){
  el('dpScope').textContent=(team?'Bầy '+team:'Toàn phòng')+(search?' · đang lọc nhân sự':'')+' · '+period+' · '+(metric==='both'?'Bán & Online':metric==='sold'?'Chỉ HĐ bán':'Chỉ HĐ Online');
  // Only the Acc column is fixed; daily columns scroll horizontally.
  el('dpTableHead').innerHTML='<tr><th class="dp-staff" rowspan="2">Mã Acc</th>'+
-  (mode==='day'?`<th colspan="${kinds.length}">${metric==='both'?'NGÀY ':''}${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="${kinds.length}" title="Ngày ${String(n).padStart(2,'0')}/${m.slice(5)}/${m.slice(0,4)}">${metric==='both'?'Ngày '+String(n).padStart(2,'0'):String(n).padStart(2,'0')+'/'+m.slice(5)}</th>`).join(''))+'</tr><tr>'+
-  (mode==='day'?kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join(''):days.map(()=>kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')).join(''))+'</tr>';
+  (mode==='day'?`<th colspan="${kinds.length+1}">${metric==='both'?'NGÀY ':''}${day.split('-').reverse().join('/')}</th>`:days.map(n=>`<th colspan="${kinds.length}" title="Ngày ${String(n).padStart(2,'0')}/${m.slice(5)}/${m.slice(0,4)}">${metric==='both'?'Ngày '+String(n).padStart(2,'0'):String(n).padStart(2,'0')+'/'+m.slice(5)}</th>`).join(''))+'</tr><tr>'+
+  (mode==='day'?kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')+'<th class="dp-expected-header" title="Chỉ đếm HĐ màu xanh còn theo dõi, không tính HĐ đỏ quá hẹn">HĐ Online dự kiến</th>':days.map(()=>kinds.map(kind=>'<th>'+metricLabel(kind)+'</th>').join('')).join(''))+'</tr>';
  let body='';const person=p=>`<td class="dp-staff dp-staff-acc-only"><strong>${esc(p.acc||p.name)}</strong></td>`;
  for(const t of team?[team]:['1','2','3']){
   const members=rows.filter(p=>p.team===t);for(const p of members)body+='<tr>'+person(p)+rowHtml(p,mode,idx,days)+'</tr>';
@@ -1023,14 +1017,14 @@ function render(){
  body+=`<tr class="dp-grand"><td class="dp-staff">${team?'TỔNG BẦY '+team:'TỔNG PHÒNG'} (${rows.length} NS)</td>`+rowHtml(total(rows,days),mode,idx,days)+'</tr>';
  el('dpTableBody').innerHTML=body;renderContracts(v);
  // VISUAL ONLY: explicit column grid prevents browser/zoom from stretching the pinned Mã Acc column.
- const baseDay=mode==='day'?(metric==='both'?70:110):(metric==='both'?50:64),cols=mode==='day'?kinds.length:days.length*kinds.length,tableW=146+cols*baseDay;
+ const baseDay=mode==='day'?(metric==='both'?70:110):(metric==='both'?50:64),cols=mode==='day'?kinds.length+1:days.length*kinds.length,tableW=146+cols*baseDay;
  el('dpColGroup').innerHTML='<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
  el('dpTable').style.width=tableW+'px'; el('dpTable').style.minWidth=tableW+'px';
  el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
 }
 function exportCSV(){const v=current;const {m,day,mode,team,days,rows,metric}=v;if(!rows)return;const kinds=metricKinds(metric);
- const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày',...kinds.map(kind=>kind==='sold'?'Bán mới':'Online'),...kinds.map(kind=>kind==='sold'?'Mã HĐ đã lên':'Mã HĐ đã Online')]:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>kinds.map(kind=>d+' '+metricLabel(kind)))]];
- function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,...kinds.map(kind=>r[kind][idx]||0),...kinds.map(kind=>acc?visibleContracts(v.contracts).filter(row=>norm(row.staff)===norm(acc)&&row[kind==='sold'?'created':'date']===day).map(row=>String(row.id).trim().toUpperCase()).join(' | '):'')]:[team,name,acc,...days.flatMap((_,i)=>kinds.map(kind=>r[kind][i]||0))]);}
+ const table=[mode==='day'?['Bầy','Nhân sự','Mã Acc','Ngày',...kinds.map(kind=>kind==='sold'?'Bán mới':metricLabel(kind)),...kinds.map(kind=>kind==='sold'?'Mã HĐ đã lên':'Mã HĐ đã Online'),'HĐ Online dự kiến','Mã HĐ Online dự kiến']:['Bầy','Nhân sự','Mã Acc',...days.flatMap(d=>kinds.map(kind=>d+' '+metricLabel(kind)))]];
+ function push(team,name,acc,r){const idx=+day.slice(-2)-1;table.push(mode==='day'?[team,name,acc,day,...kinds.map(kind=>r[kind][idx]||0),...kinds.map(kind=>acc?visibleContracts(kind==='expected'?(v.expectedContracts[day]||[]):v.contracts).filter(row=>norm(row.staff)===norm(acc)&&(kind==='expected'||row[kind==='sold'?'created':'date']===day)).map(row=>String(row.id).trim().toUpperCase()).join(' | '):''),r.expected[idx]||0,acc?visibleContracts(v.expectedContracts[day]||[]).filter(row=>norm(row.staff)===norm(acc)).map(row=>String(row.id).trim().toUpperCase()).join(' | '):'']:[team,name,acc,...days.flatMap((_,i)=>kinds.map(kind=>r[kind][i]||0))]);}
  for(const t of team?[team]:['1','2','3']){const people=rows.filter(p=>p.team===t);people.forEach(p=>push('Bầy '+t,p.name,p.acc,p));push('Bầy '+t,'TỔNG BẦY '+t,'',total(people,days));}
  push('Tổng',team?'TỔNG BẦY '+team:'TỔNG PHÒNG','',total(rows,days));
  const csv='\ufeff'+table.map(row=>row.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
@@ -1043,6 +1037,10 @@ el('dpSearch')?.addEventListener('input',render);
 el('to')?.addEventListener('change',()=>{fromReportDate();render()});
 el('dpExport').addEventListener('click',exportCSV);
 window.addEventListener('storage',render);
+['pendAsOf'].forEach(id=>el(id)?.addEventListener('change',render));
+['ibb5-shared-updated','ibb5-snapshot-updated'].forEach(event=>document.addEventListener(event,()=>queueMicrotask(render)));
+window.addEventListener('focus',render);
+setInterval(()=>{if(!document.hidden&&el('performance').classList.contains('page-active'))render();},30000);
 window.IBB5_RENDER_DAILY_PERFORMANCE=render;
 })();
 
