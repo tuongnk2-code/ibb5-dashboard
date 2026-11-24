@@ -10,7 +10,7 @@ export function sourceComparison(current,previous,available=true){
  return {current,previous,delta,percent:available&&previous>0?delta/previous*100:null};
 }
 
-// Count currently normal NET contracts by their actual Online dates.
+// Count currently normal NET contracts once when created or Online within the selected period.
 export function compareChannelSources(rows,notes,month,anchor,staff='',roster=STAFF_ROSTER,team=''){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!validDay(anchor))throw new Error('Ngày đối chiếu kênh bán không hợp lệ.');
  const cutoff=anchor.slice(0,7)===month?anchor:month<anchor.slice(0,7)?monthEnd(month):month+'-'+anchor.slice(8);
@@ -20,12 +20,12 @@ export function compareChannelSources(rows,notes,month,anchor,staff='',roster=ST
  // Keep prior-only staff and extra source channels visible in the comparison.
  const people=[...roster],known=new Set(people.map(person=>norm(person.acc)));
  for(const row of rows){
-  if(!validDay(row.date)||![month,previousMonth].includes(row.date.slice(0,7)))continue;
+  if(![row.date,row.created].some(date=>validDay(date)&&[month,previousMonth].includes(date.slice(0,7))))continue;
   const key=norm(row.staff);if(!key||known.has(key))continue;
   known.add(key);people.push({acc:row.staff||'Chưa gán',team:0});
  }
- const current=monthlyStaffChannels(rows,notes,month,staff,people,team,safeCutoff,'online');
- const previous=monthlyStaffChannels(rows,notes,previousMonth,staff,people,team,previousCutoff,'online');
+ const current=monthlyStaffChannels(rows,notes,month,staff,people,team,safeCutoff,'online-or-created');
+ const previous=monthlyStaffChannels(rows,notes,previousMonth,staff,people,team,previousCutoff,'online-or-created');
  const available=current.available&&previous.available;
  const previousPeople=new Map(previous.groups.flatMap(group=>group.rows).map(person=>[norm(person.acc),person]));
  const previousGroups=new Map(previous.groups.map(group=>[group.team,group]));

@@ -29,19 +29,21 @@ export function salesChannel(row,notes={}) {
   return !source||normalized(source)==='ibb'?'Chưa cập nhật':aliases.get(normalized(source))||source;
 }
 
+const channelDates=basis=>basis==='online-or-created'?['date','created']:basis==='online'?['date']:['created'];
+const channelInPeriod=(row,month,cutoff,basis)=>channelDates(basis).some(field=>validDay(row[field])&&row[field].slice(0,7)===month&&(!cutoff||row[field]<=cutoff));
+
 export function monthlyChannelContracts(rows,notes,month,channel,cutoff='',staff='',roster=STAFF_ROSTER,team='',basis='created') {
-  const field=basis==='online'?'date':'created',eligible=basis==='online'?normalNetSales(rows):unique(rows);
+  const eligible=basis==='created'?unique(rows):normalNetSales(rows);
   const norm=value=>String(value||'Chưa gán').trim().toLowerCase();
   const members=team?new Set(roster.filter(person=>String(person.team)===String(team)).map(person=>norm(person.acc))):null;
-  return eligible.filter(row=>validDay(row[field])&&row[field].slice(0,7)===month&&(!cutoff||row[field]<=cutoff)&&(!staff||norm(row.staff)===norm(staff))&&(!members||members.has(norm(row.staff)))&&salesChannel(row,notes)===channel);
+  return eligible.filter(row=>channelInPeriod(row,month,cutoff,basis)&&(!staff||norm(row.staff)===norm(staff))&&(!members||members.has(norm(row.staff)))&&salesChannel(row,notes)===channel);
 }
 
 // Online reporting uses latest normal NET status; legacy creation-based consumers remain unchanged.
 export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '', cutoff = '', basis = 'created') {
-  const field=basis==='online'?'date':'created';
-  const monthRows = unique(rows).filter(row=>(basis!=='online'||row.type==='Internet')&&validDay(row[field])&&row[field].slice(0,7)===month);
-  const eligible=basis==='online'?normalNetSales(rows).filter(row=>validDay(row.date)&&row.date.slice(0,7)===month):monthRows;
-  const sourceRows = eligible.filter(row=>!cutoff||row[field]<=cutoff);
+  const monthRows=unique(rows).filter(row=>(basis==='created'||row.type==='Internet')&&channelInPeriod(row,month,'',basis));
+  const eligible=basis==='created'?monthRows:normalNetSales(rows);
+  const sourceRows=eligible.filter(row=>channelInPeriod(row,month,cutoff,basis));
   const sourceOf = row => salesChannel(row,notes);
   const extra = [...new Set(sourceRows.map(sourceOf))].filter(channel=>!SALES_CHANNELS.includes(channel)).sort((a,b)=>a.localeCompare(b,'vi'));
   const channels = [...SALES_CHANNELS,...extra];

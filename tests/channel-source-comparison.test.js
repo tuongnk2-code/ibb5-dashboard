@@ -23,14 +23,14 @@ test('missing previous data is not zero, and month-end/year rollover are clamped
  const noCurrent=compareChannelSources([row('P','DNG.A','2026-10-01')],{},'2026-11','2026-11-19','',roster);assert.equal(noCurrent.comparison.previous,1);assert.equal(noCurrent.comparison.delta,null);
 });
 
-test('Tuongnk counts one normal Online contract, excludes cancellation and pending, and uses Online month',()=>{
+test('Tuongnk counts one normal Online contract, adds normal newly created contracts without counting cancellation or duplicate Online',()=>{
  const online={...row('ON','DNG.Tuongnk','2026-10-02','Khác'),date:'2026-11-12'};
  const cancelled={...row('CANCEL','DNG.Tuongnk','2026-11-02','Khác'),date:'2026-11-13',status:'Đã chấm dứt hợp đồng'};
  const pending={...row('WAIT','DNG.Tuongnk','2026-11-03','Khác'),date:''};
- const oldOnline={...row('OLD','DNG.Tuongnk','2026-11-03','Khác'),date:'2026-10-10'};
- const rows=[online,{...cancelled,status:'Bình thường'},cancelled,pending,oldOnline,{...online,type:'Camera',id:'CAM'}, {...online,id:'FUTURE',date:'2026-11-25'}];
+ const oldOnline={...row('OLD','DNG.Tuongnk','2026-09-03','Khác'),date:'2026-10-10'};
+ const rows=[online,{...cancelled,status:'Bình thường'},cancelled,pending,oldOnline,{...online,type:'Camera',id:'CAM'}, {...online,id:'FUTURE',created:'2026-11-25',date:'2026-11-25'}];
  const report=compareChannelSources(rows,{ON:{result:'Hủy'}},'2026-11','2026-11-24','',[]);
  const person=report.current.groups.flatMap(g=>g.rows).find(p=>p.acc==='DNG.Tuongnk');
- assert.equal(person.counts['Khác'],1);assert.equal(person.total,1);assert.equal(report.comparison.current,1);assert.equal(report.comparison.previous,1);
+ assert.equal(person.counts['Khác'],2);assert.equal(person.total,2);assert.equal(report.comparison.current,2);assert.equal(report.comparison.previous,2);
  const onlyCancelled=compareChannelSources([cancelled],{},'2026-11','2026-11-24','',[]);assert.equal(onlyCancelled.current.available,true);assert.equal(onlyCancelled.comparison.current,0);
 });
