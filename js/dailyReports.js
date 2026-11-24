@@ -1,3 +1,4 @@
+import { metricProgressMarkup } from './metricProgressModel.js';
 import { getSession } from './auth.js';
 import { mountReportComments } from './reportComments.js';
 import { REPORT_SOURCES, STATE_LABEL, reportDay, reportState, validateReport, reportText, shiftDay, reportIdentity } from './dailyReportModel.js';
@@ -72,7 +73,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       const result = await api('GET', null, 'history=mine&month=' + encodeURIComponent($('#drHistoryMonth').value));
       if (version !== historyGeneration) return;
       history = result.reports;
-      $('#drHistoryRows').innerHTML = history.map(r => `<tr><td>${r.report_date.split('-').reverse().join('/')}</td><td>${number(r.data.actual)} / ${number(r.data.commitment)}</td><td>${number(r.data.online)}</td><td>${time(r.submitted_at)}</td><td><button type="button" data-dr-history="${esc(r.report_date)}">Xem báo cáo</button></td></tr>`).join('') || '<tr><td colspan="5">Bạn chưa gửi báo cáo nào trong tháng này.</td></tr>';
+      $('#drHistoryRows').innerHTML = history.map(r => `<tr><td>${r.report_date.split('-').reverse().join('/')}</td><td>${number(r.data.actual)} / ${number(r.data.commitment)}${r.data.commitment>0?metricProgressMarkup(r.data.actual/r.data.commitment*100,{title:'Hoàn thành cam kết trong báo cáo đã gửi'}):''}</td><td>${number(r.data.online)}</td><td>${time(r.submitted_at)}</td><td><button type="button" data-dr-history="${esc(r.report_date)}">Xem báo cáo</button></td></tr>`).join('') || '<tr><td colspan="5">Bạn chưa gửi báo cáo nào trong tháng này.</td></tr>';
     } catch (err) { if (version === historyGeneration) $('#drHistoryRows').innerHTML = '<tr><td colspan="5">' + esc(err.message) + ' Bấm Tải lại danh sách để thử lại.</td></tr>'; }
   }
   function sourceRow(s) {
@@ -103,13 +104,13 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     if(manager || !snapshot)return;
     const metric = snapshot.metrics[me.id] || { online: 0, monthlyOnline: 0 };
     const target = own()?.data.monthlyTarget ?? getMonthlyTarget(date.slice(0, 7), me.acc);
-    $('#drAuto').innerHTML = `<div><span>HĐ Online hôm nay</span><b>${number(metric.online)}</b><small>Tự lấy theo ngày Online</small></div><div><span>Online lũy kế / Cam kết tháng</span><b>${number(metric.monthlyOnline)} / ${target == null ? '—' : number(target)}</b><small>${target == null ? 'Chưa có cam kết tháng đã duyệt trên thiết bị này' : 'Theo cam kết tháng đã duyệt'}</small></div>`;
+    $('#drAuto').innerHTML = `<div><span>HĐ Online hôm nay</span><b>${number(metric.online)}</b><small>Tự lấy theo ngày Online</small></div><div><span>Online lũy kế / Cam kết tháng</span><b>${number(metric.monthlyOnline)} / ${target == null ? '—' : number(target)}</b><small>${target == null ? 'Chưa có cam kết tháng đã duyệt trên thiết bị này' : 'Theo cam kết tháng đã duyệt'}</small>${target>0?metricProgressMarkup(metric.monthlyOnline/target*100,{title:'Hoàn thành cam kết Online tháng'}):''}</div>`;
   }
   function drawBoard() {
     if (!snapshot) return;
     const entries = snapshot.profiles.filter(p => p.role !== 'manager' || !supervisor).map(p => ({ p, r: snapshot.reports.find(r => r.user_id === p.id) }));
     const sent = entries.filter(({ r }) => r?.status === 'submitted'), pending = entries.filter(({ r }) => !['submitted', 'exempt'].includes(r?.status)), support = sent.filter(({ r }) => r.data.support?.trim());
-    $('#drSummary').innerHTML = [{ key: 'sent', label: 'Đã gửi', count: sent.length }, { key: 'pending', label: 'Chưa gửi', count: pending.length }, { key: 'support', label: 'Cần hỗ trợ', count: support.length }, { key: 'all', label: 'KHTN mới', count: sent.reduce((n, { r }) => n + r.data.sources.reduce((v, s) => v + s.leads, 0), 0) }].map(s => `<button type="button" data-dr-filter="${s.key}" class="dr-stat dr-stat-${s.key}"><span>${s.label}</span><strong>${number(s.count)}</strong></button>`).join('');
+    $('#drSummary').innerHTML = [{ key: 'sent', label: 'Đã gửi', count: sent.length }, { key: 'pending', label: 'Chưa gửi', count: pending.length }, { key: 'support', label: 'Cần hỗ trợ', count: support.length }, { key: 'all', label: 'KHTN mới', count: sent.reduce((n, { r }) => n + r.data.sources.reduce((v, s) => v + s.leads, 0), 0) }].map(s => `<button type="button" data-dr-filter="${s.key}" class="dr-stat dr-stat-${s.key}"><span>${s.label}</span><strong>${number(s.count)}</strong>${s.key==='sent'&&sent.length+pending.length>0?metricProgressMarkup(sent.length/(sent.length+pending.length)*100,{kind:'ratio',title:'Tỷ lệ đã gửi báo cáo, không tính ngày nghỉ/miễn'}):''}</button>`).join('');
     const late = pending.filter(({ r }) => state(r) === 'overdue');
     const alert = $('#drAlerts'); alert.hidden = !pending.length;
     alert.className = 'dr-alerts' + (late.length ? ' dr-overdue-alert' : '');
@@ -117,7 +118,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     const shown = entries.filter(({ r }) => filter === 'all' || (filter === 'pending' && !['submitted', 'exempt'].includes(r?.status)) || (filter === 'overdue' && ['overdue', 'late'].includes(state(r))) || (filter === 'sent' && r?.status === 'submitted') || (filter === 'support' && r?.status === 'submitted' && r.data.support?.trim()) || (filter === 'exempt' && r?.status === 'exempt'));
     $('#drRows').innerHTML = shown.map(({ p, r }) => {
       const d = r?.data, submitted = r?.status === 'submitted', leads = d?.sources?.reduce((n, s) => n + s.leads, 0) || 0, closed = d?.sources?.reduce((n, s) => n + s.closed, 0) || 0;
-      return `<tr class="dr-row-${state(r)}"><td><b>${esc(reportIdentity(p))}</b><small>${p.team ? ' · Bầy ' + p.team : ''}</small></td><td>${submitted ? d.actual + '/' + d.commitment : '—'}</td><td>${submitted ? leads + ' / ' + closed : '—'}</td><td>${submitted ? number(d.online) : '—'}</td><td>${submitted ? d.tomorrowPttb + ' / ' + d.tomorrowOnline : '—'}</td><td>${badge(r)}${submitted && d.support?.trim() ? '<small class="dr-support-flag">Cần hỗ trợ</small>' : ''}</td><td>${time(r?.submitted_at)}</td><td><button type="button" data-dr-view="${esc(p.id)}">Xem</button>${supervisor && !submitted ? `<button type="button" data-dr-exempt="${esc(p.id)}">${r?.status === 'exempt' ? 'Bỏ nghỉ' : 'Ngày nghỉ'}</button>` : ''}</td></tr>`;
+      return `<tr class="dr-row-${state(r)}"><td><b>${esc(reportIdentity(p))}</b><small>${p.team ? ' · Bầy ' + p.team : ''}</small></td><td>${submitted ? d.actual + '/' + d.commitment : '—'}${submitted&&d.commitment>0?metricProgressMarkup(d.actual/d.commitment*100,{title:'Hoàn thành PTTB cam kết trong báo cáo'}):''}</td><td>${submitted ? leads + ' / ' + closed : '—'}</td><td>${submitted ? number(d.online) : '—'}</td><td>${submitted ? d.tomorrowPttb + ' / ' + d.tomorrowOnline : '—'}</td><td>${badge(r)}${submitted && d.support?.trim() ? '<small class="dr-support-flag">Cần hỗ trợ</small>' : ''}</td><td>${time(r?.submitted_at)}</td><td><button type="button" data-dr-view="${esc(p.id)}">Xem</button>${supervisor && !submitted ? `<button type="button" data-dr-exempt="${esc(p.id)}">${r?.status === 'exempt' ? 'Bỏ nghỉ' : 'Ngày nghỉ'}</button>` : ''}</td></tr>`;
     }).join('') || '<tr><td colspan="8">Không có nhân sự phù hợp.</td></tr>';
     const ownState = state(own()); $('#drOwnStatus').className = 'dr-badge dr-' + ownState; $('#drOwnStatus').textContent = STATE_LABEL[ownState];
     const report = own();

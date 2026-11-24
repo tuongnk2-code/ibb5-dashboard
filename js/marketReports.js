@@ -78,7 +78,7 @@ export function renderMarketReports(root, me) {
     $('#mkHead').innerHTML = `<tr><th rowspan="2">Mã Acc / Bầy</th><th colspan="5">TỔNG THÁNG ${date.slice(0, 7)}</th>${days.map(day => `<th colspan="3">${dayLabel(day)}</th>`).join('')}</tr><tr><th>Số buổi</th><th>Demo</th><th>PTTB</th><th>Tỷ lệ Demo</th><th>Tỷ lệ PTTB</th>${days.map(() => '<th>Tham gia</th><th>Demo</th><th>PTTB</th>').join('')}</tr>`;
     const cells = (members, aggregate = false) => {
       const ids = new Set(members.map(p => p.id)), reports = snapshot.reports.filter(r => ids.has(r.user_id)), total = marketTotals(reports);
-      return `<td>${total.sessions}</td><td>${total.demos}</td><td>${total.pttb}</td><td>${rate(total.demoRate)}</td><td>${rate(total.pttbRate)}</td>` + days.map(day => {
+      return `<td>${total.sessions}</td><td>${total.demos}</td><td>${total.pttb}</td><td data-metric-percent="ratio">${rate(total.demoRate)}</td><td data-metric-percent="ratio">${rate(total.pttbRate)}</td>` + days.map(day => {
         const dayReports = reports.filter(r => r.report_date === day), sum = marketTotals(dayReports);
         if (aggregate) return ['sessions', 'demos', 'pttb'].map(key => `<td>${sum[key]}</td>`).join('');
         const report = dayReports[0], person = members[0], submitted = report?.status === 'submitted';

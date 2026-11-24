@@ -1,3 +1,5 @@
+import { metricProgressMarkup } from './metricProgressModel.js';
+import { installMetricProgress } from './metricProgress.js';
 import { renderDailyCommitments } from './dailyCommitments.js';
 import { renderProspects } from './prospects.js';
 import { renderDigitalWorker } from './digitalWorker.js';
@@ -533,7 +535,7 @@ function renderOverdueList(){
 }
 overdueFilters.forEach(select=>select.addEventListener('change',()=>{renderOverdueList();$('anaOldRows').closest('.ana-overdue-scroll').scrollTop=0;}));
 $('anaOldReset').addEventListener('click',()=>{overdueFilters.forEach(select=>select.value='');renderOverdueList();});
-function barRows(id,items,total,withPercent=false,denominator='HĐ NET Online'){$(id).innerHTML=items.length?items.map(([name,n])=>'<div class="ana-row"><span title="'+esc(name)+'">'+esc(name)+'</span><div class="ana-track"><div class="ana-fill" style="width:'+((total?100*n/total:0).toFixed(2))+'%"></div></div><strong'+(withPercent?' class="ana-share-value" title="'+fmt(n)+' / '+fmt(total)+' '+esc(denominator)+'"':'')+'>'+fmt(n)+(withPercent?' HĐ <small>'+formatPercent(total?100*n/total:0)+'</small>':'')+'</strong></div>').join(''):'<div class="ana-empty">Chưa có dữ liệu phù hợp.</div>'}
+function barRows(id,items,total,withPercent=false,denominator='HĐ NET Online'){$(id).innerHTML=items.length?items.map(([name,n])=>'<div class="ana-row"><span title="'+esc(name)+'">'+esc(name)+'</span>'+(withPercent?'<div class="ana-progress">'+metricProgressMarkup(total?100*n/total:null,{kind:'ratio',title:fmt(n)+' / '+fmt(total)+' '+denominator})+'</div>':'<div class="ana-track"><div class="ana-fill" style="width:'+((total?100*n/total:0).toFixed(2))+'%"></div></div>')+'<strong'+(withPercent?' class="ana-share-value" title="'+fmt(n)+' / '+fmt(total)+' '+esc(denominator)+'"':'')+'>'+fmt(n)+(withPercent?' HĐ':'')+'</strong></div>').join(''):'<div class="ana-empty">Chưa có dữ liệu phù hợp.</div>'}
 function render(){const m=$('anaMonth').value,staff=$('anaStaff').value,day=$('anaDay').value,ns=notes(),all=unique(data()),subset=all.filter(x=>!staff||x.staff===staff),monthRows=subset.filter(x=>x.created?.slice(0,7)===m||x.date?.slice(0,7)===m);const soldRows=dailySoldContracts(subset,ns,PERSONNEL);const days=new Date(+m.slice(0,4),+m.slice(5),0).getDate();let series=[];for(let d=1;d<=days;d++){const date=m+'-'+String(d).padStart(2,'0');series.push({d,sold:soldRows.filter(x=>x.created===date).length,on:subset.filter(x=>x.date===date).length})}const max=Math.max(1,...series.flatMap(x=>[x.sold,x.on]));
 const totalOn=series.reduce((a,x)=>a+x.on,0),totalSold=series.reduce((a,x)=>a+x.sold,0);
 const highestOn=series.reduce((a,x)=>x.on>a.on?x:a,series[0]);
@@ -592,7 +594,7 @@ const shareTeam=$('anaShareTeam').value,shareLabel=shareTeam?'Bầy '+shareTeam:
 const onlineMonth=filterStaffTeam(all,shareTeam).filter(x=>x.date?.slice(0,7)===m),counts=new Map();onlineMonth.forEach(x=>counts.set(x.staff||'Chưa gán',1+(counts.get(x.staff||'Chưa gán')||0)));barRows('anaStaffBars',[...counts].sort((a,b)=>b[1]-a[1]),onlineMonth.length,true);
 $('anaShareScope').textContent='HĐ Internet Online thực tế trong tháng · Tỷ trọng trong '+shareLabel.toLocaleLowerCase('vi-VN');
 const departmentOnline=all.filter(x=>x.date?.slice(0,7)===m).length,departmentShare=departmentOnline?formatPercent(onlineMonth.length/departmentOnline*100):'—';
-$('anaShareTotal').textContent=shareLabel+' · Tổng Online: '+fmt(onlineMonth.length)+' HĐ · Đóng góp phòng: '+departmentShare;
+$('anaShareTotal').innerHTML=esc(shareLabel)+' · Tổng Online: '+fmt(onlineMonth.length)+' HĐ · Đóng góp phòng: <span data-metric-percent="ratio">'+departmentShare+'</span>';
 $('anaShareTotal').title=fmt(onlineMonth.length)+' / '+fmt(departmentOnline)+' HĐ NET Online toàn phòng trong tháng';
 const chan=new Map();let annotated=0;subset.filter(x=>x.created?.slice(0,7)===m).forEach(x=>{const source=ns[x.id]?.source||x.sourceExcel||'';if(source&&salesChannel(x,ns)!=='Chưa cập nhật'){annotated++;chan.set(source,1+(chan.get(source)||0))}});renderChannelShareChart($('anaChannelBars'),[...chan]);$('anaChannelNote').textContent='Có nguồn: '+annotated+' HĐ. Tỷ trọng = HĐ từng kênh / tổng HĐ có nguồn. Chưa cập nhật nguồn không được tự gán vào kênh.';
 $('anaChannelMonth').value=m;
@@ -1174,3 +1176,5 @@ renderDigitalWorker(document.getElementById('digitalWorker'),window.IBB5_CURRENT
 renderProspects(document.getElementById('prospects'),window.IBB5_CURRENT_PROFILE||{});
 
 renderDailyCommitments(document.getElementById('dailyCommitments'));
+
+installMetricProgress();
