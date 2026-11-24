@@ -96,8 +96,8 @@
     display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:16px;
   }
   #overview .overview-five>.ov-metric {
-    grid-template-rows:minmax(40px,auto) 44px 32px minmax(20px,auto) !important;
-    gap:4px 8px !important;padding:10px !important;min-height:0 !important;
+    grid-template-rows:minmax(30px,auto) 34px 28px minmax(16px,auto) !important;
+    gap:2px 6px !important;padding:8px !important;min-height:0 !important;
     min-width:0;text-align:center;
   }
   #overview .overview-five>.ov-metric:nth-child(-n+2) {background:#f1f7fe !important}
@@ -108,7 +108,7 @@
   #overview .overview-five>.ov-metric>.ov-metric-icon svg {width:20px;height:20px}
   #overview .overview-five>.ov-metric>.value {
     grid-area:2/1/3/3 !important;justify-self:center !important;align-self:center !important;
-    font-size:36px !important;text-align:center !important;
+    font-size:30px !important;text-align:center !important;
   }
   #overview .overview-five>.ov-metric:has(.previous-day-picker)>.value {grid-column:1/3 !important}
   #overview .overview-five>.ov-metric>.detail {
@@ -119,7 +119,7 @@
     grid-area:3/1/4/3 !important;justify-self:center;align-self:center;
     flex-direction:row;align-items:center;gap:0;font-size:0;
   }
-  #overview .overview-five>.ov-metric>.previous-day-picker input {width:128px;min-height:32px;padding:5px;font-size:11px}
+  #overview .overview-five>.ov-metric>.previous-day-picker input {width:128px;min-height:28px;padding:3px 5px;font-size:11px}
   #overview .overview-five>.ov-metric:has(.previous-day-picker)>.detail {grid-area:4/1/5/3 !important;font-size:11px !important}
   @media(max-width:1199px){#overview .overview-five{grid-template-columns:repeat(3,minmax(0,1fr))}}
   @media(max-width:700px){#overview .overview-five{grid-template-columns:repeat(2,minmax(0,1fr))}}

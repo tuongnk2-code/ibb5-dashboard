@@ -12,3 +12,7 @@
 #overview :is(#dailyProgress,#pnRate,#managed,#ibbQualitySummary [data-k="prepaid"],#ibbQualitySummary [data-k="coverage"]) .metric-progress-fill{border-radius:11px}
 #overview :is(#dailyProgress,#pnRate,#managed,#ibbQualitySummary [data-k="prepaid"],#ibbQualitySummary [data-k="coverage"]) .metric-progress-text{font-size:32px!important}
 @media(max-width:650px){#overview :is(#dailyProgress,#pnRate,#managed,#ibbQualitySummary [data-k="prepaid"],#ibbQualitySummary [data-k="coverage"]) .metric-progress{height:38px!important;border-radius:9px}#overview :is(#dailyProgress,#pnRate,#managed,#ibbQualitySummary [data-k="prepaid"],#ibbQualitySummary [data-k="coverage"]) .metric-progress-text{font-size:26px!important}}
+#overview .overview-five #growth .metric-progress{height:34px!important;border-radius:9px}
+#overview .overview-five #growth .metric-progress-fill{border-radius:9px}
+#overview .overview-five #growth .metric-progress-text{font-size:26px!important}
+@media(max-width:650px){#overview .overview-five #growth .metric-progress{height:32px!important}#overview .overview-five #growth .metric-progress-text{font-size:24px!important}}
