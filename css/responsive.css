@@ -727,3 +727,23 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #performance #dpTable th.dp-expected-header{white-space:normal!important;line-height:1.2;overflow-wrap:normal}
 #performance #dpTable td.dp-expected{color:#0875bd;font-weight:800}
 #performance #dpTable .dp-grand td.dp-expected{color:white}
+/* Fit all daily metrics beside the two compact contract lists. */
+#performance .dp-day-layout{grid-template-columns:minmax(300px,30%) minmax(0,1fr);gap:12px}
+#performance .dp-day-layout #dpTable{table-layout:fixed;width:100%!important;min-width:0!important;font-size:11px}
+#performance .dp-day-layout #dpTable :is(th,td){min-width:0!important;width:auto;padding:3px 4px;line-height:1.2}
+#performance .dp-day-layout #dpTable .dp-staff{min-width:0!important;width:auto!important;padding-left:6px}
+#performance .dp-day-layout #dpTable .dp-staff strong{font-size:11px;white-space:nowrap}
+#performance .dp-day-layout #dpTable thead tr:first-child th{height:28px}
+#performance .dp-day-layout #dpTable thead tr:nth-child(2) th{top:28px;font-size:10px;height:38px}
+#performance .dp-day-layout #dpTable tbody td{height:22px;box-sizing:border-box}
+#performance .dp-day-layout .dp-legend{font-size:10px;gap:6px;margin-bottom:5px}
+#performance .dp-day-layout #dpScope{font-size:10px;margin-bottom:5px}
+#performance .dp-day-layout .dp-contract-details{gap:12px}
+#performance .dp-day-layout .dp-contract-head{padding:7px 9px}
+#performance .dp-day-layout .dp-contract-head h4{font-size:13px;margin-bottom:2px}
+#performance .dp-day-layout .dp-contract-card table{font-size:11px}
+#performance .dp-day-layout .dp-contract-card :is(th,td){padding:4px 6px;line-height:1.25}
+#performance .dp-day-layout .dp-contract-card td small{font-size:9px;line-height:1.3;margin-top:2px}
+#performance .dp-day-layout .dp-contract-card td .dp-contract-acc{font-size:10px}
+@media(max-width:1200px){#performance .dp-day-layout{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){#performance .dp-day-layout #dpTable :is(th,td){padding:3px}#performance .dp-day-layout #dpTable .dp-staff strong{font-size:10px}}

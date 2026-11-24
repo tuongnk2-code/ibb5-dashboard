@@ -972,9 +972,9 @@ function calculate(){const m=el('dpMonth').value,day=el('dpDay').value,mode=el('
 }
 const total=(arr,days)=>({expected:days.map((_,i)=>arr.reduce((s,p)=>s+(p.expected[i]||0),0)),sold:days.map((_,i)=>arr.reduce((s,p)=>s+(p.sold[i]||0),0)),online:days.map((_,i)=>arr.reduce((s,p)=>s+(p.online[i]||0),0))});
 function rowHtml(p,mode,idx,days){
- const cell=(kind,value,warn)=>'<td class="dp-'+kind+(warn&&value<1?' dp-below-one':'')+'"'+(warn&&value<1?' title="Chưa có HĐ '+(kind==='sold'?'bán mới':'Online')+' trong ngày"':'')+'>'+value+'</td>';
+ const cell=(kind,value,warn)=>'<td class="dp-'+kind+(warn&&value<1?' dp-below-one':'')+'"'+(warn&&value<1?' title="Chưa có HĐ '+(kind==='sold'?'bán mới':kind==='expected'?'Online dự kiến màu xanh':'Online')+' trong ngày"':'')+'>'+value+'</td>';
  const kinds=metricKinds(current.metric);
- if(mode==='day')return kinds.map(kind=>cell(kind,p[kind][idx]||0,!!p.acc)).join('')+cell('expected',p.expected[idx]||0,false);
+ if(mode==='day')return kinds.map(kind=>cell(kind,p[kind][idx]||0,!!p.acc)).join('')+cell('expected',p.expected[idx]||0,!!p.acc);
  return days.map((day,i)=>{const warn=!!p.acc&&(current.m+'-'+String(day).padStart(2,'0')<=reportDay());return kinds.map(kind=>cell(kind,p[kind][i]||0,warn)).join('')}).join('');
 }
 function kpi(title,val,cl=''){return `<div class="dp-kpi ${cl}"><small>${esc(title)}</small><strong>${esc(val)}</strong></div>`}
@@ -1018,8 +1018,8 @@ function render(){
  el('dpTableBody').innerHTML=body;renderContracts(v);
  // VISUAL ONLY: explicit column grid prevents browser/zoom from stretching the pinned Mã Acc column.
  const baseDay=mode==='day'?(metric==='both'?70:110):(metric==='both'?50:64),cols=mode==='day'?kinds.length+1:days.length*kinds.length,tableW=146+cols*baseDay;
- el('dpColGroup').innerHTML='<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
- el('dpTable').style.width=tableW+'px'; el('dpTable').style.minWidth=tableW+'px';
+ el('dpColGroup').innerHTML=mode==='day'?'<col style="width:42%">'+Array(cols).fill('<col style="width:'+(58/cols)+'%">').join(''):'<col style="width:146px">'+Array(cols).fill('<col style="width:'+baseDay+'px">').join('');
+ el('dpTable').style.width=mode==='day'?'100%':tableW+'px'; el('dpTable').style.minWidth=mode==='day'?'0':tableW+'px';
  el('dpNote').textContent='Cố định cột Mã Acc khi kéo ngang · Cấu trúc Bầy và danh sách nhân sự trùng bảng Hiệu suất nhân sự · Mỗi mã HĐ NET chỉ tính một lần · '+(mode==='day'?'Ngày '+period:'Đủ '+days.length+' ngày trong tháng')+' · Chủ nhật vẫn ghi nhận số bán và Online thực tế.';
 }
 function exportCSV(){const v=current;const {m,day,mode,team,days,rows,metric}=v;if(!rows)return;const kinds=metricKinds(metric);
