@@ -1,3 +1,4 @@
+import { installTableZoom } from './tableZoom.js';
 import { metricProgressMarkup } from './metricProgressModel.js';
 import { installMetricProgress } from './metricProgress.js';
 import { renderDailyCommitments } from './dailyCommitments.js';
@@ -1184,3 +1185,5 @@ renderProspects(document.getElementById('prospects'),window.IBB5_CURRENT_PROFILE
 renderDailyCommitments(document.getElementById('dailyCommitments'));
 
 installMetricProgress();
+
+installTableZoom();
