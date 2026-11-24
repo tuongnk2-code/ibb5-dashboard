@@ -1,3 +1,4 @@
+import { normalNetSales } from './dailyPerformanceModel.js';
 import { isTerminatedNetContract } from './cancellationArchive.js';
 import { validDay } from './dailyReportModel.js';
 import { STAFF_ROSTER } from './staffRoster.js';
@@ -28,16 +29,19 @@ export function salesChannel(row,notes={}) {
   return !source||normalized(source)==='ibb'?'Chưa cập nhật':aliases.get(normalized(source))||source;
 }
 
-export function monthlyChannelContracts(rows,notes,month,channel,cutoff='',staff='',roster=STAFF_ROSTER,team='') {
+export function monthlyChannelContracts(rows,notes,month,channel,cutoff='',staff='',roster=STAFF_ROSTER,team='',basis='created') {
+  const field=basis==='online'?'date':'created',eligible=basis==='online'?normalNetSales(rows):unique(rows);
   const norm=value=>String(value||'Chưa gán').trim().toLowerCase();
   const members=team?new Set(roster.filter(person=>String(person.team)===String(team)).map(person=>norm(person.acc))):null;
-  return unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month&&(!cutoff||row.created<=cutoff)&&(!staff||norm(row.staff)===norm(staff))&&(!members||members.has(norm(row.staff)))&&salesChannel(row,notes)===channel);
+  return eligible.filter(row=>validDay(row[field])&&row[field].slice(0,7)===month&&(!cutoff||row[field]<=cutoff)&&(!staff||norm(row.staff)===norm(staff))&&(!members||members.has(norm(row.staff)))&&salesChannel(row,notes)===channel);
 }
 
-// Creation month and source priority are unchanged. Unknown sources retain their own columns.
-export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '', cutoff = '') {
-  const monthRows = unique(rows).filter(row=>validDay(row.created)&&row.created.slice(0,7)===month);
-  const sourceRows = monthRows.filter(row=>!cutoff||row.created<=cutoff);
+// Online reporting uses latest normal NET status; legacy creation-based consumers remain unchanged.
+export function monthlyStaffChannels(rows, notes, month, staff = '', roster = STAFF_ROSTER, team = '', cutoff = '', basis = 'created') {
+  const field=basis==='online'?'date':'created';
+  const monthRows = unique(rows).filter(row=>(basis!=='online'||row.type==='Internet')&&validDay(row[field])&&row[field].slice(0,7)===month);
+  const eligible=basis==='online'?normalNetSales(rows).filter(row=>validDay(row.date)&&row.date.slice(0,7)===month):monthRows;
+  const sourceRows = eligible.filter(row=>!cutoff||row[field]<=cutoff);
   const sourceOf = row => salesChannel(row,notes);
   const extra = [...new Set(sourceRows.map(sourceOf))].filter(channel=>!SALES_CHANNELS.includes(channel)).sort((a,b)=>a.localeCompare(b,'vi'));
   const channels = [...SALES_CHANNELS,...extra];

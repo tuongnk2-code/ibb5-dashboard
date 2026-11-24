@@ -6,7 +6,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   const page=await browser.newPage({viewport:{width:1600,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{
-   const row=(id,staff,created,sourceExcel)=>({id,type:'Internet',staff,created,date:'',sourceExcel,room:'IBB5'});
+   const row=(id,staff,created,sourceExcel)=>({id,type:'Internet',staff,created,date:created,status:'Bình thường',sourceExcel,room:'IBB5'});
    window.IBB5_IMPORTED_DATA=[row('C1','DNG.Hoantt','2026-11-01','Web'),row('C2','DNG.Hoantt','2026-11-10','Web'),row('C3','DNG.Hoantt','2026-11-19','Web'),row('C4','DNG.Namnh170','2026-11-10','IBB'),row('MISSING','DNG.Namnh170','2026-11-10',''),row('AFTER','DNG.Hoantt','2026-11-20','Web'),row('P1','DNG.Hoantt','2026-10-01','Web'),row('P2','DNG.Hoantt','2026-10-10','IBB'),row('P3','DNG.Namnh170','2026-10-19','Web'),row('P4','DNG.Namnh170','2026-10-20','IBB'),row('JAN','DNG.Hoantt','2026-01-01','Web')];
    window.IBB5_PENDING_NOTES={};window.IBB5_SHARED_STATE={notes:{},commitments:{},revisions:{}};
   });
@@ -27,6 +27,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await set('anaChannelMonth','2026-11');await set('anaDay','2026-11-19');
   await page.locator('#anaMonthlyHead').scrollIntoViewIfNeeded();await page.screenshot({path:'C:/Users/ADMIN/.codex/visualizations/2026/11/03/01a19ee8-12dd-7e41-8be4-5a08e724d1f7/channel-comparison-desktop.png'});
   await page.setViewportSize({width:390,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);await grand.locator('[data-missing-channel]').focus();await page.keyboard.press('Enter');assert.equal(await dialog.isVisible(),true);assert.equal(await dialog.locator('tbody tr[data-aged-id]').count(),2);await page.evaluate(()=>{window.IBB5_PENDING_NOTES.C4={source:'Web'};document.dispatchEvent(new CustomEvent('ibb5-shared-updated',{detail:{keys:['pending:C4']}}));});await page.waitForFunction(()=>document.querySelectorAll('#missingChannelDialog tbody tr[data-aged-id]').length===1);assert.equal(await dialog.locator('tbody tr').getAttribute('data-aged-id'),'MISSING');assert.equal(await metric(grand,'current').innerText(),'4');await dialog.locator('[data-aged-close]').click();assert.deepEqual(errors,[]);
+  await page.evaluate(()=>{for(const [id,status,date] of [['TUONG_ON','Bình thường','2026-11-15'],['TUONG_CANCEL','Đã chấm dứt hợp đồng','2026-11-16'],['TUONG_WAIT','Bình thường','']])window.IBB5_IMPORTED_DATA.push({id,type:'Internet',staff:'DNG.Tuongnk',created:'2026-11-01',date,status,sourceExcel:'Khác',room:'IBB5'});document.getElementById('anaDay').dispatchEvent(new Event('change'));});
+  const tuong=page.locator('#anaMonthlyRows [data-acc="DNG.Tuongnk"]');assert.equal(await metric(tuong,'current').innerText(),'1');assert.equal(await tuong.locator('[data-channel="Khác"] .ana-source-count').innerText(),'1');assert.equal(await metric(grand,'current').innerText(),'5');
   console.log('PASS: compact channel cells show only current counts and same-period changes, preserving staff/team totals, missing data and mobile fit');
  }finally{await browser.close();await server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
