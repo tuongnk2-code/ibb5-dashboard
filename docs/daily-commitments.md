@@ -42,3 +42,10 @@ Ngày theo dõi picker, allowing tomorrow's targets alongside today's report.
 Tests: daily-commitments.test.cjs and daily-commitments.browser.cjs cover API roles,
 team scoping, duplicate/cancelled NET, date isolation, conflicts, zero/blank targets,
 NET refresh, Acc-only identity, and 320/390/1440px layouts.
+
+Desktop overview fitting: from 900px width, the table calculates a compact row
+height from the available viewport space, roster/totals row count and header
+height. It recalculates after renders, status messages and window/root resizing.
+The inner vertical scroll cap is removed. Tests assert the footer fits inside
+1366x768 and 1280x720 screens and the table has no vertical overflow. Narrow
+phone screens retain larger editable controls and horizontal scrolling.
