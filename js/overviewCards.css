@@ -242,3 +242,13 @@
     }
   }
 }
+@layer overview-card-layout {
+  #overview .overview-five>.ov-metric:has(>#pending,>#pace,>#previousDayOnline)>.detail{display:none!important}
+  #overview .overview-five>.ov-metric{grid-template-rows:minmax(30px,auto) 34px minmax(28px,auto)!important}
+  #overview .overview-five>.ov-metric>.detail{grid-area:3/1/4/3!important}
+}
+@layer overview-card-layout {
+  #overview #ibbQualitySummary>.kpi>.detail{display:none!important}
+  #overview #ibbQualitySummary>.kpi{min-height:0!important;padding:12px!important;gap:8px!important}
+  #overview #ibbQualitySummary>.kpi>.name{min-height:28px!important}
+}
