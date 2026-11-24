@@ -226,3 +226,19 @@
     #overview .daily {padding:10px !important}
   }
 }
+/* Hide requested helper copy and reclaim its space in the two KPI rows. */
+@layer overview-card-layout {
+  #overview .overview-efficiency>.ov-metric:nth-child(-n+4)>.detail,
+  #overview .dailygrid>.ov-metric>.detail,
+  #overview .ibb-kpi-quality-title>small {display:none!important}
+  #overview :is(.overview-efficiency,.dailygrid)>.mini.ov-metric {
+    min-height:0!important;padding:10px!important;
+    grid-template-rows:minmax(28px,auto) 50px auto!important;gap:4px 6px!important;
+  }
+  #overview .dailygrid [data-pace-progress]{grid-area:3/1/4/3;width:100%;margin:0!important}
+  @media(max-width:600px){
+    #overview :is(.overview-efficiency,.dailygrid)>.mini.ov-metric {
+      grid-template-rows:minmax(28px,auto) 44px auto!important;padding:9px!important;gap:4px!important;
+    }
+  }
+}

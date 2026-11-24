@@ -110,7 +110,7 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  const totalOnline=IBB_CALC.unique(onlineRows),target=getCommit(month,room||'__ALL__').manager;
  const staffCount=new Set(PERSONNEL.filter(person=>!room||person.room===room).map(person=>person.acc.trim().toLowerCase())).size;
  $('staffProductivity').textContent=staffCount?fmt(totalOnline/staffCount):'—';$('staffProductivity').setAttribute('aria-label',$('staffProductivity').textContent+' HĐ/NS');
- $('staffProductivityNote').textContent=staffCount?fmt(totalOnline)+' HĐ NET Online / '+staffCount+' nhân sự · Gồm cả NS chưa có Online':'Chưa có danh sách nhân sự của phòng đang chọn';
+ $('staffProductivityNote').textContent=staffCount?fmt(totalOnline)+' HĐ NET Online / '+staffCount+' nhân sự':'Chưa có danh sách nhân sự của phòng đang chọn';
  const elapsed=IBB_CALC.calendarDays(start,asOf),remaining=IBB_CALC.calendarDays(IBB_CALC.next(asOf),last),allDays=elapsed+remaining;
  // Cửa sổ 7 ngày lịch gần nhất (bao gồm ngày chốt), tính cả Chủ nhật.
  const windowDate=new Date(asOf+'T12:00:00');windowDate.setDate(windowDate.getDate()-6);
@@ -139,7 +139,7 @@ function base(){return operationalData().filter(x=>(!$('from').value||day(x)>=$(
  overviewMetricDetails.refresh();
  $('gap').textContent=number(gap);$('pace').textContent=show(pace7);$('pnRate').textContent=totalOnline?(formatPercent(payCount/totalOnline*100)):'—';$('pnRate').title=fmt(payCount)+' HĐ Pay Online / '+fmt(totalOnline)+' HĐ NET Online';
  const managed=managedShare(onlineRows);$('managed').textContent=managed.percent===null?'—':formatPercent(managed.percent);$('managed').title=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01 hoặc DNG_02 · từ '+start+' đến '+asOf;
- $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online · CNQL DNG_01, DNG_02';
+ $('managedNote').textContent=fmt(managed.count)+' / '+fmt(managed.total)+' HĐ NET Online';
  const priorCut=IBB_CALC.prior(month,+asOf.slice(-2)),priorMonth=priorCut.slice(0,7),priorRows=netRows.filter(x=>x.date&&x.date.slice(0,7)===priorMonth);
  const previous=IBB_CALC.validPrev(netRows,priorMonth)?IBB_CALC.unique(priorRows.filter(x=>x.date<=priorCut)):null;
  updatePreviousDayOnline();
