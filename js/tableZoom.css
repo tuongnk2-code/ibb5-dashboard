@@ -5,3 +5,10 @@
 .table-zoom-controls output{font:inherit;pointer-events:none}
 @media(max-width:650px){.table-zoom-controls button{min-width:36px;height:32px}.table-zoom-controls{margin:4px 0 6px auto}}
 @media print{.table-zoom-controls{display:none!important}}
+.table-zoom-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;min-width:0}
+.table-zoom-heading>h2,.table-zoom-heading>h3,.table-zoom-heading>h4{margin-bottom:0}
+.table-zoom-controls.table-zoom-inline{flex:0 0 auto;margin:0 0 0 auto;padding:2px;border-radius:9px;align-self:center}
+.table-zoom-controls.table-zoom-inline button{height:28px;min-width:32px;padding:3px 6px;font-size:16px}
+.table-zoom-controls.table-zoom-inline button[data-zoom=reset]{min-width:44px;font-size:11px}
+#pendingContracts .pending-schedule-head>.table-zoom-controls{grid-column:auto;width:max-content;max-width:100%;margin:0;justify-self:end;align-self:end}
+@media(max-width:650px){.table-zoom-controls.table-zoom-inline{margin-left:auto}.table-zoom-controls.table-zoom-inline button{height:30px}}
