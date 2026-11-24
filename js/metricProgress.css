@@ -16,3 +16,8 @@
 #overview .overview-five #growth .metric-progress-fill{border-radius:9px}
 #overview .overview-five #growth .metric-progress-text{font-size:26px!important}
 @media(max-width:650px){#overview .overview-five #growth .metric-progress{height:32px!important}#overview .overview-five #growth .metric-progress-text{font-size:24px!important}}
+/* Match the cancellation headline percentage to the neighboring KPI numbers. */
+#cancelled .ibbc-kpis .ibbc-stat>strong{display:flex;align-items:center;justify-content:center;min-height:38px;line-height:1.15}
+#cancelled .ibbc-kpis #ibbcRate .metric-progress{height:38px!important;border-radius:10px}
+#cancelled .ibbc-kpis #ibbcRate .metric-progress-text{font-size:29px!important;font-weight:900!important}
+@media(max-width:600px){#cancelled .ibbc-kpis .ibbc-stat>strong{min-height:32px}#cancelled .ibbc-kpis #ibbcRate .metric-progress{height:32px!important}#cancelled .ibbc-kpis #ibbcRate .metric-progress-text{font-size:23px!important}}
