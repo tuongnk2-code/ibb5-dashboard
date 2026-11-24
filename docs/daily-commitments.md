@@ -1,13 +1,8 @@
 # Cam Kết Ngày
 
 The table is embedded above the daily-report form in the Báo cáo ngày tab,
-visible only after the authenticated API confirms manager/lead access.
-Managers see all roster accounts; team leads see only their roster team. Staff,
-unknown-team leads and unauthenticated requests cannot read targets through the
-API. Initial HTML hides this embedded table. There is no separate menu item; the old
-#dailyCommitments link redirects to #dailyReports. Staff still use their report
-form normally without seeing the manager/lead commitment table. Only managers may write. The new table is RLS-enabled with
-no direct anon/authenticated grants; the server service client checks roles.
+visible only after the authenticated API confirms access. Managers see all roster accounts. Leads see their roster team; staff see themselves, except members of roster team 2 see all team 2 accounts. Team membership is resolved from the canonical roster, never request parameters. Unknown roster accounts and unauthenticated callers cannot read targets. Scope applies on the server to roster rows, targets, report-derived commitments and actuals. Only managers may write. Self views have no team subtotal and use a personal total.
+Initial HTML hides the table; the old #dailyCommitments link redirects to #dailyReports. Daily-report form access remains independent. The database table remains RLS-enabled with no direct anon/authenticated grants; this change needs no database policy migration.
 
 Each row is keyed by Vietnam calendar date and canonical roster Acc. Two explicit
 nonnegative integer targets are saved together using a row revision (insert for
