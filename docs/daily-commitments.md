@@ -50,9 +50,12 @@ The inner vertical scroll cap is removed. Tests assert the footer fits inside
 1366x768 and 1280x720 screens and the table has no vertical overflow. Narrow
 phone screens retain larger editable controls and horizontal scrolling.
 
-Shortage cells use a continuous red/amber/green background based on actual /
-commitment, capped at 100%. Unknown data and zero targets remain neutral. The
-number remains the actual shortage; the tooltip exposes the completion percentage
-and counts. Team/room completion uses (known target - sum of individual deficits)
-so one over-performing employee cannot hide another's shortfall. A small gradient
-legend sits beside the Thiếu header without increasing row height.
+Shortage cells show horizontal rounded progress bars on a neutral track. The
+filled length caps at 100%, while the percentage label and tooltip show the true
+completion (including values above 100%). Fill color progresses red/amber/green.
+The original shortage number stays beside the bar. Unknown or zero commitments
+have no fabricated progress bar. Team/room completion uses (known target - sum
+of individual deficits), so over-performance cannot hide another's shortfall.
+ARIA progress values/text expose both capped fill and actual completion. Browser
+tests verify half/full fill lengths, label values, unchanged shortage numbers
+and the whole-roster desktop fit.
