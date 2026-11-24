@@ -7,7 +7,7 @@ export function installTableZoom(root=document.body){
  const tableKey=table=>{const scope=table.closest('.panel[id],[role="dialog"][id],dialog[id]')||table.parentElement.closest('[id]')||root;return (scope.id||'dashboard')+':'+(table.id||'table-'+[...scope.querySelectorAll('table')].indexOf(table));};
  const eligible=table=>!table.matches('.perf-table')&&!table.closest('#perfStickyClone,[id$="StickyClone"],.table-zoom-controls')&&(!table.id||document.getElementById(table.id)===table);
  function mount(table,toolbar){
-  const dayTools=table.id==='dpTable'?document.querySelector('#ibbDayPerf .dp-controls'):null;
+  const dayTools=table.id==='dpTable'?document.querySelector('#ibbDayPerf .dp-head'):null;
   let head=null;
   if(dayTools)head=dayTools;
   else for(let block=table.parentElement;block&&block!==root;block=block.parentElement){
@@ -17,7 +17,7 @@ export function installTableZoom(root=document.body){
   }
   if(head){
    if(head.matches('h2,h3,h4')){const line=document.createElement('div');line.className='table-zoom-heading';head.before(line);line.append(head);head=line;}
-   const tools=head.querySelector('.filters,.dc-controls,.wr-tools,.mk-tools,.dp-controls');const target=tools||head;
+   const tools=head.matches('.dp-head')?null:head.querySelector('.filters,.dc-controls,.wr-tools,.mk-tools,.dp-controls');const target=tools||head;
    target.classList.add('table-zoom-heading');toolbar.classList.add('table-zoom-inline');
    const date=target.matches('.pending-schedule-head')?target.querySelector(':scope>label'):null;if(date)date.before(toolbar);else target.append(toolbar);return;
   }

@@ -762,3 +762,12 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
  #overview #ibbCaptureOverview>.heading>.filters select{width:120px;min-width:0;padding:7px;font-size:11px}
  #overview #ibbCaptureOverview>.heading>.filters button{padding:8px;font-size:11px;white-space:nowrap}
 }
+/* Daily report heading: title and zoom above one compact filter row. */
+#performance #ibbDayPerf>.dp-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px}
+#performance #ibbDayPerf>.dp-head>.dp-heading{grid-area:1/1/2/2;min-width:0}
+#performance #ibbDayPerf>.dp-head>.table-zoom-controls{grid-area:1/2/2/3;margin:0!important;align-self:center}
+#performance #ibbDayPerf>.dp-head>.dp-controls{grid-area:2/1/3/3;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px!important;width:100%;min-width:0}
+#performance #ibbDayPerf .dp-controls>:is(select,input,button),#performance #ibbDayPerf .dp-controls #dpDateWrap{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;align-self:center}
+#performance #ibbDayPerf .dp-controls>:is(select,input,button),#performance #ibbDayPerf .dp-controls #dpDay{height:36px!important;min-height:36px!important;padding:6px 8px!important;font-size:12px!important;border-radius:8px!important}
+@media(min-width:1400px){#performance #ibbDayPerf>.dp-head>.dp-controls{grid-template-columns:minmax(90px,.8fr) minmax(120px,1.5fr) minmax(150px,1.1fr) minmax(90px,.8fr) minmax(105px,.9fr) minmax(125px,1fr) 120px 90px}}
+@media(max-width:650px){#performance #ibbDayPerf>.dp-head{gap:8px}#performance #ibbDayPerf>.dp-head h3{font-size:16px}#performance #ibbDayPerf>.dp-head>.dp-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
