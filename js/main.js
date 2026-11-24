@@ -1,3 +1,4 @@
+import { renderDailyCommitments } from './dailyCommitments.js';
 import { renderProspects } from './prospects.js';
 import { renderDigitalWorker } from './digitalWorker.js';
 import { commitmentTarget, canViewCommitment } from './dashboardStateModel.js';
@@ -288,7 +289,7 @@ document.querySelectorAll('.sidebar .nav a').forEach(a=>a.addEventListener('clic
 const links=[...document.querySelectorAll('.sidebar .nav a[href^="#"]')];
 const sections=[...document.querySelectorAll('.content > section.panel[id]')];
 const title=document.querySelector('header.top h1');
-const names={prospects:'Khách hàng tiềm năng riêng',digitalWorker:'Nhân sự số',customerCare:'Chăm sóc khách hàng',overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',lcb:'LCB',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',weeklyReports:'Báo cáo tuần',marketReports:'Triển khai thị trường',account:'Tài khoản'};
+const names={dailyCommitments:'Cam Kết Ngày',prospects:'Khách hàng tiềm năng riêng',digitalWorker:'Nhân sự số',customerCare:'Chăm sóc khách hàng',overview:'Tổng quan kinh doanh',performance:'Hiệu suất nhân sự',lcb:'LCB',commitments:'Cam kết tháng',details:'Chi tiết hợp đồng',dispatch:'Điều phối Online',tasks:'Việc hôm nay',pendingContracts:'Hợp đồng tồn',cancelled:'Hợp đồng hủy',channels:'Kênh khai thác',mail:'Form mail',contacts:'Danh bạ hỗ trợ',scripts:'Kịch bản gợi ý',pricing:'Tạo báo giá',lookup:'Tra cứu giá FPT',datahub:'Trung tâm dữ liệu',dailyReports:'Báo cáo ngày',weeklyReports:'Báo cáo tuần',marketReports:'Triển khai thị trường',account:'Tài khoản'};
 function activate(id){if(!sections.some(s=>s.id===id))id='overview';sections.forEach(s=>s.classList.toggle('page-active',s.id===id));links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));if(title)title.textContent=names[id]||'Tổng quan kinh doanh';window.scrollTo(0,0);}
 links.forEach(a=>a.addEventListener('click',function(e){e.preventDefault();const id=this.getAttribute('href').slice(1);if(location.hash!=='#'+id)history.pushState(null,'','#'+id);activate(id)}));
 window.addEventListener('popstate',()=>activate(location.hash.slice(1)));
@@ -1171,3 +1172,5 @@ renderCustomerCare(document.getElementById('customerCare'),window.IBB5_CURRENT_P
 renderDigitalWorker(document.getElementById('digitalWorker'),window.IBB5_CURRENT_PROFILE||{});
 
 renderProspects(document.getElementById('prospects'),window.IBB5_CURRENT_PROFILE||{});
+
+renderDailyCommitments(document.getElementById('dailyCommitments'));
