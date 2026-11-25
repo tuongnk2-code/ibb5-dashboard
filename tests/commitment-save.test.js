@@ -4,13 +4,14 @@ import { commitmentTarget, scopeCommitmentRow } from '../js/dashboardStateModel.
 
 test('commitment views use manager / team / own permissions without mutating shared data', () => {
   const row={key:'commit:2026-11:__ALL__',revision:10,data:{manager:{value:450,status:'signed'},staff:{
-    'DNG.Vypv':{value:45,status:'approved'},'DNG.ChuongHM':{value:30,status:'pending'},
+    'DNG.Vypv':{value:45,status:'approved',plan:'Private plan',reviewedAt:'2026-11-01'},'DNG.ChuongHM':{value:30,status:'pending'},
     'DNG.ManLM3':{value:40,status:'approved'},'DNG.HoaNTB6':{value:45,status:'approved'},
   }}};
   assert.equal(scopeCommitmentRow(row,{role:'manager'}),row);
   assert.deepEqual(Object.keys(scopeCommitmentRow(row,{id:'lead',role:'lead',acc:'DNG.HoaNTB6'}).data.staff),['DNG.ManLM3','DNG.HoaNTB6']);
   assert.deepEqual(Object.keys(scopeCommitmentRow(row,{id:'staff',role:'staff',acc:'dng.manlm3'}).data.staff),['DNG.ManLM3']);
   assert.deepEqual(scopeCommitmentRow(row,{id:'unknown',role:'staff'}).data.staff,{});
+  const metrics=scopeCommitmentRow(row,{role:'lead',acc:'DNG.HoaNTB6'}).data.performanceStaff;assert.deepEqual(metrics['DNG.Vypv'],{value:45,status:'approved'});assert.equal(metrics['DNG.ChuongHM'],undefined);assert.deepEqual(scopeCommitmentRow(row,{role:'staff',acc:'DNG.ManLM3'}).data.performanceStaff,{});assert.deepEqual(scopeCommitmentRow(row,{role:'lead',acc:'UNKNOWN'}).data.performanceStaff,{});
   assert.equal(Object.keys(row.data.staff).length,4);
   assert.deepEqual(commitmentTarget(row.data,'submit','DNG.ManLM3'),{value:40,status:'approved',plan:'',submittedAt:null,reviewedAt:null});
   assert.equal(commitmentTarget(row.data,'submit','MISSING'),null);
@@ -41,6 +42,7 @@ test('atomic commit API checks ownership, routes target guards and scopes all re
     const conflict=await invoke(payload);assert.equal(conflict.code,409);assert.equal(conflict.body.row.data.staff['DNG.Vypv'],undefined);
     const initial=await invoke(null,'GET');assert.deepEqual(Object.keys(initial.body.commitments['2026-11'].__ALL__.staff),['DNG.ManLM3']);
     const keys=await invoke(null,'GET',{keys:JSON.stringify([row.key])});assert.equal(keys.body.rows[0].data.staff['DNG.Vypv'],undefined);
+    caller={...caller,role:'lead'};const leadInitial=(await invoke(null,'GET')).body.commitments['2026-11'].__ALL__;assert.equal(leadInitial.staff['DNG.Vypv'],undefined);assert.deepEqual(leadInitial.performanceStaff['DNG.Vypv'],{value:45,status:'approved'});assert.deepEqual((await invoke(null,'GET',{keys:JSON.stringify([row.key])})).body.rows[0].data.performanceStaff['DNG.Vypv'],{value:45,status:'approved'});assert.equal((await invoke({...payload,action:'approve'})).code,403);assert.equal((await invoke({...payload,acc:'DNG.Vypv'})).code,403);
     caller={...caller,role:'manager'};assert.equal((await invoke(null,'GET')).body.commitments['2026-11'].__ALL__.staff['DNG.Vypv'].value,45);
   }finally{globalThis.fetch=savedFetch;}
 });

@@ -1,5 +1,5 @@
 import { mergeCancellationArchive } from './cancellationArchive.js';
-import { validDay, canSeeReport } from './dailyReportModel.js';
+import { validDay, canSeeReport, teamOf } from './dailyReportModel.js';
 export const LEGACY_KEYS = { snapshot: 'ibb5_three_source_snapshot_v1', commitments: 'fpt_ibb_monthly_commitments_v2', notes: 'ibb5_pending_followup_v1' };
 export const normAcc = v => String(v || '').trim().toLowerCase();
 export function canViewCommitment(profile, acc) {
@@ -8,7 +8,8 @@ export function canViewCommitment(profile, acc) {
 }
 export function scopeCommitmentRow(row, profile) {
   if (!row?.key.startsWith('commit:') || profile.role === 'manager' || !row.data) return row;
-  return { ...row, data: { ...row.data, staff: Object.fromEntries(Object.entries(row.data.staff || {}).filter(([acc]) => canViewCommitment(profile, acc))) } };
+  const performanceStaff=profile.role==='lead'&&teamOf(profile)!==null?Object.fromEntries(Object.entries(row.data.staff||{}).filter(([,v])=>v.status==='approved'&&Number.isInteger(v.value)).map(([acc,v])=>[acc,{value:v.value,status:'approved'}])):{};
+  return { ...row, data: { ...row.data, performanceStaff, staff: Object.fromEntries(Object.entries(row.data.staff || {}).filter(([acc]) => canViewCommitment(profile, acc))) } };
 }
 export function commitmentTarget(data, action, acc) {
   const value = action === 'sign' ? data?.manager : data?.staff?.[acc];
