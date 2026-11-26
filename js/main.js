@@ -1173,6 +1173,15 @@ window.addEventListener('hashchange',loadSalesPlaybook);window.addEventListener(
 document.querySelectorAll('.sidebar .nav a[href="#scripts"]').forEach(link=>link.addEventListener('click',()=>queueMicrotask(loadSalesPlaybook)));
 loadSalesPlaybook();
 
+let regulationsLoading;
+function loadRegulations(){
+ if(location.hash!=='#regulations'||regulationsLoading)return;
+ regulationsLoading=import('./regulations.js').then(({renderRegulations})=>renderRegulations(document.getElementById('regulations'))).catch(()=>{regulationsLoading=null;document.getElementById('regulations').textContent='Chưa mở được quy trình. Anh tải lại trang để thử lại.';});
+}
+window.addEventListener('hashchange',loadRegulations);window.addEventListener('popstate',loadRegulations);
+document.querySelectorAll('.sidebar .nav a[href="#regulations"]').forEach(link=>link.addEventListener('click',()=>queueMicrotask(loadRegulations)));
+loadRegulations();
+
 renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
 
 installDashboardAssistant({getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false,getProfile:()=>window.IBB5_CURRENT_PROFILE,getCommitments:()=>window.IBB5_SHARED_STATE?.commitments||commitDB});

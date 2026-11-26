@@ -1,0 +1,15 @@
+#regulations .qr-head{display:flex;justify-content:space-between;align-items:center;gap:16px}
+#regulations .qr-source{font-size:11px;font-weight:800;color:#ef7818;letter-spacing:.7px}
+#regulations h2{margin:5px 0;font-size:24px}
+#regulations p.qr-meta{margin:5px 0 12px;font-size:12px;color:#69819b;line-height:1.5;overflow-wrap:anywhere}
+.qr-original{flex-shrink:0;border:1px solid #c8dcf4;border-radius:8px;padding:9px 12px;color:#0866c2;text-decoration:none;font-size:12px}
+.qr-tools{display:grid;grid-template-columns:minmax(220px,1fr) minmax(200px,.7fr) auto;gap:8px;margin-top:16px}
+.qr-tools input,.qr-tools select,.qr-tools button{width:100%;min-width:0;border:1px solid #c8dcf4;border-radius:8px;padding:9px 10px;background:white;color:#173c62;font:inherit;font-size:13px}
+#regulations p.qr-count{margin:10px 0;font-size:12px;color:#69819b}
+.qr-sections{display:grid;gap:10px}.qr-section{border:1px solid #d7e5f5;border-radius:10px;overflow:hidden}
+.qr-section summary{display:flex;justify-content:space-between;gap:14px;align-items:center;background:#f0f6fd;padding:12px 14px;cursor:pointer;color:#123c64;font-weight:750;font-size:15px}
+.qr-section summary:before{content:'▸'}.qr-section[open] summary:before{content:'▾'}.qr-section summary>span{flex:1}.qr-section summary small{font-size:11px;white-space:nowrap;font-weight:400}
+.qr-body{padding:4px 14px 12px;line-height:1.65;font-size:14px;color:#23405e}.qr-body p{margin:10px 0!important;color:inherit!important;font-size:inherit!important}.qr-body ul{padding-left:22px}.qr-body li+li{margin-top:7px}
+.qr-table-scroll{overflow-x:auto;margin-top:10px}.qr-body table{width:100%;border-collapse:collapse;font-size:13px}.qr-body th,.qr-body td{border:1px solid #d7e5f5;padding:9px;text-align:left;vertical-align:top;line-height:1.5}.qr-body th{background:#eaf3fe}.qr-body tbody tr:nth-child(even){background:#f7faff}
+.qr-empty{padding:24px;text-align:center;color:#69819b}
+@media(max-width:650px){#regulations .qr-head{align-items:flex-start;flex-direction:column;gap:4px}#regulations h2{font-size:21px}.qr-tools{grid-template-columns:1fr auto}.qr-tools input{grid-column:1/-1}.qr-section summary{font-size:14px;padding:10px}.qr-body{padding:3px 10px 10px;font-size:13px}.qr-body table{min-width:560px}.qr-original{font-size:12px}}
