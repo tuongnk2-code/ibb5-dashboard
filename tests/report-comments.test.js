@@ -25,7 +25,7 @@ test('comments API scopes threads, authors and receipts; rejects spoofing and sa
   if(url.pathname==='/rest/v1/report_notifications'){
    assert.equal(url.searchParams.get('recipient_id'),'eq.'+caller.id);
    if(method==='PATCH'){lastRead={url,body:JSON.parse(init.body)};return json(null);}
-   assert.equal(url.searchParams.get('read_at'),'is.null');return json(lastRead?[]:comments.map(c=>({id:randomUUID(),comment_id:c.id,comment:c,read_at:null})));
+   const viewed=url.searchParams.get('read_at')==='not.is.null';assert.equal(url.searchParams.get('read_at'),viewed?'not.is.null':'is.null');return json(viewed?(lastRead?comments.map(c=>({id:randomUUID(),comment_id:c.id,comment:c,read_at:lastRead.body.read_at})):[]):lastRead?[]:comments.map(c=>({id:randomUUID(),comment_id:c.id,comment:c,read_at:null})));
   }
   throw Error(method+' '+url.pathname);
  };
@@ -46,10 +46,10 @@ test('comments API scopes threads, authors and receipts; rejects spoofing and sa
   caller=staff;assert.equal((await invoke('GET',context)).body.comments[0].author,'Trưởng phòng');
   assert.equal((await invoke('GET',{inbox:'mine',recipient_id:manager.id})).body.notifications.length,1);
   assert.equal((await invoke('POST',{action:'read',comment_ids:[comments[0].id],recipient_id:manager.id})).code,200);assert.match(lastRead.url.searchParams.get('recipient_id'),new RegExp(staff.id));assert.ok(lastRead.body.read_at);
-  assert.equal((await invoke('GET',{inbox:'mine'})).body.notifications.length,0);
+  assert.equal((await invoke('GET',{inbox:'mine'})).body.notifications.length,0);const seen=await invoke('GET',{inbox:'mine',view:'read',recipient_id:manager.id});assert.equal(seen.code,200);assert.equal(seen.body.notifications.length,1);assert.ok(seen.body.notifications[0].read_at);
   const signatures=contractAlertSignatures(scopedContractAlerts(caller,alertState),alertState.notes);
   assert.equal((await invoke('POST',{action:'read-contracts',user_id:manager.id,items:[{id:'OWN',signature:signatures.OWN}]})).code,200);assert.equal(receipts[0].user_id,staff.id);
-  assert.equal((await invoke('GET',{inbox:'mine'})).body.alertReads.length,1);
+  assert.equal((await invoke('GET',{inbox:'mine'})).body.alertReads.length,1);const history=(await invoke('GET',{inbox:'mine',view:'read'})).body;assert.deepEqual(history.viewedContracts.map(r=>r.contract_id),['OWN']);assert.ok(history.viewedContracts[0].viewed_at);alertState.rows[0].date=day;assert.deepEqual((await invoke('GET',{inbox:'mine',view:'read'})).body.viewedContracts.map(r=>r.contract_id),['OWN']);alertState.rows[0].date='';
   assert.equal((await invoke('GET',{inbox:'mine'})).body.contractAlerts.total,0,'Server returns the authoritative unread count even when a phone keeps old local notes');
   assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OTHER',signature:'fake'}]})).code,409);
   assert.equal((await invoke('POST',{action:'read-contracts',items:[{id:'OWN',signature:'old'}]})).code,409);

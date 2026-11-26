@@ -15,7 +15,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.route('**/api/report-comments**',async r=>{
    assert.equal(r.request().headers().authorization,'Bearer test');
    const input=r.request().method()==='GET'?Object.fromEntries(new URL(r.request().url()).searchParams):r.request().postDataJSON();
-   if(input.inbox){return r.fulfill({json:{notifications:notifications.filter(n=>n.recipient===profile.id)}});}
+   if(input.inbox){return r.fulfill({json:{notifications:notifications.filter(n=>n.recipient===profile.id&&(input.view==='read'?!!n.read_at:!n.read_at))}});}
    if(input.action==='read'){notifications.filter(n=>n.recipient===profile.id&&input.comment_ids.includes(n.comment_id)).forEach(n=>n.read_at=new Date().toISOString());return r.fulfill({json:{ok:true}});}
    if(input.action==='comment'){
     if(failNext){failNext=false;return r.fulfill({status:500,json:{error:'Thử lại kết nối'}});}
@@ -45,7 +45,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(await discussion.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
   if(process.env.COMMENTS_SCREENSHOT_DIR)await employee.screenshot({path:process.env.COMMENTS_SCREENSHOT_DIR+'/report-comment-mobile.png'});
   await discussion.getByRole('button',{name:'Đóng bình luận'}).click();
-  await employee.locator('#reportNotificationButton').click();assert.equal(await employee.locator('.rc-inbox .rc-notification').count(),0);await employee.locator('.rc-inbox header button').click();
+  await employee.locator('#reportNotificationButton').click();assert.equal(await employee.locator('.rc-inbox .rc-notification').count(),0);await employee.locator('[data-inbox-view=read]').click();await employee.locator('.rc-read-history .rc-notification').waitFor();assert.match(await employee.locator('.rc-read-history').textContent(),/Đã xem:/);assert.equal(await employee.locator('.rc-read-history img').count(),0);assert.equal(await employee.locator('#reportNotificationButton b').isVisible(),false);await employee.locator('.rc-read-history .rc-notification').click();await employee.locator('.rc-dialog:not(.rc-inbox) .rc-comments article').nth(1).waitFor();await employee.locator('.rc-dialog:not(.rc-inbox)').getByRole('button',{name:'Đóng bình luận'}).click();await employee.locator('#reportNotificationButton').click();await employee.locator('.rc-inbox header button').click();
   await boss.evaluate(()=>window.dispatchEvent(new Event('focus')));await boss.locator('#reportNotificationButton b').filter({hasText:'1'}).waitFor();await boss.locator('#reportNotificationButton').click();await boss.locator('.rc-notification').click();await boss.locator('.rc-dialog:not(.rc-inbox) .rc-comments article').nth(1).waitFor();
   if(process.env.COMMENTS_SCREENSHOT_DIR)await boss.screenshot({path:process.env.COMMENTS_SCREENSHOT_DIR+'/report-comment-desktop.png'});
   assert.deepEqual(errors,[]);console.log('PASS: report detail comment, failed-send draft retention, staff unread notification, exact report opening, safe rendering, read sync and reply notification to manager; desktop/mobile');

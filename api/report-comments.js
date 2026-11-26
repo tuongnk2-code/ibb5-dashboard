@@ -1,6 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
 import { canSeeReport, reportDay, validDay } from '../js/dailyReportModel.js';
-import { scopedContractAlerts } from '../js/phonePushModel.js';
+import { scopedContractAlerts, viewedContractHistory } from '../js/phonePushModel.js';
 import { contractAlertSignatures, unreadContractAlerts, mergeContractAlertReads } from '../js/contractAlertReadModel.js';
 
 const check = result => { if (result.error) throw result.error; return result.data; };
@@ -13,12 +13,16 @@ export default async function handler(req,res) {
   const {admin,caller}=auth;
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return fail(res,405,'Phương thức không hỗ trợ.');}
   if(req.method==='GET'&&req.query?.inbox==='mine'){
-   const notifications=check(await admin.from('report_notifications').select('id,comment_id,created_at,read_at,comment:report_comments!inner(id,kind,subject_id,report_date,author_id,body)').eq('recipient_id',caller.id).is('read_at',null).order('created_at',{ascending:false}).limit(100));
+   const viewed=req.query?.view==='read';
+   let query=admin.from('report_notifications').select('id,comment_id,created_at,read_at,comment:report_comments!inner(id,kind,subject_id,report_date,author_id,body)').eq('recipient_id',caller.id);
+   query=viewed?query.not('read_at','is',null):query.is('read_at',null);
+   const notifications=check(await query.order(viewed?'read_at':'created_at',{ascending:false}).limit(100));
    const alertReads=[];for(let offset=0;;offset+=1000){const batch=check(await admin.from('contract_alert_reads').select('contract_id,signature,viewed_at').eq('user_id',caller.id).order('contract_id').range(offset,offset+999));alertReads.push(...batch);if(batch.length<1000)break;}
    const ids=[...new Set(notifications.flatMap(n=>[n.comment.subject_id,n.comment.author_id]))];
    const people=ids.length?check(await admin.from('profiles').select('id,acc,full_name,role').in('id',ids)):[];
    const profiles=new Map(people.map(p=>[p.id,p]));
-   const state=check(await admin.rpc('push_contract_state')),contractAlerts=unreadContractAlerts(scopedContractAlerts(caller,state),state.notes,mergeContractAlertReads(alertReads));
+   const state=check(await admin.rpc('push_contract_state'));if(viewed)return res.status(200).json({viewedContracts:viewedContractHistory(caller,state,alertReads),notifications:notifications.filter(n=>profiles.has(n.comment.subject_id)&&canSeeReport(caller,profiles.get(n.comment.subject_id))).map(n=>({...n,author:profiles.get(n.comment.author_id)?.acc||'Quản lý',subject:profiles.get(n.comment.subject_id)?.acc||'Nhân sự'}))});
+   const contractAlerts=unreadContractAlerts(scopedContractAlerts(caller,state),state.notes,mergeContractAlertReads(alertReads));
    return res.status(200).json({alertReads,contractAlerts,notifications:notifications.filter(n=>profiles.has(n.comment.subject_id)&&canSeeReport(caller,profiles.get(n.comment.subject_id))).map(n=>({...n,author:profiles.get(n.comment.author_id)?.acc||'Quản lý',subject:profiles.get(n.comment.subject_id)?.acc||'Nhân sự'}))});
   }
   const input=req.method==='GET'?req.query:req.body||{};

@@ -19,3 +19,8 @@ export function phonePushDecision(subscription,{alerts,unread=0,latest=null,now=
  const badge=unread+alerts.count;
  return {payload:{title:test?'IBB5 · Thông báo thử':'IBB5 · Thông báo mới',body:test?'Thông báo điện thoại đã hoạt động trên thiết bị này.':(unread?unread+' phản hồi chưa đọc. ':'')+(alerts.count?alerts.count+' HĐ cần xử lý. ':'')+'Mở IBB5 để xem chi tiết.',badge,kind:test?'test':'summary'},update:{...(comment?{last_comment_at:latest}:{}),...(test?{test_delivered_at:subscription.test_requested_at}:{}),...((alert||test||comment)?{last_alert_signature:alerts.signature,last_alert_day:today,last_alert_sent_at:new Date(now).toISOString(),alert_count:alerts.count}:{})}};
 }
+
+export function viewedContractHistory(profile,state,reads){
+ const rows=new Map((state.rows||[]).filter(row=>row.type==='Internet').map(row=>[row.id,row]));
+ return reads.flatMap(read=>{const row=rows.get(read.contract_id);if(!row||!canSeeReport(profile,{id:norm(profile.acc)&&norm(profile.acc)===norm(row.staff)?profile.id:'other',acc:row.staff,role:'staff'}))return [];let kinds=[];try{kinds=Object.keys(JSON.parse(read.signature).kinds||{});}catch{}return [{contract_id:read.contract_id,staff:row.staff||'',customer:row.customer||'',viewed_at:read.viewed_at,kinds}];}).sort((a,b)=>Date.parse(b.viewed_at)-Date.parse(a.viewed_at)).slice(0,100);
+}
