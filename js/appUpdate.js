@@ -3,7 +3,7 @@ const version=typeof __IBB5_APP_VERSION__==='string'?__IBB5_APP_VERSION__:'dev';
 let checking=false,dismissed='',notice=null;
 function reload(){location.reload();}
 function addRefresh(host){if(!host)return;const button=document.createElement('button');button.type='button';button.className='pwa-refresh-trigger';button.textContent='↻ Cập nhật IBB5';button.title='Lưu nội dung đang nhập trước khi cập nhật ứng dụng';button.onclick=reload;host.append(button);}
-addRefresh(document.querySelector('.sidebar .nav'));addRefresh(document.querySelector('.login-card'));
+addRefresh(document.getElementById('sidebarAppActions') || document.querySelector('.sidebar .nav'));addRefresh(document.querySelector('.login-card'));
 async function check(){
  if(checking||document.hidden||!import.meta.env.PROD)return;checking=true;
  try{const response=await fetch('/app-version.json',{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)return;const latest=await response.json();if(typeof latest.version!=='string'||latest.version===version||latest.version===dismissed)return;

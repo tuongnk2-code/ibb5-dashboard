@@ -13,7 +13,7 @@ dialog.querySelector('[data-install-guide]').innerHTML=ios?'<h3>Trên iPhone / i
 function update(){triggers.forEach(button=>{button.hidden=standalone();button.disabled=installing;});native.hidden=!pendingPrompt||standalone();native.disabled=installing;}
 function showGuide(){status.textContent='';update();if(!dialog.open)dialog.showModal();}
 function trigger(host){if(!host)return;const button=document.createElement('button');button.type='button';button.className='pwa-install-trigger';button.textContent='↓ Cài ứng dụng IBB5';button.onclick=()=>{if(installing)return;if(pendingPrompt)install();else showGuide();};host.append(button);triggers.push(button);}
-trigger(document.querySelector('.login-card'));trigger(document.querySelector('.sidebar .nav'));
+trigger(document.querySelector('.login-card'));trigger(document.getElementById('sidebarAppActions') || document.querySelector('.sidebar .nav'));
 dialog.querySelector('[data-install-close]').onclick=()=>dialog.close();
 async function install(){
  const prompt=pendingPrompt;if(!prompt||installing)return;pendingPrompt=null;installing=true;update();if(dialog.open)dialog.close();

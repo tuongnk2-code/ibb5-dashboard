@@ -22,7 +22,7 @@ document.addEventListener('keydown', event => {
   if (!document.body.classList.contains('mobile-nav-open')) return;
   if (event.key === 'Escape') { setMenu(false, true); return; }
   if (event.key !== 'Tab') return;
-  const focusable = [toggle, ...sidebar.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled])')].filter(el => el.getClientRects().length);
+  const focusable = [toggle, ...sidebar.querySelectorAll('a[href],summary,button:not([disabled]),input:not([disabled]),select:not([disabled])')].filter(el => el.getClientRects().length);
   const index = focusable.indexOf(document.activeElement);
   if (event.shiftKey && index <= 0) { event.preventDefault(); focusable.at(-1)?.focus(); }
   else if (!event.shiftKey && (index === focusable.length - 1 || index === -1)) { event.preventDefault(); toggle.focus(); }

@@ -1,0 +1,22 @@
+#appShell #dashboardSidebar{display:flex!important;flex-direction:column;padding:16px 10px 12px!important;overflow:hidden!important}
+#appShell #dashboardSidebar .logo{flex:none;font-size:20px!important;line-height:1.2!important;padding:4px 9px 15px!important;white-space:nowrap}
+#appShell #dashboardSidebar .logo small{font-size:8px!important;letter-spacing:.65px!important;line-height:1.4!important;margin-top:5px!important;white-space:normal}
+#appShell #dashboardSidebar .nav{display:flex!important;flex-direction:column;flex:1;min-height:0;overflow:hidden!important;margin:0!important;gap:8px}
+#dashboardSidebar .nav-main{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#527eaf transparent}
+#dashboardSidebar .nav-shortcuts{padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid #ffffff24}
+#appShell #dashboardSidebar .nav a{display:block!important;padding:10px 11px!important;min-height:38px!important;margin:2px 0!important;font-size:12.5px!important;line-height:1.35!important;border-radius:8px!important}
+#appShell #dashboardSidebar .nav a[hidden]{display:none!important}
+#dashboardSidebar .nav-folder{margin:3px 0;color:#e4edfa;border-radius:8px}
+#dashboardSidebar .nav-folder>summary{display:flex;align-items:center;gap:9px;list-style:none;cursor:pointer;min-height:40px;padding:10px 9px;border-radius:8px;font-size:12.5px;line-height:1.35;font-weight:650;user-select:none}
+#dashboardSidebar .nav-folder>summary::-webkit-details-marker{display:none}
+#dashboardSidebar .nav-folder>summary>span{width:15px;flex:none;text-align:center;color:#aacdf6;font-size:15px}
+#dashboardSidebar .nav-folder>summary:after{content:'›';margin-left:auto;color:#91b4df;font-size:18px;line-height:1;transform:rotate(0)}
+#dashboardSidebar .nav-folder[open]>summary:after{transform:rotate(90deg)}
+#dashboardSidebar .nav-folder>summary:hover,#dashboardSidebar .nav-folder.has-active>summary{background:#ffffff12}
+#dashboardSidebar .nav-folder>summary:focus-visible{outline:2px solid #9acaff;outline-offset:-2px}
+#dashboardSidebar .nav-folder-links{padding:0 0 5px 13px;margin-left:16px;border-left:1px solid #ffffff26}
+#appShell #dashboardSidebar .nav-folder-links>a{padding:8px 9px!important;min-height:33px!important;font-size:12px!important;margin:2px 0!important}
+#dashboardSidebar .nav-system{flex:none;border-top:1px solid #ffffff24;padding-top:7px;margin:0}
+#dashboardSidebar #sidebarAppActions{display:grid;gap:5px;margin:6px 0 0}
+#dashboardSidebar #sidebarAppActions>button{margin:0!important;max-width:100%;font-size:11px;min-height:32px;padding:7px 8px;text-align:left}
+@media(max-width:1000px){#appShell #dashboardSidebar{padding:14px 11px 12px!important}#appShell #dashboardSidebar .logo{font-size:19px!important;padding-bottom:13px!important}#appShell #dashboardSidebar .nav a{min-height:42px!important;font-size:14px!important}#dashboardSidebar .nav-folder>summary{min-height:44px;font-size:14px}#appShell #dashboardSidebar .nav-folder-links>a{min-height:40px!important;font-size:13px!important}}
