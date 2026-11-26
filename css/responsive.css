@@ -771,3 +771,11 @@ body.contract-details-open{overflow:hidden;overscroll-behavior:none}
 #performance #ibbDayPerf .dp-controls>:is(select,input,button),#performance #ibbDayPerf .dp-controls #dpDay{height:36px!important;min-height:36px!important;padding:6px 8px!important;font-size:12px!important;border-radius:8px!important}
 @media(min-width:1400px){#performance #ibbDayPerf>.dp-head>.dp-controls{grid-template-columns:minmax(90px,.8fr) minmax(120px,1.5fr) minmax(150px,1.1fr) minmax(90px,.8fr) minmax(105px,.9fr) minmax(125px,1fr) 120px 90px}}
 @media(max-width:650px){#performance #ibbDayPerf>.dp-head{gap:8px}#performance #ibbDayPerf>.dp-head h3{font-size:16px}#performance #ibbDayPerf>.dp-head>.dp-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#regulations .qms-document{display:flex;align-items:flex-start;gap:18px;max-width:800px;padding:12px 2px}
+#regulations .qms-document-icon{display:grid;place-items:center;flex:0 0 58px;height:58px;border-radius:14px;background:#eaf3ff;color:#087cf0;font-size:32px}
+#regulations .qms-document-source{color:#ef7818;font-size:12px;font-weight:800;letter-spacing:.8px}
+#regulations h2{margin:5px 0 10px;color:#12365d;font-size:25px}
+#regulations p{margin:0 0 20px;color:#6a819b;line-height:1.5}
+#regulations .qms-document-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 16px;border-radius:9px;background:#087cf0;color:white;font-size:14px;font-weight:750;text-decoration:none}
+#regulations .qms-document-link:hover{background:#0667c7}#regulations .qms-document-link:focus-visible{outline:3px solid #9bc8ff;outline-offset:3px}
+@media(max-width:650px){#regulations .qms-document{gap:12px;padding:3px 0}#regulations .qms-document-icon{flex-basis:42px;height:42px;font-size:25px}#regulations h2{font-size:21px}}
