@@ -18,4 +18,4 @@ export const STAFF_ROSTER = [
   { acc: 'DNG.DatBTH', name: 'DNG.DatBTH', team: 3 },
 ];
 
-export const ROLE_LABEL = { manager: 'Trưởng phòng', lead: 'Trưởng Bầy', staff: 'Nhân viên' };
+export const ROLE_LABEL = { manager: 'Trưởng phòng', lead: 'Trưởng Bầy', staff: 'Nhân viên', ctv: 'CTV' };

@@ -34,6 +34,7 @@ function addFormHtml(initial) {
     + '<option value="manager"' + (d.role === 'manager' ? ' selected' : '') + '>Trưởng phòng · Toàn quyền</option>'
     + '<option value="lead"' + (d.role === 'lead' ? ' selected' : '') + '>Trưởng Bầy</option>'
     + '<option value="staff"' + (!d.role || d.role === 'staff' ? ' selected' : '') + '>Nhân viên</option>'
+    + '<option value="ctv"' + (d.role === 'ctv' ? ' selected' : '') + '>CTV · Kịch bản và Quy trình</option>'
     + '</select></label>'
     + '<label id="accAccWrap">Mã Acc<select name="acc">' + accOptions(d.acc) + '</select></label>'
     + '<div class="acc-form-actions"><button type="submit" class="primary">' + (isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản') + '</button><button type="button" id="accCancelBtn">Hủy</button></div>'
@@ -44,7 +45,7 @@ function addFormHtml(initial) {
 function wireFormRoleToggle(root) {
   const roleSel = root.querySelector('[name="role"]');
   const accWrap = root.querySelector('#accAccWrap');
-  const sync = () => { accWrap.style.display = roleSel.value === 'manager' ? 'none' : ''; };
+  const sync = () => { accWrap.style.display = ['manager', 'ctv'].includes(roleSel.value) ? 'none' : ''; };
   roleSel.addEventListener('change', sync);
   sync();
 }
@@ -89,7 +90,7 @@ function openForm(root, me, initial) {
     const payload = {
       full_name: fd.get('full_name'),
       role: fd.get('role'),
-      acc: fd.get('role') === 'manager' ? null : fd.get('acc'),
+      acc: ['lead', 'staff'].includes(fd.get('role')) ? fd.get('acc') : null,
     };
     const password = fd.get('password');
     try {

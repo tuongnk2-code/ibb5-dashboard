@@ -25,6 +25,7 @@ Deno.serve(async(req:Request)=>{
   // Bound parallelism so one bad endpoint cannot prevent delivery to the remaining devices.
   for(let offset=0;offset<subscriptions.length&&Date.now()-now<45000;offset+=8)await Promise.all(subscriptions.slice(offset,offset+8).map(async(subscription:any)=>{
    const person:any=byId.get(subscription.user_id);if(!person){check(await admin.from('push_subscriptions').delete().eq('id',subscription.id));return;}
+   if(person.role==='ctv')return;
    if(!alerts.has(person.id))alerts.set(person.id,phoneAlertState(person,state,now,reads.get(person.id)||{}));
    const visible=unreadState.filter((n:any)=>n.recipient_id===person.id&&byId.has(n.subject_id)&&canSeeReport(person,byId.get(n.subject_id)));
    const unread=visible.reduce((sum:number,n:any)=>sum+n.unread,0),latest=visible.map((n:any)=>n.latest).sort((a:string,b:string)=>Date.parse(b)-Date.parse(a))[0]||null;

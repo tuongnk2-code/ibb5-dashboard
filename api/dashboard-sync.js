@@ -16,7 +16,7 @@ function cleanCommit(value) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    const auth = await requireProfile(req);
+    const auth = await requireProfile(req, { allowCtv: req.method === 'GET' && req.query?.document === 'sales-procedure' });
     if (auth.error) return bad(res, auth.status, auth.error);
     const { admin, caller } = auth;
     if (req.method === 'GET' && req.query?.document === 'sales-procedure') return createRegulationsHandler(async () => auth)(req, res);

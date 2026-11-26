@@ -1,7 +1,7 @@
 import { requireManager } from './_supabaseAdmin.js';
 import { usernameToEmail } from '../js/loginIdentity.js';
 
-const ROLES = ['manager', 'lead', 'staff'];
+const ROLES = ['manager', 'lead', 'staff', 'ctv'];
 
 function bad(res, status, message) {
   res.status(status).json({ error: message });
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       return bad(res, 400, err.message);
     }
     if (!ROLES.includes(role)) return bad(res, 400, 'Vai trò không hợp lệ.');
-    if (role !== 'manager' && !acc) return bad(res, 400, 'Trưởng Bầy và Nhân viên cần chọn mã Acc.');
+    if (['lead', 'staff'].includes(role) && !acc) return bad(res, 400, 'Trưởng Bầy và Nhân viên cần chọn mã Acc.');
     if (password.length < 6) return bad(res, 400, 'Mật khẩu cần tối thiểu 6 ký tự.');
 
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       email,
       full_name,
       role,
-      acc: role === 'manager' ? null : acc,
+      acc: ['lead', 'staff'].includes(role) ? acc : null,
     });
     if (profileError) {
       await admin.auth.admin.deleteUser(created.user.id);
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     const { id, full_name, role, acc, password } = req.body || {};
     if (!id) return bad(res, 400, 'Thiếu id tài khoản.');
     if (role && !ROLES.includes(role)) return bad(res, 400, 'Vai trò không hợp lệ.');
-    if (role && role !== 'manager' && !acc) return bad(res, 400, 'Trưởng Bầy và Nhân viên cần chọn mã Acc.');
+    if (role && ['lead', 'staff'].includes(role) && !acc) return bad(res, 400, 'Trưởng Bầy và Nhân viên cần chọn mã Acc.');
 
     if (password) {
       if (password.length < 6) return bad(res, 400, 'Mật khẩu cần tối thiểu 6 ký tự.');
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
     const update = {};
     if (full_name) update.full_name = full_name;
-    if (role) { update.role = role; update.acc = role === 'manager' ? null : acc; }
+    if (role) { update.role = role; update.acc = ['lead', 'staff'].includes(role) ? acc : null; }
     if (Object.keys(update).length) {
       const { error: updateError } = await admin.from('profiles').update(update).eq('id', id);
       if (updateError) return bad(res, 400, updateError.message);

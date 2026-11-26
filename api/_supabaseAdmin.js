@@ -13,7 +13,13 @@ export function getSupabaseAdmin() {
   return client;
 }
 
-export async function requireProfile(req) {
+export function profileAccessError(profile, { allowCtv = false } = {}) {
+  if (!profile || !['manager', 'lead', 'staff', 'ctv'].includes(profile.role)) return { error: 'Tài khoản chưa được cấp quyền truy cập.', status: 403 };
+  if (profile.role === 'ctv' && !allowCtv) return { error: 'CTV chỉ được xem Kịch bản gợi ý và Quy trình quy định.', status: 403 };
+  return null;
+}
+
+export async function requireProfile(req, options = {}) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (!token) {
@@ -32,6 +38,8 @@ export async function requireProfile(req) {
   if (profileError || !profile) {
     return { error: 'Không tìm thấy hồ sơ tài khoản.', status: 403 };
   }
+  const denied = profileAccessError(profile, options);
+  if (denied) return denied;
   return { admin, caller: profile };
 }
 

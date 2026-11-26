@@ -1,5 +1,5 @@
 import { getSession, signIn, signOut, fetchMyProfile } from './auth.js';
-import './phonePush.js';
+
 
 const loginScreen = document.getElementById('loginScreen');
 const appShell = document.getElementById('appShell');
@@ -20,6 +20,15 @@ function showLogin(message) {
 }
 
 async function showApp(profile) {
+  if (profile.role === 'ctv') {
+    window.IBB5_CURRENT_PROFILE = profile;
+    const { renderCtvView } = await import('./ctvView.js');
+    await renderCtvView();
+    loginScreen.style.display = 'none';
+    appShell.style.display = '';
+    return;
+  }
+  await import('./phonePush.js');
   const { bootstrapDashboardSync, installSyncControls } = await import('./dashboardSync.js');
   await bootstrapDashboardSync(profile);
   loginScreen.style.display = 'none';

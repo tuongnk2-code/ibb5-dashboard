@@ -8,6 +8,7 @@ export const validDay = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$
 const norm = s => String(s || '').trim().toLowerCase();
 export const teamOf = profile => STAFF_ROSTER.find(p => norm(p.acc) === norm(profile.acc))?.team || null;
 export function canSeeReport(caller, subject) {
+  if (caller.role === 'ctv') return false;
   if (caller.id === subject.id || caller.role === 'manager') return true;
   return caller.role === 'lead' && subject.role !== 'manager' && teamOf(caller) !== null && teamOf(caller) === teamOf(subject);
 }
