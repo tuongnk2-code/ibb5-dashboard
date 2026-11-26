@@ -8,24 +8,30 @@ const element = (tag, text, className) => {
   if (className) node.className = className;
   return node;
 };
-function renderFullDocument(root, doc) {
+function renderFullDocument(root, doc, documents = []) {
   root.replaceChildren();
   const head = element('div', null, 'qr-head'), title = element('div');
   title.append(element('h2', doc.title), element('p', `${doc.code} · Phiên bản ${doc.version}`, 'qr-meta'));
   head.append(title);
-  const frame = element('iframe', null, 'qr-document-frame'); frame.title = 'Toàn bộ nội dung Quy trình bán hàng - 4 trang'; frame.setAttribute('sandbox', ''); frame.srcdoc = doc.originalHtml;
-  root.append(head, element('p', 'Bản chép lại đầy đủ theo 4 trang QMS; bảng và lưu đồ được dựng lại từ nội dung hiển thị.', 'qr-meta'), frame);
+  if (documents.length > 1) {
+    const label=element('label','Tài liệu','qr-document-picker'), select=element('select');select.setAttribute('aria-label','Chọn tài liệu');
+    documents.forEach(item=>{const option=element('option',item.title);option.value=item.code;select.append(option);});select.value=doc.code;
+    select.onchange=()=>renderRegulations(root,select.value);label.append(select);head.append(label);
+  }
+  const pages=doc.sourcePages || doc.pages || 4;
+  const frame = element('iframe', null, 'qr-document-frame'); frame.title = `Toàn bộ nội dung ${doc.title} - ${pages} trang`; frame.setAttribute('sandbox', ''); frame.srcdoc = doc.originalHtml;
+  root.append(head, element('p', `Bản chép lại đầy đủ theo ${pages} trang QMS; bảng được dựng lại từ nội dung hiển thị.`, 'qr-meta'), frame);
 }
-export async function renderRegulations(root) {
+export async function renderRegulations(root, selectedCode = '') {
   root.replaceChildren(element('p', 'Đang tải quy trình…', 'note'));
   try {
     const session = await getSession();
     if (!session?.access_token) throw Error('Anh cần đăng nhập để xem quy trình.');
-    const response = await fetch('/api/dashboard-sync?document=sales-procedure', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
+    const response = await fetch('/api/dashboard-sync?document=sales-procedure' + (selectedCode ? '&code=' + encodeURIComponent(selectedCode) : ''), { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
     const payload = await response.json();
     if (!response.ok) throw Error(payload.error || 'Chưa tải được quy trình.');
     const doc = payload.document;
-    if (typeof doc?.originalHtml === 'string' && doc.originalHtml) { renderFullDocument(root, doc); return; }
+    if (typeof doc?.originalHtml === 'string' && doc.originalHtml) { renderFullDocument(root, doc, payload.documents); return; }
     if (!Array.isArray(doc?.sections)) throw Error('Nội dung tài liệu chưa hợp lệ.');
     root.replaceChildren();
     const head = element('div', null, 'qr-head'), titles = element('div');
@@ -68,6 +74,6 @@ export async function renderRegulations(root) {
     render();
   } catch (error) {
     root.replaceChildren(element('p', error.message, 'note'));
-    const retry = element('button', 'Thử lại'); retry.type = 'button'; retry.onclick = () => renderRegulations(root); root.append(retry);
+    const retry = element('button', 'Thử lại'); retry.type = 'button'; retry.onclick = () => renderRegulations(root, selectedCode); root.append(retry);
   }
 }

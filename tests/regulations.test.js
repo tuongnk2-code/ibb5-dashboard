@@ -19,3 +19,9 @@ test('missing or failed document never returns partial data',async()=>{
   const res=response();await createRegulationsHandler(async()=>({admin:{from(){return chain;}}}))({method:'GET'},res);assert.equal(res.code,result.error?500:404);assert.equal(res.payload.document,undefined);
  }
 });
+test('new regulation code is allowed, arbitrary shared keys are denied and PDF bytes are omitted',async()=>{
+ const calls=[],chain={select(){return this;},eq(k,v){calls.push(v);return this;},async maybeSingle(){return {data:{data:{code:'QD',originalHtml:'<p>Original</p>',pdfBase64:'private'}}};}};
+ const handler=createRegulationsHandler(async()=>({admin:{from(){return chain;}}}));
+ const res=response();await handler({method:'GET',query:{code:'2-SEL.0.0.1-QD/KD/HDCV/FTEL'}},res);assert.equal(res.code,200);assert.equal(res.payload.documents.length,2);assert.equal(res.payload.document.pdfBase64,undefined);assert.deepEqual(calls,['qms:2-SEL.0.0.1-QD/KD/HDCV/FTEL']);
+ const denied=response();await handler({method:'GET',query:{code:'snapshot'}},denied);assert.equal(denied.code,400);assert.equal(calls.length,1);
+});
