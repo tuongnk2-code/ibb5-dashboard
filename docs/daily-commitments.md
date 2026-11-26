@@ -54,3 +54,4 @@ of individual deficits), so over-performance cannot hide another's shortfall.
 ARIA progress values/text expose both capped fill and actual completion. Browser
 tests verify half/full fill lengths, label values, unchanged shortage numbers
 and the whole-roster desktop fit.
+The Bầy selector filters only the staff already returned within authenticated scope. Managers can choose all teams or one team; a single-team scope exposes only that team, and self scope hides the selector. Team and footer totals recalculate from visible rows. Filtering keeps per-date unsaved drafts, and does not alter server authorization or writes.
