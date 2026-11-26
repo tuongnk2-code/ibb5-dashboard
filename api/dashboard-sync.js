@@ -3,6 +3,7 @@ import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardSta
 import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, requiresCancellationReason, monthKey, normAcc, canImportData, hasProcessingRequest, scopeCommitmentRow } from '../js/dashboardStateModel.js';
 import { canSeeReport, validDay, reportDay } from '../js/dailyReportModel.js';
 import { isTerminatedNetContract } from '../js/cancellationArchive.js';
+import { createRegulationsHandler } from './_regulations.js';
 
 const bad = (res, status, error) => res.status(status).json({ error });
 const int = v => { if (!Number.isInteger(v) || v < 0 || v > 100000) throw new Error('Cam kết phải là số nguyên từ 0 đến 100.000.'); return v; };
@@ -18,6 +19,7 @@ export default async function handler(req, res) {
     const auth = await requireProfile(req);
     if (auth.error) return bad(res, auth.status, auth.error);
     const { admin, caller } = auth;
+    if (req.method === 'GET' && req.query?.document === 'sales-procedure') return createRegulationsHandler(async () => auth)(req, res);
     if (req.method === 'GET') {
       if (req.query?.keys) {
         let keys; try { keys = JSON.parse(req.query.keys); } catch { return bad(res, 400, 'Danh sách mục đồng bộ không hợp lệ.'); }

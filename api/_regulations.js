@@ -16,4 +16,3 @@ export function createRegulationsHandler(authenticate = requireProfile) {
     }
   };
 }
-export default createRegulationsHandler();

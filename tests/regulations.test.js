@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRegulationsHandler} from '../api/regulations.js';
+import {createRegulationsHandler} from '../api/_regulations.js';
 const response=()=>({headers:{},setHeader(k,v){this.headers[k]=v;},status(s){this.code=s;return this;},json(p){this.payload=p;return this;}});
 test('regulations rejects unauthenticated callers without reading content',async()=>{
  const res=response();await createRegulationsHandler(async()=>({status:401,error:'Login required'}))({method:'GET'},res);assert.equal(res.code,401);assert.equal(res.headers['Cache-Control'],'no-store');assert.equal(res.payload.document,undefined);

@@ -13,7 +13,7 @@ export async function renderRegulations(root) {
   try {
     const session = await getSession();
     if (!session?.access_token) throw Error('Anh cần đăng nhập để xem quy trình.');
-    const response = await fetch('/api/regulations', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
+    const response = await fetch('/api/dashboard-sync?document=sales-procedure', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' });
     const payload = await response.json();
     if (!response.ok) throw Error(payload.error || 'Chưa tải được quy trình.');
     const doc = payload.document;
