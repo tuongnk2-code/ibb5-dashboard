@@ -11,7 +11,7 @@ const element = (tag, text, className) => {
 function renderFullDocument(root, doc, documents = []) {
   root.replaceChildren();
   const head = element('div', null, 'qr-head'), title = element('div');
-  title.append(element('h2', doc.title), element('p', `${doc.code} · Phiên bản ${doc.version}`, 'qr-meta'));
+  title.append(element('h2', doc.title), element('p', `${doc.code} · Phiên bản ${doc.version}${doc.qmsEffectiveDate ? ' · Hiệu lực: ' + doc.qmsEffectiveDate : ''}`, 'qr-meta'));
   head.append(title);
   if (documents.length > 1) {
     const label=element('label','Tài liệu','qr-document-picker'), select=element('select');select.setAttribute('aria-label','Chọn tài liệu');
