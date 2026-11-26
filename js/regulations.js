@@ -10,21 +10,9 @@ const element = (tag, text, className) => {
 };
 function renderFullDocument(root, doc) {
   root.replaceChildren();
-  const head = element('div', null, 'qr-head'), title = element('div'), actions = element('div', null, 'qr-document-actions');
+  const head = element('div', null, 'qr-head'), title = element('div');
   title.append(element('h2', doc.title), element('p', `${doc.code} · Phiên bản ${doc.version}`, 'qr-meta'));
-  if (doc.pdfBase64) {
-    const download = element('button', '↓ Tải file PDF', 'qr-original'); download.type = 'button';
-    download.onclick = () => {
-      const bytes = Uint8Array.from(atob(doc.pdfBase64), c => c.charCodeAt(0));
-      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-      const link = element('a'); link.href = url; link.download = 'Quy-trinh-ban-hang-1-11.pdf'; link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    };
-    actions.append(download);
-  }
-  const source = element('a', 'QMS ↗', 'qr-original');
-  source.href = 'https://qms.fpt.com/document-detail/3bae0044-2454-41e1-a864-3bc34b1e4b27/view'; source.target = '_blank'; source.rel = 'noopener noreferrer'; actions.append(source);
-  head.append(title, actions);
+  head.append(title);
   const frame = element('iframe', null, 'qr-document-frame'); frame.title = 'Toàn bộ nội dung Quy trình bán hàng - 4 trang'; frame.setAttribute('sandbox', ''); frame.srcdoc = doc.originalHtml;
   root.append(head, element('p', 'Bản chép lại đầy đủ theo 4 trang QMS; bảng và lưu đồ được dựng lại từ nội dung hiển thị.', 'qr-meta'), frame);
 }

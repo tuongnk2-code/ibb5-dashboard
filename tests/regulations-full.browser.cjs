@@ -16,9 +16,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const frame=page.frameLocator('iframe');await frame.locator('[data-source-page="4"]').waitFor({state:'attached'});assert.equal(await frame.locator('[data-source-page]').count(),4);assert.equal(await page.locator('iframe').getAttribute('sandbox'),'');assert.equal(await page.locator('body').getAttribute('data-injected'),null);
   assert.equal(await page.locator('.qr-tools').count(),0);assert.equal(await page.locator('.qr-section').count(),0);
   if(process.env.QMS_HTML){assert.match(await frame.locator('body').innerText(),/TINPNC xác minh thông tin KH/);assert.match(await frame.locator('[data-source-page="4"]').innerText(),/Chưa có quy định/);assert.equal(await frame.locator('.penalties [rowspan="2"]').count(),4);}
-  const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Tải file PDF'}).click();const download=await downloadPromise;assert.equal(download.suggestedFilename(),'Quy-trinh-ban-hang-1-11.pdf');assert.deepEqual(await fs.readFile(await download.path()),pdf);
+  assert.equal(await page.getByRole('button',{name:'Tải file PDF'}).count(),0);assert.equal(await page.locator('.qr-head a').count(),0);
   assert.ok(await page.locator('#regulations').evaluate(n=>n.scrollWidth<=n.clientWidth+1));assert.deepEqual(errors,[]);
   await page.screenshot({path:`C:/Users/ADMIN/.codex/visualizations/2026/11/03/01a19ee8-12dd-7e41-8be4-5a08e724d1f7/qms-full-dashboard-${width}.png`});await page.close();
- }console.log('PASS: full four-page transcription, isolated viewer, no summary controls, exact PDF download and desktop/mobile rendering');}
+ }console.log('PASS: full four-page transcription, isolated viewer, hidden PDF/QMS actions and desktop/mobile rendering');}
  finally{await browser.close();await server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
