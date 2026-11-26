@@ -1168,7 +1168,10 @@ function loadSalesPlaybook(){
   salesPlaybookLoad=null;root.innerHTML='<p class="note" role="status">Chưa tải được kịch bản. Anh kiểm tra kết nối rồi thử lại nhé.</p><button type="button">Thử lại</button>';root.querySelector('button').onclick=loadSalesPlaybook;
  });
 }
-window.addEventListener('hashchange',loadSalesPlaybook);loadSalesPlaybook();
+window.addEventListener('hashchange',loadSalesPlaybook);window.addEventListener('popstate',loadSalesPlaybook);
+// Sidebar navigation uses pushState, which does not emit hashchange.
+document.querySelectorAll('.sidebar .nav a[href="#scripts"]').forEach(link=>link.addEventListener('click',()=>queueMicrotask(loadSalesPlaybook)));
+loadSalesPlaybook();
 
 renderWeeklyReports(document.getElementById('weeklyReportsRoot'), {getData:()=>dashboardData().map(row=>row.type==='Truyền hình'&&row.vvip==null?{...row,vvip:IBB_TV_META[row.id]?.vvip===true}:row),getNotes:()=>IBB_CALC.notes(),canView:row=>window.IBB5_ROLE?.canView(row)??false});
 
