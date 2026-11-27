@@ -1,3 +1,4 @@
+import { handleChannelDocuments } from './_channelDocuments.js';
 import { requireProfile } from './_supabaseAdmin.js';
 import { STATE_TABLE, sharedRow, sharedRows, importAudit } from './_dashboardState.js';
 import { unpackState, stateSignature, validateSnapshot, mergeNetSnapshot, validateNote, requiresCancellationReason, monthKey, normAcc, canImportData, hasProcessingRequest, scopeCommitmentRow } from '../js/dashboardStateModel.js';
@@ -16,9 +17,10 @@ function cleanCommit(value) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    const auth = await requireProfile(req, { allowCtv: req.method === 'GET' && req.query?.document === 'sales-procedure' });
+    const auth = await requireProfile(req, { allowCtv: req.method === 'GET' && ['sales-procedure','sales-channels'].includes(req.query?.document) });
     if (auth.error) return bad(res, auth.status, auth.error);
     const { admin, caller } = auth;
+    if ((req.method === 'GET' && req.query?.document === 'sales-channels') || (req.method === 'POST' && req.body?.kind === 'channel-document')) return await handleChannelDocuments(req,res,auth);
     if (req.method === 'GET' && req.query?.document === 'sales-procedure') return createRegulationsHandler(async () => auth)(req, res);
     if (req.method === 'GET') {
       if (req.query?.keys) {

@@ -15,7 +15,7 @@ export function getSupabaseAdmin() {
 
 export function profileAccessError(profile, { allowCtv = false } = {}) {
   if (!profile || !['manager', 'lead', 'staff', 'ctv'].includes(profile.role)) return { error: 'Tài khoản chưa được cấp quyền truy cập.', status: 403 };
-  if (profile.role === 'ctv' && !allowCtv) return { error: 'CTV chỉ được xem Kịch bản gợi ý và Quy trình quy định.', status: 403 };
+  if (profile.role === 'ctv' && !allowCtv) return { error: 'CTV chỉ được xem Kịch bản gợi ý, Quy trình quy định và Tài liệu kênh bán.', status: 403 };
   return null;
 }
 

@@ -34,7 +34,7 @@ function addFormHtml(initial) {
     + '<option value="manager"' + (d.role === 'manager' ? ' selected' : '') + '>Trưởng phòng · Toàn quyền</option>'
     + '<option value="lead"' + (d.role === 'lead' ? ' selected' : '') + '>Trưởng Bầy</option>'
     + '<option value="staff"' + (!d.role || d.role === 'staff' ? ' selected' : '') + '>Nhân viên</option>'
-    + '<option value="ctv"' + (d.role === 'ctv' ? ' selected' : '') + '>CTV · Kịch bản và Quy trình</option>'
+    + '<option value="ctv"' + (d.role === 'ctv' ? ' selected' : '') + '>CTV · Kịch bản, Quy trình và Tài liệu</option>'
     + '</select></label>'
     + '<label id="accAccWrap">Mã Acc<select name="acc">' + accOptions(d.acc) + '</select></label>'
     + '<div class="acc-form-actions"><button type="submit" class="primary">' + (isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản') + '</button><button type="button" id="accCancelBtn">Hủy</button></div>'

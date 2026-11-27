@@ -1,7 +1,7 @@
 import './responsive.js';
 import './sidebarGroups.css';
 
-const pages = { scripts: 'Kịch bản gợi ý', regulations: 'Quy trình quy định' };
+const pages = { scripts: 'Kịch bản gợi ý', regulations: 'Quy trình quy định', channelDocuments: 'Tài liệu kênh bán' };
 
 // CTV never bootstraps the operational dashboard or fetches its datasets.
 export async function renderCtvView() {
@@ -47,6 +47,7 @@ export async function renderCtvView() {
       root.textContent = 'Đang tải nội dung…';
       const work = (id === 'scripts'
         ? import('./salesPlaybook.js').then(module => module.renderSalesPlaybook(root))
+        : id === 'channelDocuments' ? import('./channelDocuments.js').then(module => module.renderChannelDocuments(root))
         : import('./regulations.js').then(module => module.renderRegulations(root)))
         .catch(() => { loaded.delete(id); root.textContent = 'Chưa tải được nội dung. Anh/chị tải lại trang để thử lại.'; });
       loaded.set(id, work);

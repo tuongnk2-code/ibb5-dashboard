@@ -16,6 +16,7 @@ test('CTV is denied business APIs, allowed only the document route; manager can 
     if (url.pathname === '/rest/v1/profiles' && method === 'GET') return json({ id: 'caller', role });
     if (url.pathname === '/auth/v1/admin/users') return json({ id: 'created', email: 'ctv.test@username.ibb5.invalid' });
     if (url.pathname === '/rest/v1/profiles' && ['POST', 'PATCH'].includes(method)) { writes.push(JSON.parse(init.body)); return new Response(null, { status: 201 }); }
+    if (url.pathname === '/rest/v1/dashboard_shared_state' && (!url.searchParams.has('key') || url.searchParams.get('key').startsWith('like.'))) return json([]);
     if (url.pathname === '/rest/v1/dashboard_shared_state') { reads.push(url.searchParams.get('key')); return json({ data: { code: 'QT', originalHtml: '<p>Document</p>' } }); }
     throw Error('Unexpected data request: ' + url.pathname);
   };
@@ -34,6 +35,8 @@ test('CTV is denied business APIs, allowed only the document route; manager can 
     assert.equal(reads.length, 0);
     const output = res(); await sync({ ...request, query: { document: 'sales-procedure', keys: '["snapshot"]' } }, output);
     assert.equal(output.code, 200); assert.deepEqual(reads, ['eq.qms:2-SEL.0.0.1-QT/KD/HDCV/FTEL']);
+    const library=res();await sync({...request,query:{document:'sales-channels'}},library);assert.equal(library.code,200);assert.equal(library.body.canUpload,false);
+    const uploadDenied=res();await sync({...request,method:'POST',body:{kind:'channel-document',action:'prepare'}},uploadDenied);assert.equal(uploadDenied.code,403);
     const { default: users } = await import('../api/admin-users.js');
     const body = { username: 'ctv.test', password: 'test-password', full_name: 'CTV Test', role: 'ctv', acc: 'DNG.Vypv' };
     const denied = res(); await users({ ...request, method: 'POST', body }, denied); assert.equal(denied.code, 403);

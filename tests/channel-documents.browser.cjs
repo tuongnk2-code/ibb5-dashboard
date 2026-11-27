@@ -14,6 +14,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await page.route('**/js/app-gate.js', r => r.fulfill({ contentType: 'application/javascript', body: 'window.IBB5_CURRENT_PROFILE={id:"test",role:"staff",acc:"DNG.ManLM3"};document.getElementById("loginScreen").style.display="none";document.getElementById("appShell").style.display="";await import("/js/main.js");' }));
       await page.route('**/facebook-ads.pdf*', r => { pdfRequests++; return r.abort(); });
       await page.route('https://**/*', r => r.abort());
+      await page.route('**/api/dashboard-sync?document=sales-channels*',r=>r.fulfill({json:{documents:[],canUpload:true}}));
       await page.goto('http://127.0.0.1:5298/#overview'); await page.waitForFunction(() => typeof window.IBB5_MONTHLY_TARGET === 'function');
       if (width < 1000) await page.locator('#mobileMenuToggle').click();
       await page.locator('[data-nav-group="reference"] summary').click();
