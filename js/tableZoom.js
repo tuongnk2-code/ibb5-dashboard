@@ -5,7 +5,7 @@ export function installTableZoom(root=document.body){
  const records=new Map();let saved={},frame=0;
  try{saved=JSON.parse(localStorage.getItem(STORE)||'{}');if(!saved||typeof saved!=='object'||Array.isArray(saved))saved={};}catch{}
  const tableKey=table=>{const scope=table.closest('.panel[id],[role="dialog"][id],dialog[id]')||table.parentElement.closest('[id]')||root;return (scope.id||'dashboard')+':'+(table.id||'table-'+[...scope.querySelectorAll('table')].indexOf(table));};
- const eligible=table=>!table.matches('.perf-table')&&!table.closest('#perfStickyClone,[id$="StickyClone"],.table-zoom-controls')&&(!table.id||document.getElementById(table.id)===table);
+ const eligible=table=>!table.matches('.perf-table')&&!table.closest('#perfStickyClone,[id$="StickyClone"],.table-zoom-controls,.dpv-stage')&&(!table.id||document.getElementById(table.id)===table);
  function mount(table,toolbar){
   const dayTools=table.matches('.dr-late-table')?table.closest('[data-late-summary]')?.querySelector(':scope>.dr-card-head'):table.id==='dpTable'?document.querySelector('#ibbDayPerf .dp-head'):null;
   let head=null;

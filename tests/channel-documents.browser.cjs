@@ -26,8 +26,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await page.locator('.chdoc-actions a[download]').getAttribute('href'), '/documents/sales-channels/facebook-ads.pdf');
       await page.screenshot({ path: `C:/Users/ADMIN/.codex/visualizations/2026/11/03/01a19ee8-12dd-7e41-8be4-5a08e724d1f7/channel-documents-${width}.png` });
       await page.locator('[data-chdoc-read]').click();
-      assert.match(await page.locator('#channelDocuments iframe').getAttribute('src'), /facebook-ads.pdf#view=FitH/);
-      await page.locator('[data-chdoc-close]').click(); assert.equal(await page.locator('#channelDocuments iframe').count(), 0);
+      await page.locator('.dpv-toolbar').waitFor();assert.equal(await page.locator('.chdoc-reader').isVisible(),true);
+      await page.locator('[data-chdoc-close]').click(); assert.equal(await page.locator('.dpv-toolbar').count(), 0);
       await page.reload(); await page.locator('[data-chdoc-read]').waitFor(); assert.equal(await page.locator('[data-nav-group="reference"]').getAttribute('open'), '');
       assert.deepEqual(errors, []); await page.close();
     }
