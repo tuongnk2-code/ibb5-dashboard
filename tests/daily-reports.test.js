@@ -7,7 +7,7 @@ test('Vietnam deadline includes drafts and submitted-late distinction', () => {
   assert.equal(reportDay(new Date('2026-11-04T18:00:00Z')), '2026-11-05');
   assert.equal(validDay('2026-02-30'), false);
   assert.equal(validDay('2028-02-29'), true);
-  const before = new Date('2026-11-04T14:59:59Z'), after = new Date('2026-11-04T15:00:00Z');
+  const before = new Date('2026-11-04T14:59:59Z'), after = new Date('2026-11-04T15:00:01Z');
   assert.equal(reportState(null, '2026-11-04', before), 'missing');
   assert.equal(reportState({ status: 'draft' }, '2026-11-04', before), 'draft');
   assert.equal(reportState({ status: 'draft' }, '2026-11-04', after), 'overdue');

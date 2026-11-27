@@ -1,3 +1,4 @@
+import { installDailyLateSummary } from './dailyLateSummary.js';
 import { metricProgressMarkup } from './metricProgressModel.js';
 import { getSession } from './auth.js';
 import { mountReportComments } from './reportComments.js';
@@ -32,8 +33,9 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
       <div class="dr-monitor-filters"><label>Trạng thái<select id="drFilter"><option value="all">Tất cả</option><option value="pending">Chưa gửi</option><option value="overdue">Quá hạn</option><option value="sent">Đã gửi</option><option value="support">Cần hỗ trợ</option><option value="exempt">Nghỉ / Miễn báo cáo</option></select></label></div></div>
       <div class="dr-table-scroll"><table class="dr-table"><thead><tr><th>Nhân sự</th><th>PTTB<br>TH/CK</th><th>KHTN / Chốt</th><th>Online</th><th>Cam kết mai<br>PTTB / Online</th><th>Trạng thái</th><th>Giờ gửi</th><th></th></tr></thead><tbody id="drRows"><tr><td colspan="8">Đang tải…</td></tr></tbody></table></div><p class="dr-hint">Theo tài khoản đã được cấp quyền. Người lưu nháp vẫn thuộc danh sách chưa gửi; người được quản lý đánh dấu nghỉ không nhận cảnh báo.</p>
     </article></div><article class="dr-card dr-history" ${manager ? 'hidden' : ''}><div class="dr-card-head"><div><h3>Báo cáo đã gửi của tôi</h3><p>${esc(reportIdentity(me))} · Chọn ngày để xem lại nội dung đã gửi</p></div><label>Tháng báo cáo<input type="month" id="drHistoryMonth" value="${date.slice(0, 7)}"><button type="button" id="drHistoryReload">Tải lại danh sách</button></label></div><div class="dr-table-scroll"><table class="dr-table"><thead><tr><th>Ngày báo cáo</th><th>PTTB · TH/CK</th><th>HĐ Online</th><th>Giờ gửi</th><th></th></tr></thead><tbody id="drHistoryRows"><tr><td colspan="5">Đang tải…</td></tr></tbody></table></div></article>
-    <dialog id="drDetail" class="dr-dialog"><div class="dr-card-head"><h3>Chi tiết báo cáo</h3><button type="button" id="drClose">Đóng</button></div><pre id="drDetailText"></pre><p id="drDetailAudit" class="dr-hint"></p></dialog>`;
+    <article class="dr-card dr-history" id="drLateSummary"></article><dialog id="drDetail" class="dr-dialog"><div class="dr-card-head"><h3>Chi tiết báo cáo</h3><button type="button" id="drClose">Đóng</button></div><pre id="drDetailText"></pre><p id="drDetailAudit" class="dr-hint"></p></dialog>`;
 
+  const lateSummary = installDailyLateSummary($('#drLateSummary'), date);
   const message = (text, error = false) => { const el = $('#drMessage'); el.hidden = false; el.className = 'dr-message' + (error ? ' dr-error' : ''); el.textContent = text; };
   const own = () => snapshot?.reports.find(r => r.user_id === me.id);
   const state = r => reportState(r, date, new Date(Date.now() + serverOffset));
@@ -175,9 +177,9 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
     if (busy || (hasEdits() && !confirm('Báo cáo có thay đổi chưa lưu. Chuyển ngày và bỏ các thay đổi này?'))) { e.target.value = date; return; }
     date = e.target.value; snapshot = null; dirty = false; formBaseline = null; $('#drFields').disabled = true;
     $('#drSummary').innerHTML = ''; $('#drAlerts').hidden = true; $('#drOwnStatus').textContent = 'Đang tải…'; $('#drViewOwn').hidden = true;
-    $('#drRows').innerHTML = '<tr><td colspan="8">Đang tải…</td></tr>'; load();
+    $('#drRows').innerHTML = '<tr><td colspan="8">Đang tải…</td></tr>'; lateSummary.update(date); load();
   };
-  $('#drReload').onclick = () => { if (!busy && (!hasEdits() || confirm('Tải lại sẽ bỏ thay đổi chưa lưu. Tiếp tục?'))) {dirty = false; formBaseline = formSignature(); load();} };
+  $('#drReload').onclick = () => { if (!busy && (!hasEdits() || confirm('Tải lại sẽ bỏ thay đổi chưa lưu. Tiếp tục?'))) {dirty = false; formBaseline = formSignature(); lateSummary.update(date, true); load();} };
   $('#drFilter').onchange = e => { filter = e.target.value; drawBoard(); };
   $('#drSummary').onclick = e => { const button = e.target.closest('[data-dr-filter]'); if (button) { filter = button.dataset.drFilter; $('#drFilter').value = filter; drawBoard(); } };
   $('#drCopy').onclick = async () => {

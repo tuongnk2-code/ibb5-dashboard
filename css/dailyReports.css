@@ -70,3 +70,5 @@ body:has(#dailyReports.page-active) .sidebar>div:not(.logo){display:none!importa
   #dailyReports .dr-auto b {font-size:24px;margin:4px 0}
   #dailyReports .dr-history {margin-top:12px}
 }
+
+#dailyReports .dr-late-table{min-width:540px}#dailyReports .dr-late-table td,#dailyReports .dr-late-table th{padding:7px 10px}#dailyReports .dr-late-table tfoot{background:#eaf3ff;font-weight:700}#dailyReports [data-late-total]{font-weight:700;color:#b45309}

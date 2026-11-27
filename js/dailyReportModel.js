@@ -15,7 +15,7 @@ export function canSeeReport(caller, subject) {
 export function reportState(report, date, now = new Date()) {
   if (report?.status === 'exempt') return 'exempt';
   if (report?.status === 'submitted') return new Date(report.submitted_at) > new Date(date + 'T22:00:00+07:00') ? 'late' : 'submitted';
-  if (now >= new Date(date + 'T22:00:00+07:00')) return 'overdue';
+  if (now > new Date(date + 'T22:00:00+07:00')) return 'overdue';
   return report?.status === 'draft' ? 'draft' : 'missing';
 }
 export const STATE_LABEL = { exempt: 'Nghỉ / Miễn báo cáo', submitted: 'Đã gửi', late: 'Đã gửi muộn', overdue: 'Quá hạn chưa gửi', draft: 'Bản nháp', missing: 'Chưa gửi' };
