@@ -45,7 +45,7 @@ export function installDailyLateSummary(root, initialDate) {
     if (!calendarNote) { calendarNote = document.createElement('p'); calendarNote.className = 'dr-hint'; calendarNote.dataset.lateCalendar = ''; root.querySelector('.dr-table-scroll').before(calendarNote); }
     calendarNote.textContent = lateReportCalendarNote(month);
     loadingMonth = month; body.replaceChildren(); footer.replaceChildren(); status.textContent = 'Đang tải…';
-    const start = month + '-01', last = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5)), 0)).toISOString().slice(0, 10);
+    const start = month === '2026-11' ? '2026-11-09' : month + '-01', last = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5)), 0)).toISOString().slice(0, 10);
     const end = last < reportDay() ? last : reportDay();
     try {
       const session = await getSession();

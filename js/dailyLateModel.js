@@ -4,13 +4,13 @@ export const LATE_REPORT_RATE = 20000;
 
 export function isLateReportChargeDay(day) {
   const weekday = new Date(day + 'T12:00:00Z').getUTCDay();
-  if (day.slice(0, 7) === '2026-11') return weekday !== 6 && weekday !== 0;
+  if (day.slice(0, 7) === '2026-11') return day >= '2026-11-09' && weekday !== 6 && weekday !== 0;
   if (day >= '2026-12-01') return weekday !== 0;
   return true;
 }
 
 export const lateReportCalendarNote = month => month === '2026-11'
-  ? 'Tháng 11/2026: không tính thứ Bảy và Chủ nhật.'
+  ? 'Tháng 11/2026: tính từ 09/11; không tính thứ Bảy và Chủ nhật.'
   : month >= '2026-12' ? 'Không tính Chủ nhật; thứ Bảy vẫn tính.' : '';
 
 export function dailyLateSummary(snapshot, options) {
