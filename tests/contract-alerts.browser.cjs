@@ -18,9 +18,9 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5251/#overview');
   await page.waitForFunction(total=>document.querySelector('#reportNotificationButton b')?.textContent===String(total),total);
   const bell=page.locator('#reportNotificationButton'),assistant=page.locator('#ibbAssistantLauncher');
-  const before=await bell.boundingBox(),assistantBox=await assistant.boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=assistantBox.x);assert.ok(before.y>=850);
-  await page.evaluate(()=>window.scrollTo(0,700));assert.equal((await bell.boundingBox()).y,before.y);
-  await page.evaluate(()=>location.hash='performance');await page.waitForFunction(()=>document.getElementById('performance').classList.contains('page-active'));assert.equal((await bell.boundingBox()).y,before.y);
+  const before=await bell.boundingBox(),logoutBox=await page.locator('#topLogoutBtn').boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=logoutBox.x);assert.ok(before.y<180);assert.ok(before.width<=48);assert.equal(await bell.evaluate(el=>el.parentElement.classList.contains('top-right')),true);
+  assert.equal(await bell.locator('b').evaluate(el=>getComputedStyle(el).backgroundImage.includes('gradient')),true);
+  await page.evaluate(()=>location.hash='performance');await page.waitForFunction(()=>document.getElementById('performance').classList.contains('page-active'));assert.ok((await bell.boundingBox()).y<180);
   assert.equal(await bell.locator('svg').evaluate(el=>getComputedStyle(el).animationName),'rc-bell-ring');
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await bell.locator('svg').evaluate(el=>getComputedStyle(el).animationName),'none');await page.emulateMedia({reducedMotion:'no-preference'});
   await assistant.click();await page.locator('#ibbAssistant').waitFor({state:'visible'});await page.locator('[data-chat-close]').click();
