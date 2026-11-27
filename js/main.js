@@ -1,3 +1,4 @@
+import { installExpectedDateFilter } from './pendingExpectedFilter.js';
 import { installTableZoom } from './tableZoom.js';
 import { installSidebarGroups } from './sidebarGroups.js';
 import { metricProgressMarkup } from './metricProgressModel.js';
@@ -358,6 +359,7 @@ const fieldLabels=['Mã HĐ','Nhân viên bán','Tên Khách Hàng','Ngày Tạo
 let columnSortField='',columnSortDirection='';
 const header=el('pendRows').closest('table').querySelector('thead');
 header.innerHTML='<tr>'+fieldLabels.map((v,i)=>'<th><div class="ph-label">'+escapeHTML(v)+'</div>'+'<select class="ph-filter" data-field="'+fields[i]+'" aria-label="Lọc '+escapeHTML(v)+'"><option value="">Tất cả</option></select></th>').join('')+'<th><div class="ph-label">Cập nhật</div></th><th><div class="ph-label">TP xử lý</div></th></tr>';
+const expectedFilter=installExpectedDateFilter(header.querySelector('[data-field="expected"]'),()=>render());
 const filterControls=document.createElement('div');filterControls.className='pending-header-filters';
 const statusFilter=el('pendStatus');statusFilter.replaceWith(filterControls);
 statusFilter.querySelector('option[value="hidden"]').textContent='HĐ OL đã ẩn';statusFilter.add(new Option('HĐ hủy đã ẩn','hidden-cancelled'));
@@ -388,12 +390,12 @@ a=a.filter(x=>{
 a=a.filter(x=>!q||[x.id,customer(x),x.staff,x.created,x.date,x.package,teamMap[x.staff],notes[x.id]?.expected,notes[x.id]?.timeSlot,notes[x.id]?.reason,notes[x.id]?.cancelReason,notes[x.id]?.result,notes[x.id]?.source,...fields.map(f=>cellValue(x,f))].some(v=>String(v??'').toLocaleLowerCase('vi').includes(q)));
 const createdMonth=el('pendCreatedMonth').value;if(createdMonth)a=a.filter(x=>String(x.created||'').slice(0,7)===createdMonth);
 a=filterStaffTeam(a,el('pendTeam').value);
-header.querySelectorAll('.ph-filter').forEach(sel=>{if(sel.value && !sel.value.startsWith('__SORT_'))a=a.filter(x=>pendingDrafts.has(x.id)||String(cellValue(x,sel.dataset.field))===sel.value)});
+header.querySelectorAll('.ph-filter').forEach(sel=>{if(sel.dataset.field==='expected'&&expectedFilter.active)a=a.filter(x=>pendingDrafts.has(x.id)||expectedFilter.matches(String(cellValue(x,'expected'))));else if(sel.value && !sel.value.startsWith('__SORT_'))a=a.filter(x=>pendingDrafts.has(x.id)||String(cellValue(x,sel.dataset.field))===sel.value)});
 a.sort((x,y)=>(notes[x.id]?.expected||'9999-12-31').localeCompare(notes[y.id]?.expected||'9999-12-31'));if(columnSortField){const dir=columnSortDirection==='az'?1:-1;a.sort((x,y)=>String(cellValue(x,columnSortField)).localeCompare(String(cellValue(y,columnSortField)),'vi',{numeric:true,sensitivity:'base'})*dir)}return a}
 function populateFilters(){const mode=el('pendStatus').value,hidden=isHiddenMode(mode),all=(hidden?hiddenContracts(mode):el('pendQuery').value.trim()||mode==='continue-processing'?distinct:pending()).filter(x=>(hidden||!isCancelled(x.id))&&(window.IBB5_ROLE?.canView(x)??true));
 const monthSelect=el('pendCreatedMonth'),selectedMonth=monthSelect.value,months=[...new Set([...all.map(x=>String(x.created||'').slice(0,7)),selectedMonth].filter(m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m)))].sort().reverse();
 monthSelect.innerHTML='<option value="">Tất cả tháng</option>'+months.map(m=>'<option value="'+m+'">'+m.slice(5)+'/'+m.slice(0,4)+'</option>').join('');monthSelect.value=selectedMonth;
-header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;const vals=[...new Set([...(sel.dataset.field==='action'?REASONS:[]),...all.map(x=>cellValue(x,sel.dataset.field)).filter(Boolean),...(previous&&!previous.startsWith('__SORT_')?[previous]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'vi'));sel.innerHTML='<option value="">Tất cả</option><option value="__SORT_AZ__">↑ Từ A-Z</option><option value="__SORT_ZA__">↓ Từ Z-A</option>'+vals.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');sel.value=previous;});}
+header.querySelectorAll('.ph-filter').forEach(sel=>{const previous=sel.value;const vals=[...new Set([...(sel.dataset.field==='action'?REASONS:[]),...all.map(x=>cellValue(x,sel.dataset.field)).filter(Boolean),...(previous&&!previous.startsWith('__')?[previous]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'vi'));sel.innerHTML='<option value="">Tất cả</option><option value="__SORT_AZ__">↑ Từ A-Z</option><option value="__SORT_ZA__">↓ Từ Z-A</option>'+vals.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');if(sel.dataset.field==='expected')expectedFilter.decorate(all.map(x=>cellValue(x,'expected')),previous);sel.value=previous;});}
 function cancellationApproval(id,result,showTime=true){
  if(isCancelled(id))return '<span class="p-manager-only">Đã duyệt hủy</span>';
  const continuing=hasProcessingRequest(notes[id]),badge='<span class="p-continue-status" title="Hợp đồng tiếp tục được theo dõi đến khi Trưởng phòng duyệt hủy">Y/C xử lý tiếp</span>'+processingRequestedTime(notes[id]);
@@ -497,7 +499,7 @@ const metricDetails=installAgedContractDetails({button:null,id:'pendingMetricDia
 document.addEventListener('ibb5-open-pending-contract',event=>{
  const id=event.detail?.id,row=distinct.find(row=>row.id===id);if(!row||!(window.IBB5_ROLE?.canView(row)??false)||isCancelled(id))return;
  el('pendAsOf').value=reportDay();el('pendCreatedMonth').value='';el('pendTeam').value='';el('pendStatus').value='all';el('pendQuery').value=id;
- header.querySelectorAll('.ph-filter').forEach(select=>select.value='');const idFilter=header.querySelector('.ph-filter[data-field="id"]');if(![...idFilter.options].some(option=>option.value===id))idFilter.add(new Option(id,id));idFilter.value=id;location.hash='pendingContracts';render();
+ expectedFilter.clear();header.querySelectorAll('.ph-filter').forEach(select=>select.value='');const idFilter=header.querySelector('.ph-filter[data-field="id"]');if(![...idFilter.options].some(option=>option.value===id))idFilter.add(new Option(id,id));idFilter.value=id;location.hash='pendingContracts';render();
  requestAnimationFrame(()=>{const target=[...el('pendRows').querySelectorAll('tr[data-id]')].find(row=>row.dataset.id===id);target?.scrollIntoView({block:'center'});target?.querySelector('.p-result')?.focus({preventScroll:true});});
 });
 for(const [id,group] of Object.entries(metricGroups)){
