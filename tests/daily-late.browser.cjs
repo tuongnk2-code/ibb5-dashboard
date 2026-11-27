@@ -10,7 +10,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       page.on('pageerror', error => errors.push(error.message));
       await page.route('**/js/auth.js', r => r.fulfill({ contentType: 'application/javascript', body: 'export async function getSession(){return {access_token:"test"}}' }));
       await page.route('**/api/daily-reports*', r => {
-        const start = new URL(r.request().url()).searchParams.get('from');
+        const query = new URL(r.request().url()).searchParams; assert.equal(query.get('summary'), 'late'); const start = query.get('from');
         assert.equal(r.request().headers().authorization, 'Bearer test');
         r.fulfill({ json: { profiles: [{ id: 'staff', acc: 'DNG.ManLM3', role: 'staff' }, { id: 'ctv', role: 'ctv' }], reports: [{ user_id: 'staff', report_date: start, status: 'submitted', submitted_at: start + 'T22:00:00+07:00', data: {} }, { user_id: 'staff', report_date: start.slice(0, 8) + '02', status: 'submitted', submitted_at: start.slice(0, 8) + '02T22:00:01+07:00', data: {} }], trackingStart: start, serverTime: start.slice(0, 8) + '03T15:00:01Z' } });
       });

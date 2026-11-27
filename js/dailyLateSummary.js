@@ -50,7 +50,7 @@ export function installDailyLateSummary(root, initialDate) {
     try {
       const session = await getSession();
       if (!session?.access_token) throw Error('Vui lòng đăng nhập lại.');
-      const response = await fetch('/api/daily-reports?from=' + start + '&to=' + end, { headers: { Authorization: 'Bearer ' + session.access_token }, cache: 'no-store', signal: AbortSignal.timeout(15000) });
+      const response = await fetch('/api/daily-reports?summary=late&from=' + start + '&to=' + end, { headers: { Authorization: 'Bearer ' + session.access_token }, cache: 'no-store', signal: AbortSignal.timeout(15000) });
       const snapshot = await response.json();
       if (!response.ok) throw Error(snapshot.error || 'Chưa tải được thống kê.');
       if (!Array.isArray(snapshot.profiles) || !Array.isArray(snapshot.reports)) throw Error('Dữ liệu chưa hợp lệ.');
@@ -60,7 +60,7 @@ export function installDailyLateSummary(root, initialDate) {
       const cells = (row, person) => ['late', 'overdue', 'count', 'amount'].map(key => `<td><button type="button" class="dr-late-number" data-late-detail="${key === 'amount' ? 'count' : key}" data-late-person="${person}" title="Xem ngày báo cáo và thời gian trễ">${number(row[key])}${key === 'amount' ? 'đ' : ''}</button></td>`).join('');
       body.innerHTML = result.rows.map((row, index) => `<tr><td>${esc(row.profile.acc || row.profile.full_name || 'Chưa gán Acc')}</td>${cells(row, index)}</tr>`).join('') || '<tr><td colspan="5">Không có nhân sự trong phạm vi được xem.</td></tr>';
       footer.innerHTML = '<tr><th>TỔNG</th>' + cells(result.total, 'all') + '</tr>';
-      status.textContent = `${number(result.total.count)} lần × ${number(LATE_REPORT_RATE)}đ = ${number(result.total.amount)}đ · ${start.split('-').reverse().join('/')} – ${end.split('-').reverse().join('/')}`;
+      status.textContent = `Toàn phòng · ${number(result.total.count)} lần × ${number(LATE_REPORT_RATE)}đ = ${number(result.total.amount)}đ · ${start.split('-').reverse().join('/')} – ${end.split('-').reverse().join('/')}`;
       loadedMonth = month;
     } catch (error) { if (version === generation) { loadedMonth = ''; status.textContent = 'Chưa tải được thống kê: ' + error.message; } }
     finally { if (version === generation) loadingMonth = ''; }
