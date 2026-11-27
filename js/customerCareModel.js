@@ -8,7 +8,7 @@ export const CARE_TEMPLATES=[
   ['Sau lắp đặt','Chào anh/chị {ten_kh}, em {nhan_su} hỏi thăm sau khi lắp đặt hợp đồng {ma_hd}. Anh/chị đã sử dụng thuận tiện chưa ạ? Em luôn sẵn sàng hỗ trợ.'],
 ];
 export const normCare=v=>String(v||'').trim().toLowerCase();
-export const canManageCare=(caller,owner)=>caller?.id===owner?.id||caller?.role==='manager';
+export const canManageCare=(caller,owner)=>!!owner&&caller?.role!=='ctv'&&owner.role!=='ctv'&&(caller?.id===owner.id||caller?.role==='manager');
 export const careScope=(caller,owner)=>!!owner&&canSeeReport(caller,owner);
 export function carePhone(value){
   let phone=String(value||'').replace(/[\s().-]/g,'');

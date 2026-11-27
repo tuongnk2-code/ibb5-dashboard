@@ -13,7 +13,7 @@ export function reportAssessment(row) {
   return labels.join(' · ');
 }
 export function dailyReportRollup(snapshot,{start,end,team='',now=new Date()}={}) {
-  const profiles=(snapshot.profiles||[]).filter(p=>p.role!=='manager'&&(!team||String(p.team)===String(team)));
+  const profiles=(snapshot.profiles||[]).filter(p=>p.role!=='manager'&&p.role!=='ctv'&&(!team||String(p.team)===String(team)));
   const reports=new Map();
   for(const report of snapshot.reports||[]){const key=report.user_id+':'+report.report_date,old=reports.get(key);if(!old||number(report.revision)>number(old.revision))reports.set(key,report);}
   const rows=profiles.map(profile=>{

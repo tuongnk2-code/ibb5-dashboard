@@ -108,7 +108,7 @@ export function renderDailyReports(root, me, getMonthlyTarget) {
   }
   function drawBoard() {
     if (!snapshot) return;
-    const entries = snapshot.profiles.filter(p => p.role !== 'manager' || !supervisor).map(p => ({ p, r: snapshot.reports.find(r => r.user_id === p.id) }));
+    const entries = snapshot.profiles.filter(p => p.role !== 'ctv' && (p.role !== 'manager' || !supervisor)).map(p => ({ p, r: snapshot.reports.find(r => r.user_id === p.id) }));
     const sent = entries.filter(({ r }) => r?.status === 'submitted'), pending = entries.filter(({ r }) => !['submitted', 'exempt'].includes(r?.status)), support = sent.filter(({ r }) => r.data.support?.trim());
     $('#drSummary').innerHTML = [{ key: 'sent', label: 'Đã gửi', count: sent.length }, { key: 'pending', label: 'Chưa gửi', count: pending.length }, { key: 'support', label: 'Cần hỗ trợ', count: support.length }, { key: 'all', label: 'KHTN mới', count: sent.reduce((n, { r }) => n + r.data.sources.reduce((v, s) => v + s.leads, 0), 0) }].map(s => `<button type="button" data-dr-filter="${s.key}" class="dr-stat dr-stat-${s.key}"><span>${s.label}</span><strong>${number(s.count)}</strong>${s.key==='sent'&&sent.length+pending.length>0?metricProgressMarkup(sent.length/(sent.length+pending.length)*100,{kind:'ratio',title:'Tỷ lệ đã gửi báo cáo, không tính ngày nghỉ/miễn'}):''}</button>`).join('');
     const late = pending.filter(({ r }) => state(r) === 'overdue');

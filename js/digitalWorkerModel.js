@@ -4,7 +4,7 @@ export const WORKER_CHANNELS={meta_facebook:'Meta Facebook',top_zalo:'Top Zalo',
 export const WORKER_CHANNEL_URLS={fpt_sop:'https://portal-sop.fpt.vn/trang-chu'};
 export const WORKER_STATES={queued:'Chờ máy thực hiện',running:'Đang thực hiện',succeeded:'Đã hoàn tất',failed:'Cần kiểm tra',cancelled:'Đã dừng'};
 export const canViewWorker=(caller,owner)=>!!owner&&canSeeReport(caller,owner);
-export const canManageWorker=(caller,owner)=>!!owner&&(caller.role==='manager'||caller.id===owner.id);
+export const canManageWorker=(caller,owner)=>!!owner&&caller.role!=='ctv'&&owner.role!=='ctv'&&(caller.role==='manager'||caller.id===owner.id);
 export const workerOnline=(device,now=Date.now())=>!!device&&!device.revoked&&Date.parse(device.last_seen_at)>now-90000;
 export const workerSupportsTask=(device,task)=>!!device&&!device.revoked&&device.capabilities.includes(task.channel)&&(!task.config?.care_policy||device.capabilities.includes('care_'+task.channel))&&(!task.config?.steps||(device.capabilities.includes('workflow_v1')&&task.config.steps.every(step=>device.capabilities.includes(step.channel))));
 export function cleanWorkerTask(input){

@@ -7,6 +7,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  try{
   const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   const profiles=['late','ontime','draft','missing','exempt'].map(id=>({id,role:'staff',acc:id}));
+  profiles.push({id:'ctv',role:'ctv',acc:null,full_name:'CTV không tính báo cáo'});
   const data={actual:1,commitment:1,tomorrowPttb:1,tomorrowOnline:1,sources:[],support:''};
   const reports=[{user_id:'late',status:'submitted',submitted_at:'2026-11-06T15:06:00Z',data},{user_id:'ontime',status:'submitted',submitted_at:'2026-11-06T14:53:00Z',data},{user_id:'draft',status:'draft',data},{user_id:'exempt',status:'exempt',data:{absenceReason:'Nghỉ'}}];
   await page.route('**/js/auth.js',r=>r.fulfill({contentType:'application/javascript',body:'export async function getSession(){return {access_token:"test"}}'}));
@@ -15,7 +16,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   await page.goto('http://127.0.0.1:5185/filter-check');await page.locator('#drDate').fill('2026-11-06');await page.locator('#drDate').dispatchEvent('change');
   await page.locator('#drRows .dr-row-late').waitFor();
   const shown=()=>page.locator('#drRows tr td:first-child b').allTextContents();
-  assert.equal((await shown()).length,5);
+  assert.equal((await shown()).length,5);assert.doesNotMatch(await page.locator('#drRows').textContent(),/CTV không tính báo cáo/);assert.equal(await page.locator('[data-dr-filter="pending"] strong').textContent(),'2');
   await page.locator('#drFilter').selectOption('overdue');assert.deepEqual(await shown(),['late','draft','missing']);
   assert.match(await page.locator('#drRows').textContent(),/Đã gửi muộn/);assert.match(await page.locator('#drRows').textContent(),/Quá hạn chưa gửi/);
   await page.locator('#drFilter').selectOption('pending');assert.deepEqual(await shown(),['draft','missing']);
