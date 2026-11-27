@@ -1,6 +1,13 @@
 import { dailyReportRollup } from './dailyReportRollupModel.js';
 
 export const LATE_REPORT_RATE = 20000;
+export const canConfirmLatePayment = profile => ['manager', 'lead', 'staff'].includes(profile?.role) && String(profile?.acc || '').trim().toLowerCase() === 'dng.hoantb6';
+
+export function latePaymentBalance(details, payment) {
+  const paidDates = new Set(payment?.data?.dates || []);
+  const paid = details.filter(item => paidDates.has(item.date)).length * LATE_REPORT_RATE;
+  return { paid, remaining: details.length * LATE_REPORT_RATE - paid };
+}
 
 export function isLateReportChargeDay(day) {
   const weekday = new Date(day + 'T12:00:00Z').getUTCDay();

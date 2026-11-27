@@ -17,6 +17,7 @@ test('all operational roles can view department lateness metadata; ordinary repo
   globalThis.fetch = async input => {
     const url = new URL(input instanceof Request ? input.url : input);
     const json = data => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
+    if (url.pathname === '/rest/v1/dashboard_shared_state') return json([]);
     if (url.pathname === '/auth/v1/user') return json({ id: caller.id });
     if (url.pathname === '/rest/v1/profiles') return json(url.searchParams.has('id') ? caller : profiles);
     if (url.pathname === '/rest/v1/daily_reports') {
@@ -40,7 +41,7 @@ test('all operational roles can view department lateness metadata; ordinary repo
       assert.deepEqual(result.body.profiles.map(p => p.id), ['staff', 'other', 'lead']);
       assert.ok(queries.some(q => q.searchParams.get('user_id') === 'in.(staff,other,lead)'));
       assert.equal(queries[0].searchParams.get('select'), 'user_id,report_date,status,submitted_at,revision');
-      assert.equal(result.body.reports[0].data, undefined);
+      assert.equal(result.body.reports[0].data, undefined);assert.equal(result.body.canConfirmPayment,profile.acc==='DNG.HoaNTB6');
     }
     caller = profiles[0];
     assert.deepEqual((await invoke()).body.profiles.map(p => p.id), ['staff']);

@@ -1,4 +1,6 @@
 import { requireProfile } from './_supabaseAdmin.js';
+import { confirmLatePayment, readLatePayments } from './_dailyLatePayments.js';
+import { canConfirmLatePayment } from '../js/dailyLateModel.js';
 import { sharedRow } from './_dashboardState.js';
 import { includeInDashboardReports } from '../js/reportScope.js';
 import { canSeeReport, teamOf, reportDay, shiftDay, validDay, validateReport } from '../js/dailyReportModel.js';
@@ -30,6 +32,7 @@ export default async function handler(req, res) {
     const auth = await requireProfile(req);
     if (auth.error) return fail(res, auth.status, auth.error);
     const { caller, admin } = auth;
+    if (req.method === 'POST' && req.body?.action === 'late-payment') return await confirmLatePayment(admin, caller, req.body, res);
     if (req.method === 'GET' && (req.query?.from !== undefined || req.query?.to !== undefined)) {
       const { from, to } = req.query;
       if (!validDay(from) || !validDay(to) || from > to || to > reportDay() || Date.parse(to)-Date.parse(from) > 61*86400000) return fail(res, 400, 'Chọn khoảng báo cáo hợp lệ, tối đa 62 ngày và không vượt hôm nay.');
@@ -43,7 +46,8 @@ export default async function handler(req, res) {
         reports.push(...batch);if(batch.length<1000)break;
       }
       const first=ids.length?check(await admin.from('daily_reports').select('report_date').in('user_id',ids).order('report_date').limit(1)):[];
-      return res.status(200).json({profiles,reports,trackingStart:first[0]?.report_date||null,serverTime:new Date().toISOString()});
+      const paymentInfo = lateSummary ? { payments: await readLatePayments(admin, from.slice(0, 7), ids), canConfirmPayment: canConfirmLatePayment(caller) } : {};
+      return res.status(200).json({profiles,reports,trackingStart:first[0]?.report_date||null,...paymentInfo,serverTime:new Date().toISOString()});
     }
     if (req.method === 'GET' && req.query?.history === 'mine') {
       const month = req.query.month;
