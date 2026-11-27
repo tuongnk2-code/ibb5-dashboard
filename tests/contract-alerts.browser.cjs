@@ -18,7 +18,7 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5251/#overview');
   await page.waitForFunction(total=>document.querySelector('#reportNotificationButton b')?.textContent===String(total),total);
   const bell=page.locator('#reportNotificationButton'),assistant=page.locator('#ibbAssistantLauncher');
-  const before=await bell.boundingBox(),assistantBox=await assistant.boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=assistantBox.x);assert.ok(before.y>=850);assert.ok(before.width<=48);assert.equal(await bell.evaluate(el=>el.parentElement.classList.contains('ibb-floating-actions')),true);
+  const before=await bell.boundingBox(),assistantBox=await assistant.boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=assistantBox.x);assert.ok(before.y>=850);assert.equal(before.width,width<=600?54:58);assert.equal(await bell.evaluate(el=>el.parentElement.classList.contains('ibb-floating-actions')),true);
   await page.evaluate(()=>window.scrollTo(0,700));assert.equal((await bell.boundingBox()).y,before.y);
   assert.equal(await bell.locator('b').evaluate(el=>getComputedStyle(el).backgroundImage.includes('gradient')),true);
   await page.evaluate(()=>location.hash='performance');await page.waitForFunction(()=>document.getElementById('performance').classList.contains('page-active'));assert.equal((await bell.boundingBox()).y,before.y);
