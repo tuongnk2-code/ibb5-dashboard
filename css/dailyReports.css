@@ -72,3 +72,4 @@ body:has(#dailyReports.page-active) .sidebar>div:not(.logo){display:none!importa
 }
 
 #dailyReports .dr-late-table{min-width:540px}#dailyReports .dr-late-table td,#dailyReports .dr-late-table th{padding:7px 10px}#dailyReports .dr-late-table tfoot{background:#eaf3ff;font-weight:700}#dailyReports [data-late-total]{font-weight:700;color:#b45309}
+#dailyReports .dr-late-table .dr-late-number{border:0;background:transparent;color:#075eb3;text-decoration:underline;text-underline-offset:3px;font:inherit;padding:2px 4px;margin:0;cursor:pointer}#dailyReports .dr-late-table .dr-late-number:focus-visible{outline:2px solid #1685ee;outline-offset:2px}#dailyReports .dr-late-dialog{width:min(1000px,95vw);max-width:95vw}#dailyReports .dr-late-dialog .dr-table{min-width:720px}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reportState } from '../js/dailyReportModel.js';
-import { dailyLateSummary } from '../js/dailyLateModel.js';
+import { dailyLateSummary, isLateReportChargeDay } from '../js/dailyLateModel.js';
 
 test('22:00:00 is on time; only later submissions or missing reports after the deadline count', () => {
   const day = '2026-11-10', deadline = new Date(day + 'T22:00:00+07:00');
@@ -31,4 +31,17 @@ test('late and overdue count once per person/day at 20,000; ignores exempt, CTV,
   reports.push({ user_id: 'staff', report_date: '2026-11-05', status: 'submitted', submitted_at: '2026-11-06T08:00:00+07:00', data: {} });
   const submitted = dailyLateSummary(snapshot, { ...options, now: new Date('2026-11-06T08:00:00+07:00') });
   assert.deepEqual(submitted.total, { late: 2, overdue: 1, count: 3, amount: 60000 });
+});
+
+
+test('November 2026 excludes both weekend days; December onward excludes only Sunday, by report date', () => {
+  for (const day of ['2026-11-07','2026-11-08','2026-11-28','2026-11-29','2026-12-06','2027-01-03']) assert.equal(isLateReportChargeDay(day),false,day);
+  for (const day of ['2026-11-06','2026-11-30','2026-12-05','2027-01-02','2026-10-31']) assert.equal(isLateReportChargeDay(day),true,day);
+  const profiles=[{id:'a',role:'staff'}];
+  const snapshot={profiles,trackingStart:'2026-11-06',reports:[{user_id:'a',report_date:'2026-11-07',status:'submitted',submitted_at:'2026-11-09T08:00:00+07:00',data:{}}]};
+  const november=dailyLateSummary(snapshot,{start:'2026-11-06',end:'2026-11-09',now:new Date('2026-11-10T08:00:00+07:00')});
+  assert.deepEqual(november.total,{late:0,overdue:2,count:2,amount:40000});
+  snapshot.trackingStart='2026-12-04';snapshot.reports=[{user_id:'a',report_date:'2026-12-05',status:'submitted',submitted_at:'2026-12-07T08:00:00+07:00',data:{}}];
+  const december=dailyLateSummary(snapshot,{start:'2026-12-04',end:'2026-12-07',now:new Date('2026-12-08T08:00:00+07:00')});
+  assert.deepEqual(december.total,{late:1,overdue:2,count:3,amount:60000});
 });
