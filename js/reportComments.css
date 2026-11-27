@@ -4,17 +4,17 @@
 .rc-phone-push{padding:12px 14px;margin-top:16px;background:#edf7ff;border:1px solid #c4dff7;border-radius:12px}.rc-phone-push h4{margin:0;font-size:16px}.rc-phone-push p{font-size:13px;line-height:1.5;color:#54718d}.rc-phone-push .rc-actions{flex-wrap:wrap}.rc-phone-push button{font-size:13px}.rc-phone-push [data-phone-enable]{background:#087cf0;color:#fff}.rc-phone-push button[hidden]{display:none}.rc-phone-push button:disabled{opacity:.6;cursor:wait}
 .rc-inbox{padding:18px}.rc-inbox>.rc-dialog-head h3{font-size:19px}.rc-inbox .rc-phone-compact{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:10px 0 0;padding:0;border:0;background:none}.rc-phone-compact>span{font-size:12px;color:#52728f}.rc-phone-compact>span[hidden]{display:none}.rc-phone-compact>details{font-size:13px;flex:0 1 auto}.rc-phone-compact>details[open]{flex-basis:100%;padding:10px 12px;background:#f3f8ff;border-radius:10px}.rc-phone-compact summary{cursor:pointer;color:#647f9a;padding:7px 0}.rc-inbox .rc-contract-alerts{padding-bottom:10px}.rc-inbox .rc-contract-alerts h4{margin:12px 0 8px;font-size:15px}.rc-inbox .rc-alert-groups{gap:8px;margin:10px 0}.rc-inbox .rc-alert-groups button{padding:9px 12px;min-height:42px;font-size:14px}.rc-inbox .rc-alert-contracts article{padding:10px 12px}.rc-inbox .rc-alert-contracts p{margin:4px 0}.rc-inbox .rc-status:empty{display:none}.rc-inbox .rc-inbox-list[hidden]{display:none}@media(max-width:600px){.rc-inbox{padding:14px}.rc-inbox>.rc-dialog-head h3{font-size:18px}.rc-inbox .rc-alert-contracts{max-height:40dvh}}
 .rc-inbox-tabs{display:flex;gap:6px;margin:10px 0 14px;padding-bottom:8px;border-bottom:1px solid #d8e6f5}
-/* Keep the bell in the header; only the assistant floats over page content. */
-.top-right .rc-bell{position:relative;display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;padding:0!important;border:0;background:transparent;border-radius:14px;cursor:pointer;transition:background .18s}
-.top-right .rc-bell:hover{background:#fff5d8}
+/* Keep both notification and assistant controls together above page content. */
+.ibb-floating-actions .rc-bell{position:relative;display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;padding:0!important;border:0;background:transparent;border-radius:14px;cursor:pointer;transition:background .18s}
+.ibb-floating-actions .rc-bell:hover{background:#fff5d8}
 .rc-bell-icon{width:48px;height:48px;overflow:visible;filter:drop-shadow(0 3px 2px #a86a0024);transform-origin:50% 12%}
-.top-right .rc-bell b{position:absolute;right:-3px;top:0;display:grid;place-items:center;min-width:23px;height:23px;padding:0 5px;border:2px solid #fff;border-radius:16px;background:linear-gradient(145deg,#ff4545,#d5091c);color:white;font-size:12px;line-height:1;font-weight:900;box-shadow:0 2px 4px #ad152a40;font-variant-numeric:tabular-nums;pointer-events:none}
-.top-right .rc-bell b[hidden]{display:none}
+.ibb-floating-actions .rc-bell b{position:absolute;right:-3px;top:0;display:grid;place-items:center;min-width:23px;height:23px;padding:0 5px;border:2px solid #fff;border-radius:16px;background:linear-gradient(145deg,#ff4545,#d5091c);color:white;font-size:12px;line-height:1;font-weight:900;box-shadow:0 2px 4px #ad152a40;font-variant-numeric:tabular-nums;pointer-events:none}
+.ibb-floating-actions .rc-bell b[hidden]{display:none}
 .rc-bell:has(b:not([hidden])) .rc-bell-icon{animation:rc-bell-ring 1.8s ease-in-out infinite}
 @keyframes rc-bell-ring{0%,55%,100%{transform:rotate(0)}6%,20%,34%{transform:rotate(30deg)}13%,27%,41%{transform:rotate(-30deg)}48%{transform:rotate(12deg)}}
-.ibb-floating-actions{position:fixed;right:22px;bottom:22px;z-index:1050;display:flex;align-items:center;max-width:calc(100vw - 28px)}
+.ibb-floating-actions{position:fixed;right:22px;bottom:22px;z-index:1050;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 28px)}
 .ibb-floating-actions>#ibbAssistantLauncher{position:static;min-height:52px;white-space:nowrap}
-@media(max-width:600px){.top-right{gap:6px}.top-right .rc-bell{flex-basis:44px;width:44px;height:44px}.rc-bell-icon{width:42px;height:42px}.ibb-floating-actions{right:14px;bottom:max(16px,env(safe-area-inset-bottom))}.ibb-floating-actions>#ibbAssistantLauncher{min-height:48px;padding:12px 15px}}
+@media(max-width:600px){.ibb-floating-actions .rc-bell{flex-basis:44px;width:44px;height:44px}.rc-bell-icon{width:42px;height:42px}.ibb-floating-actions{right:14px;bottom:max(16px,env(safe-area-inset-bottom))}.ibb-floating-actions>#ibbAssistantLauncher{min-height:48px;padding:12px 15px}}
 @media(prefers-reduced-motion:reduce){.rc-bell .rc-bell-icon{animation:none!important;transform:none!important}}
 .rc-inbox-tabs button{padding:7px 15px;border:1px solid #bed8f5;border-radius:8px;background:#fff;color:#28557e;font-weight:750}
 .rc-inbox-tabs button[aria-pressed=true]{background:#087cf0;color:white;border-color:#087cf0}
