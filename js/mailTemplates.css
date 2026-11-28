@@ -7,7 +7,7 @@
 #mail .mail-form,#mail .mail-specific,#mail .mail-preview{display:grid;align-content:start;gap:14px;min-width:0}
 #mail .mail-preview{padding:18px;background:#f5f9ff;border:1px solid #d9e7f5;border-radius:14px}
 #mail .mail-preview h3,#mail p{margin:0}
-#mail .mail-preview [name=body]{min-height:360px;font-size:14px;font-weight:400}
+#mail .mail-preview [name=body]{min-height:360px;font-family:Calibri,Carlito,Arial,sans-serif;font-size:12pt;font-weight:400;color:#1f497d}
 #mail .mail-lookup{display:flex;align-items:end;gap:8px}#mail .mail-lookup label{flex:1;min-width:0}
 #mail .mail-actions{display:flex;flex-wrap:wrap;gap:8px}#mail [role=status]{font-size:13px;color:#436c91}
 #mail button:disabled{opacity:.5;cursor:not-allowed}
