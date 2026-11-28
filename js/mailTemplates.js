@@ -8,7 +8,20 @@ export const MAIL_TEMPLATES=[
 ];
 export function createMail(templateId,v){
  const t=MAIL_TEMPLATES.find(t=>t.id===templateId);if(!t)throw Error('Mẫu email không hợp lệ.');
- if(templateId==='invoice')return {subject:`${t.subject}${v.contract?' - HĐ '+v.contract:''}`,body:`Kính gửi ${v.greeting},\n\nHiện em đang có khách hàng:\n\n${v.contract?'- Mã HĐ: '+v.contract+'\n':''}- Họ và tên: ${v.customer}\n- Địa chỉ lắp đặt: ${v.address}\n- SĐT khách hàng: ${v.phone}\n- Gói cước KH đăng ký: ${v.package}\n\nỞ đây KH ${v.currentService}, với nhu cầu sử dụng của KH tầm khoảng ${v.devices} thiết bị.\n\nEm đã tư vấn các gói doanh nghiệp nhưng khách hàng không đồng ý vì nhu cầu sử dụng ít nên không muốn đăng ký gói doanh nghiệp. Sau đó em có care KH xuống gói ${v.carePackage}.\n\nVì là công ty nên cần xuất hóa đơn để thực hiện thanh toán theo hình thức công ty cho sau này.\n\nVậy mong Anh xem xét confirm xuất hóa đơn công ty cho trường hợp này, để khách hàng lựa chọn sử dụng dịch vụ FPT.\n\nEm xin cảm ơn.\n\nTrân trọng,\n${v.sender}\n${v.senderEmail||''}`.trim()};
+ if(templateId==='invoice')return {subject:`${t.subject}${v.contract?' - HĐ '+v.contract:''}`,body:`Kính gửi ${v.greeting||'Anh Duy'},
+
+Hiện em đang có khách hàng:
+- Họ và tên: ${v.customer}
+- Địa chỉ lắp đặt: ${v.address}
+- SĐT khách hàng: ${v.phone}
+- Gói cước KH đăng ký: ${v.package}
+
+Ở đây KH ${v.currentService}, với nhu cầu sử dụng của KH tầm khoảng ${v.devices} thiết bị.
+
+Em đã tư vấn các gói doanh nghiệp nhưng khách hàng không đồng ý vì nhu cầu sử dụng ít nên không muốn đăng ký gói doanh nghiệp. Sau đó em có care KH xuống gói ${v.carePackage}.
+Vì là công ty nên cần xuất hóa đơn để thực hiện thanh toán theo hình thức công ty cho sau này.
+
+Vậy mong Anh xem xét confirm xuất hóa đơn công ty cho trường hợp này, để khách hàng lựa chọn sử dụng dịch vụ FPT.`};
  const common=`${v.contract?'Mã HĐ: '+v.contract+'\n':''}Tên khách hàng: ${v.customer}\nSĐT: ${v.phone}\nĐịa chỉ lắp đặt: ${v.address}\nGói cước: ${v.package}`;
  const details=t.fields.map(([key,label])=>`${label}: ${v[key]||''}`).join('\n\n');
  const request={invoice:'Kính nhờ Anh/Chị xem xét hỗ trợ xuất hóa đơn công ty cho trường hợp trên.',box:'Kính nhờ Anh/Chị xem xét phương án Box tái sử dụng theo đề xuất trên.',wifi:'Kính nhờ Anh/Chị xem xét hỗ trợ bộ phát Wi-Fi tái sử dụng theo đề xuất trên.',lines:'Kính nhờ Anh/Chị xem xét hỗ trợ triển khai đường truyền mới theo nhu cầu và nội dung khách hàng đã xác nhận.'}[templateId];
@@ -30,7 +43,7 @@ export function renderMailTemplates(root,{profile={}}={}){
  preview.querySelector('[name=body]').maxLength=30000;
  copy.textContent='Sao chép có định dạng';
  const formatNote=document.createElement('p');formatNote.className='note';formatNote.textContent='Calibri · 12 pt · Xanh lam sẫm. Để giữ định dạng trong Outlook: bấm Sao chép có định dạng, rồi chọn toàn bộ nội dung thư và dán thay thế (giữ định dạng nguồn).';root.querySelector('.mail-actions').after(formatNote);
- function specific(){const t=MAIL_TEMPLATES.find(t=>t.id===form.elements.template.value);root.querySelector('.mail-specific').innerHTML=t.fields.map(([k,l,type])=>field(k,l,type||'text',k==='invoiceAddress'?form.elements.address.value:'')).join('');if(!open.disabled)status.textContent='Đã đổi mẫu. Bấm Tạo / cập nhật email để thay nội dung xem trước.';open.disabled=copy.disabled=true;}
+ function specific(){const t=MAIL_TEMPLATES.find(t=>t.id===form.elements.template.value);const invoice=t.id==='invoice';const email=form.elements.senderEmail;email.closest('label').hidden=invoice;email.disabled=invoice;if(['Anh/Chị','Anh Duy'].includes(form.elements.greeting.value))form.elements.greeting.value=invoice?'Anh Duy':'Anh/Chị';root.querySelector('.mail-specific').innerHTML=t.fields.map(([k,l,type])=>field(k,l,type||'text',k==='invoiceAddress'?form.elements.address.value:'')).join('');if(!open.disabled)status.textContent='Đã đổi mẫu. Bấm Tạo / cập nhật email để thay nội dung xem trước.';open.disabled=copy.disabled=true;}
  form.elements.template.onchange=specific;specific();
  form.onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(form)),draft=createMail(v.template,v);preview.querySelector('[name=subject]').value=draft.subject;preview.querySelector('[name=body]').value=draft.body;open.disabled=copy.disabled=false;status.textContent='Đã tạo nội dung. Kiểm tra và chỉnh sửa trước khi mở Outlook.';};
  async function copyBody(preserveStatus=false){try{const text=preview.querySelector('[name=body]').value;let formatted=false;if(typeof ClipboardItem!=='undefined'&&navigator.clipboard?.write){const html='<html><body><div style="font-family:Calibri,Carlito,Arial,sans-serif;font-size:12pt;color:#1f497d;line-height:1.5;white-space:pre-wrap">'+esc(text).replace(/\n/g,'<br>')+'</div></body></html>';await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);formatted=true;}else await navigator.clipboard.writeText(text);if(!preserveStatus)status.textContent=formatted?'Đã sao chép Calibri 12, xanh lam sẫm. Trong Outlook, chọn toàn bộ nội dung thư và dán thay thế, giữ định dạng nguồn.':'Đã sao chép văn bản. Trình duyệt chưa hỗ trợ sao chép định dạng; chọn Calibri 12 và màu xanh lam sẫm trong Outlook.';}catch{preview.querySelector('[name=body]').focus();preview.querySelector('[name=body]').select();if(!preserveStatus)status.textContent='Trình duyệt chưa cho sao chép. Nội dung đã được chọn để anh/chị sao chép thủ công; đặt Calibri 12, xanh lam sẫm trong Outlook.';}}

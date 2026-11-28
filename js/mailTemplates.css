@@ -13,3 +13,5 @@
 #mail button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:900px){#mail .mail-layout{grid-template-columns:1fr}}
 @media(max-width:600px){#mail .mail-fields{grid-template-columns:1fr}#mail input,#mail textarea,#mail select{font-size:16px}}
+
+#mail label[hidden]{display:none}
