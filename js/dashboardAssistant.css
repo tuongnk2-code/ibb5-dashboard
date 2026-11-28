@@ -1,9 +1,14 @@
-#ibbAssistantLauncher{position:fixed;right:22px;bottom:22px;z-index:1050;width:88px;height:88px;display:grid;place-items:center;background:transparent;border:0;border-radius:20px;padding:0;font-weight:800;box-shadow:none;cursor:pointer}
-#ibbAssistantLauncher img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 5px #163c6929);transition:transform .18s}
-#ibbAssistantLauncher:hover img{transform:translateY(-3px)}
+#ibbAssistantLauncher{position:fixed;right:22px;bottom:22px;z-index:1050;width:100px;height:100px;display:grid;place-items:center;background:transparent;border:0;border-radius:20px;padding:0;font-weight:800;box-shadow:none;cursor:pointer}
+#ibbAssistantLauncher .assistant-robot-pose{position:relative;display:block;width:100%;height:100%;pointer-events:none;filter:drop-shadow(0 4px 5px #163c6929);animation:ibb-robot-bounce 1.8s ease-in-out infinite}
+#ibbAssistantLauncher img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
+/* Split the same artwork at the raised wrist so only the waving arm rotates. */
+#ibbAssistantLauncher .assistant-robot-body{clip-path:polygon(0 0,100% 0,100% 40%,77% 42%,70% 61%,76% 70%,100% 70%,100% 100%,0 100%)}
+#ibbAssistantLauncher .assistant-robot-hand{clip-path:polygon(77% 42%,100% 40%,100% 70%,76% 70%,70% 61%);transform-origin:74% 65%;animation:ibb-robot-wave .7s ease-in-out infinite}
+@keyframes ibb-robot-bounce{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes ibb-robot-wave{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(15deg)}}
 #ibbAssistantLauncher:focus-visible{outline:3px solid #1684e6;outline-offset:3px}
-@media(max-width:600px){#ibbAssistantLauncher{width:80px;height:80px}}
-@media(prefers-reduced-motion:reduce){#ibbAssistantLauncher img{transition:none}#ibbAssistantLauncher:hover img{transform:none}}
+@media(max-width:600px){#ibbAssistantLauncher{width:92px;height:92px}}
+@media(prefers-reduced-motion:reduce){#ibbAssistantLauncher .assistant-robot-pose,#ibbAssistantLauncher .assistant-robot-hand{animation:none!important;transform:none!important}}
 #ibbAssistant[hidden],#ibbAssistantLauncher[hidden]{display:none}
 #ibbAssistant{position:fixed;right:18px;bottom:18px;z-index:1051;display:flex;flex-direction:column;width:min(520px,calc(100vw - 32px));height:min(820px,calc(100dvh - 36px));background:#f6f9fd;border:1px solid #c6d8ef;border-radius:18px;box-shadow:0 12px 48px #18355250;overflow:hidden;color:#1d4066;font-size:14px}
 #ibbAssistant *{box-sizing:border-box}
