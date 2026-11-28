@@ -13,8 +13,8 @@
 .rc-bell:has(b:not([hidden])) .rc-bell-icon{animation:rc-bell-ring 1.8s ease-in-out infinite}
 @keyframes rc-bell-ring{0%,55%,100%{transform:rotate(0)}6%,20%,34%{transform:rotate(30deg)}13%,27%,41%{transform:rotate(-30deg)}48%{transform:rotate(12deg)}}
 .ibb-floating-actions{position:fixed;right:22px;bottom:22px;z-index:1050;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 28px)}
-.ibb-floating-actions>#ibbAssistantLauncher{position:static;min-height:52px;white-space:nowrap}
-@media(max-width:600px){.ibb-floating-actions .rc-bell{flex-basis:54px;width:54px;height:54px}.rc-bell-icon{width:54px;height:54px}.ibb-floating-actions{right:14px;bottom:max(16px,env(safe-area-inset-bottom))}.ibb-floating-actions>#ibbAssistantLauncher{min-height:48px;padding:12px 15px}}
+.ibb-floating-actions>#ibbAssistantLauncher{position:static;flex-shrink:0;padding:0}
+@media(max-width:600px){.ibb-floating-actions .rc-bell{flex-basis:54px;width:54px;height:54px}.rc-bell-icon{width:54px;height:54px}.ibb-floating-actions{right:14px;bottom:max(16px,env(safe-area-inset-bottom))}.ibb-floating-actions>#ibbAssistantLauncher{padding:0}}
 @media(prefers-reduced-motion:reduce){.rc-bell .rc-bell-icon{animation:none!important;transform:none!important}}
 .rc-inbox-tabs button{padding:7px 15px;border:1px solid #bed8f5;border-radius:8px;background:#fff;color:#28557e;font-weight:750}
 .rc-inbox-tabs button[aria-pressed=true]{background:#087cf0;color:white;border-color:#087cf0}

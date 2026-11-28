@@ -18,6 +18,10 @@ const assert=require('node:assert/strict');const {chromium}=require(process.env.
   await page.route('https://**/*',r=>r.abort());await page.goto('http://127.0.0.1:5251/#overview');
   await page.waitForFunction(total=>document.querySelector('#reportNotificationButton b')?.textContent===String(total),total);
   const bell=page.locator('#reportNotificationButton'),assistant=page.locator('#ibbAssistantLauncher');
+  await page.waitForFunction(()=>{const image=document.querySelector('#ibbAssistantLauncher img');return image?.complete&&image.naturalWidth>0;});
+  assert.equal(await assistant.getAttribute('aria-label'),'Trợ lý IBB5');
+  assert.equal(await assistant.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+  if(process.env.ALERT_SCREENSHOT_DIR)await page.screenshot({path:process.env.ALERT_SCREENSHOT_DIR+'/robot-launcher-'+role+'-'+width+'.png'});
   const before=await bell.boundingBox(),assistantBox=await assistant.boundingBox();assert.ok(before.x>=0);assert.ok(before.x+before.width<=assistantBox.x);assert.ok(before.y>=850);assert.equal(before.width,width<=600?54:58);assert.equal(await bell.evaluate(el=>el.parentElement.classList.contains('ibb-floating-actions')),true);
   await page.evaluate(()=>window.scrollTo(0,700));assert.equal((await bell.boundingBox()).y,before.y);
   assert.equal(await bell.locator('b').evaluate(el=>getComputedStyle(el).backgroundImage.includes('gradient')),true);
