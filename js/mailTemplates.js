@@ -18,7 +18,8 @@ export function outlookComposeUrl({to,cc,subject,body}){
  const valid=s=>!/[\r\n]/.test(s)&&s.split(/[;,]/).filter(x=>x.trim()).every(x=>/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x.trim()));
  if(!to.trim()||!valid(to)||!valid(cc))throw Error('Kiểm tra địa chỉ email người nhận/CC; phân cách nhiều địa chỉ bằng dấu chấm phẩy.');
  const p=new URLSearchParams({to:to.split(/[;,]/).map(x=>x.trim()).filter(Boolean).join(';'),cc:cc.split(/[;,]/).map(x=>x.trim()).filter(Boolean).join(';'),subject,body});
- return 'https://outlook.cloud.microsoft/mail/deeplink/compose?'+p;
+ // Outlook's compose link decodes percent escapes but can leave form-style '+' spaces literal.
+ return 'https://outlook.cloud.microsoft/mail/deeplink/compose?'+p.toString().replace(/\+/g,'%20');
 }
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function renderMailTemplates(root,{profile={}}={}){
