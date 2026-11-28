@@ -1218,7 +1218,7 @@ let mailTemplatesLoading;
 function loadMailTemplates(){
  if(location.hash!=='#mail'||mailTemplatesLoading)return;
  const root=document.getElementById('mail');
- mailTemplatesLoading=import('./mailTemplates.js').then(({renderMailTemplates})=>renderMailTemplates(root,{profile:window.IBB5_CURRENT_PROFILE||{},getRows:()=>DATA.filter(row=>window.IBB5_ROLE?.canView(row))})).catch(()=>{mailTemplatesLoading=null;root.textContent='Chưa tải được mẫu email. Anh/chị tải lại trang để thử lại.';});
+ mailTemplatesLoading=import('./mailTemplates.js').then(({renderMailTemplates})=>renderMailTemplates(root,{profile:window.IBB5_CURRENT_PROFILE||{},contacts:CONTACT_DATA})).catch(()=>{mailTemplatesLoading=null;root.textContent='Chưa tải được mẫu email. Anh/chị tải lại trang để thử lại.';});
 }
 window.addEventListener('hashchange',loadMailTemplates);window.addEventListener('popstate',loadMailTemplates);
 document.querySelectorAll('.sidebar .nav a[href="#mail"]').forEach(link=>link.addEventListener('click',()=>queueMicrotask(loadMailTemplates)));
